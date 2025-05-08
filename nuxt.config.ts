@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
+  future: {
+    compatibilityVersion: 4,
+  },
+
   modules: [
     '@nuxt/eslint',
     '@nuxt/fonts',
@@ -10,6 +14,18 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/scripts',
     '@nuxt/ui',
-    '@nuxt/test-utils'
-  ]
+    '@nuxt/test-utils',
+    '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
+    '@vueuse/nuxt'
+  ],
+
+  css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    public: {
+      googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
+      googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID
+    }
+  }
 })
