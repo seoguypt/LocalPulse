@@ -1,5 +1,6 @@
 import { PlacesClient } from '@googlemaps/places';
 import { search } from 'google-sr';
+import UserAgent from 'user-agents';
 
 export default defineEventHandler(async (event) => {
   const data = await readValidatedBody(event, dataSchema.parse) as Data;
@@ -48,6 +49,11 @@ export default defineEventHandler(async (event) => {
 
     const searchResults = await search({
       query: `"${data.businessName}" Australia`,
+      requestConfig: {
+        headers: {
+          'User-Agent': new UserAgent().toString(),
+        },
+      },
     });
 
     data.googleSearchResults = searchResults.map(result => ({
@@ -62,6 +68,11 @@ export default defineEventHandler(async (event) => {
 
     const searchResults = await search({
       query: `"${data.businessName}" Australia site:facebook.com`,
+      requestConfig: {
+        headers: {
+          'User-Agent': new UserAgent().toString(),
+        },
+      },
     });
 
     data.facebookSearchResults = searchResults.map(result => ({
@@ -76,6 +87,11 @@ export default defineEventHandler(async (event) => {
 
     const searchResults = await search({
       query: `"${data.businessName}" Australia site:instagram.com`,
+      requestConfig: {
+        headers: {
+          'User-Agent': new UserAgent().toString(),
+        },
+      },
     });
 
     data.instagramSearchResults = searchResults.map(result => ({
