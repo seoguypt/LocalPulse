@@ -104,6 +104,75 @@ const handleSubmit = () => {
         </div>
       </div>
 
+      <div v-if="dataStore.data.scrapedSocialMediaData?.length" class="mt-16 max-w-3xl">
+        <h2 class="font-medium uppercase text-gray-500">Social Media Profiles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Facebook Profiles -->
+          <div class="p-4 border rounded-lg">
+            <h3 class="text-lg font-semibold mb-4">Facebook</h3>
+            <div v-for="data in dataStore.data.scrapedSocialMediaData.filter(d => d.website?.includes('facebook.com'))" 
+                 :key="data.website" 
+                 class="mb-4 last:mb-0">
+              <div class="flex items-start gap-3">
+                <img v-if="data.logo" :src="data.logo" :alt="data.businessName || 'Facebook profile'" class="w-12 h-12 object-contain rounded-full" />
+                <div>
+                  <a :href="data.website" target="_blank" class="font-medium hover:underline">
+                    {{ data.businessName || 'Facebook Profile' }}
+                  </a>
+                  <p v-if="data.description" class="text-sm text-gray-600 mt-1">{{ data.description }}</p>
+                  <p v-if="data.address" class="text-sm text-gray-500 mt-1">{{ data.address }}</p>
+                  
+                  <div v-if="data.websiteLinks?.length" class="mt-2">
+                    <span class="text-sm font-medium text-gray-500">Website Links:</span>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                      <a v-for="link in data.websiteLinks" 
+                         :key="link" 
+                         :href="link" 
+                         target="_blank"
+                         class="text-sm text-blue-600 hover:underline">
+                        {{ link }}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instagram Profiles -->
+          <div class="p-4 border rounded-lg">
+            <h3 class="text-lg font-semibold mb-4">Instagram</h3>
+            <div v-for="data in dataStore.data.scrapedSocialMediaData.filter(d => d.website?.includes('instagram.com'))" 
+                 :key="data.website" 
+                 class="mb-4 last:mb-0">
+              <div class="flex items-start gap-3">
+                <img v-if="data.logo" :src="data.logo" :alt="data.businessName || 'Instagram profile'" class="w-12 h-12 object-contain rounded-full" />
+                <div>
+                  <a :href="data.website" target="_blank" class="font-medium hover:underline">
+                    {{ data.businessName || 'Instagram Profile' }}
+                  </a>
+                  <p v-if="data.description" class="text-sm text-gray-600 mt-1">{{ data.description }}</p>
+                  <p v-if="data.address" class="text-sm text-gray-500 mt-1">{{ data.address }}</p>
+                  
+                  <div v-if="data.websiteLinks?.length" class="mt-2">
+                    <span class="text-sm font-medium text-gray-500">Website Links:</span>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                      <a v-for="link in data.websiteLinks" 
+                         :key="link" 
+                         :href="link" 
+                         target="_blank"
+                         class="text-sm text-blue-600 hover:underline">
+                        {{ link }}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <template v-if="dataStore.ingesting">
         <h3 class="text-2xl font-medium mt-32">Searching the universe for your business...</h3>
         <UProgress class="w-1/3 mt-8" />

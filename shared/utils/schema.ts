@@ -3,6 +3,7 @@ import { z } from 'zod';
 // Schema for scraped website data
 const scrapedWebsiteDataSchema = z.object({
   website: z.string(),
+  websiteLinks: z.array(z.string()).default([]),
   socialLinks: z.object({
     facebook: z.array(z.string()),
     instagram: z.array(z.string()),
@@ -41,6 +42,7 @@ export const dataSchema = z.object({
     description: z.string(),
   })).default([]),
   scrapedWebsiteData: z.array(scrapedWebsiteDataSchema).default([]),
+  scrapedSocialMediaData: z.array(scrapedWebsiteDataSchema).default([]),
 })
 
 export type Data = z.infer<typeof dataSchema>
