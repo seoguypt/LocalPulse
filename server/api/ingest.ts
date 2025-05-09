@@ -1,6 +1,7 @@
 import { PlacesClient } from '@googlemaps/places';
 import { search } from 'google-sr';
 import puppeteer from 'puppeteer';
+import { filterFacebookLinks, filterInstagramLinks, type SocialLinks } from '~~/shared/utils/social-links';
 
 export default defineEventHandler(async (event) => {
   const data = await readValidatedBody(event, dataSchema.parse) as Data;
@@ -111,7 +112,7 @@ export default defineEventHandler(async (event) => {
 
       const scrapedData = await page.evaluate(() => {
         // @ts-ignore - This code runs in browser context where document is available
-        const data: Record<string, string | string[] | null> = {};
+        const data: Record<string, string | string[] | SocialLinks | null> = {};
 
         // Helper function to safely get text content
         // @ts-ignore - This code runs in browser context where document is available
@@ -123,11 +124,11 @@ export default defineEventHandler(async (event) => {
         // @ts-ignore - This code runs in browser context where document is available
         const getLinks = (selector: string): string[] => Array.from(document.querySelectorAll(selector)).map(a => (a as HTMLAnchorElement).href).filter(href => !!href);
 
-        // Instagram links
-        data.instagramLinks = getLinks('a[href*="instagram.com"]');
-
-        // Facebook links
-        data.facebookLinks = getLinks('a[href*="facebook.com"]');
+        // Get all social media links
+        data.socialLinks = {
+          facebook: getLinks('a[href*="facebook.com/"]'),
+          instagram: getLinks('a[href*="instagram.com/"]'),
+        };
 
         // Business Addresses
         let address = getText('address');
@@ -175,7 +176,17 @@ export default defineEventHandler(async (event) => {
       });
 
       await browser.close();
-      return { website, ...scrapedData } as ScrapedWebsiteData;
+
+      // Clean and process the data in Node.js context
+      const cleanedData = {
+        ...scrapedData,
+        socialLinks: {
+          facebook: filterFacebookLinks((scrapedData.socialLinks as SocialLinks)?.facebook || []),
+          instagram: filterInstagramLinks((scrapedData.socialLinks as SocialLinks)?.instagram || []),
+        }
+      };
+
+      return { website, ...cleanedData } as ScrapedWebsiteData;
     } catch (error) {
       console.error(`Error scraping ${website}:`, error);
       return { website, error: (error as Error).message } as ScrapedWebsiteData;

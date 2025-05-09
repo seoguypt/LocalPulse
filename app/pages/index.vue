@@ -70,10 +70,10 @@ const handleSubmit = () => {
               <p v-if="data.address" class="text-gray-600 mt-1">{{ data.address }}</p>
               <p v-if="data.description" class="text-gray-600 mt-2">{{ data.description }}</p>
               
-              <div v-if="data.instagramLinks?.length" class="mt-2">
+              <div v-if="data.socialLinks?.instagram?.length" class="mt-2">
                 <span class="text-sm font-medium text-gray-500">Instagram:</span>
                 <div class="flex flex-wrap gap-2 mt-1">
-                  <a v-for="link in data.instagramLinks" 
+                  <a v-for="link in data.socialLinks.instagram" 
                      :key="link" 
                      :href="link" 
                      target="_blank"
@@ -83,10 +83,10 @@ const handleSubmit = () => {
                 </div>
               </div>
 
-              <div v-if="data.facebookLinks?.length" class="mt-2">
+              <div v-if="data.socialLinks?.facebook?.length" class="mt-2">
                 <span class="text-sm font-medium text-gray-500">Facebook:</span>
                 <div class="flex flex-wrap gap-2 mt-1">
-                  <a v-for="link in data.facebookLinks" 
+                  <a v-for="link in data.socialLinks.facebook" 
                      :key="link" 
                      :href="link" 
                      target="_blank"

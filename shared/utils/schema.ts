@@ -3,8 +3,13 @@ import { z } from 'zod';
 // Schema for scraped website data
 const scrapedWebsiteDataSchema = z.object({
   website: z.string(),
-  instagramLinks: z.array(z.string()).optional(),
-  facebookLinks: z.array(z.string()).optional(),
+  socialLinks: z.object({
+    facebook: z.array(z.string()),
+    instagram: z.array(z.string()),
+  }).default({
+    facebook: [],
+    instagram: [],
+  }),
   address: z.string().nullable().optional(),
   logo: z.string().nullable().optional(),
   businessName: z.string().nullable().optional(),
