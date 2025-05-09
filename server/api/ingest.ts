@@ -94,9 +94,9 @@ export default defineEventHandler(async (event) => {
 
   const websitesToScrape = [
     // Get top 5 google places websites
-    ...data.googlePlacesSearchResults.slice(0, 5).map(result => result.website),
+    ...data.googlePlacesSearchResults.slice(0, 3).map(result => result.website),
     // Get top 5 google search websites
-    ...data.googleSearchResults.slice(0, 5).map(result => result.url),
+    ...data.googleSearchResults.slice(0, 3).map(result => result.url),
   ].filter((website): website is string => {
     if (!website) return false;
     const lowerCaseWebsite = website.toLowerCase();
@@ -123,11 +123,11 @@ export default defineEventHandler(async (event) => {
     });
 
   const socialMediaLinksToScrape = new Set<string>([
-    ...data.facebookSearchResults.slice(0, 5).map(result => result.url),
-    ...data.instagramSearchResults.slice(0, 5).map(result => result.url),
+    ...data.facebookSearchResults.slice(0, 3).map(result => result.url),
+    // ...data.instagramSearchResults.slice(0, 3).map(result => result.url),
     ...data.scrapedWebsiteData.flatMap(site => [
       ...(site.socialLinks?.facebook || []),
-      ...(site.socialLinks?.instagram || [])
+      // ...(site.socialLinks?.instagram || [])
     ].filter((link): link is string => !!link) // Ensure only strings are passed
     )
   ]);
