@@ -1,10 +1,42 @@
 import { z } from 'zod';
 
+// Schema for scraped website data
+const scrapedWebsiteDataSchema = z.object({
+  website: z.string(),
+  instagramLinks: z.array(z.string()).optional(),
+  facebookLinks: z.array(z.string()).optional(),
+  address: z.string().nullable().optional(),
+  logo: z.string().nullable().optional(),
+  businessName: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  error: z.string().optional(),
+});
+
 export const dataSchema = z.object({
   businessName: z.string().optional(),
-  businessAddress: z.string().optional(),
-  facebookLink: z.string().optional(),
-  diagnostics: z.array(z.enum(['no-google-places-listing'])).default([]),
+  googlePlacesSearchResults: z.array(z.object({
+    id: z.string().optional(),
+    name: z.string().optional(),
+    address: z.string().optional(),
+    website: z.string().optional(),
+  })).default([]),
+  googleSearchResults: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+    description: z.string(),
+  })).default([]),
+  facebookSearchResults: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+    description: z.string(),
+  })).default([]),
+  instagramSearchResults: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+    description: z.string(),
+  })).default([]),
+  scrapedWebsiteData: z.array(scrapedWebsiteDataSchema).default([]),
 })
 
 export type Data = z.infer<typeof dataSchema>
+export type ScrapedWebsiteData = z.infer<typeof scrapedWebsiteDataSchema>

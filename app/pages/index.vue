@@ -22,9 +22,87 @@ const handleSubmit = () => {
 
     <div class="container mx-auto pt-16 flex flex-col items-center justify-center" v-else>
       <h1 class="text-6xl font-extrabold text-center">{{ dataStore.data.businessName }}</h1>
-      <div class="mt-4" v-if="dataStore.data.businessAddress">{{ dataStore.data.businessAddress }}</div>
 
-      {{ dataStore.data.diagnostics }}
+      <div v-if="dataStore.data.googleSearchResults.length" class="mt-16">
+        <h2 class="font-medium uppercase text-gray-500">Google Search Results</h2>
+        <div v-for="result in dataStore.data.googleSearchResults" :key="result.url">
+          <a :href="result.url" target="_blank">{{ result.title }}</a>
+          <div class="text-sm w-[64ch] truncate">{{ result.description }}</div>
+        </div>
+      </div>
+
+      <div v-if="dataStore.data.googlePlacesSearchResults.length" class="mt-16">
+        <h2 class="font-medium uppercase text-gray-500">Google Places Search Results</h2>
+        <div v-for="result in dataStore.data.googlePlacesSearchResults" :key="result.id">
+          <div>{{ result.name }}</div>
+          <div>{{ result.address }}</div>
+          <a :href="result.website" target="_blank">{{ result.website }}</a>
+        </div>
+      </div>
+
+      <div v-if="dataStore.data.facebookSearchResults.length" class="mt-16">
+        <h2 class="font-medium uppercase text-gray-500">Facebook Search Results</h2>
+        <div v-for="result in dataStore.data.facebookSearchResults" :key="result.url">
+          <a :href="result.url" target="_blank">{{ result.title }}</a>
+          <div class="text-sm w-[64ch] truncate">{{ result.description }}</div>
+        </div>
+      </div>
+
+      <div v-if="dataStore.data.instagramSearchResults.length" class="mt-16">
+        <h2 class="font-medium uppercase text-gray-500">Instagram Search Results</h2>
+        <div v-for="result in dataStore.data.instagramSearchResults" :key="result.url">
+          <a :href="result.url" target="_blank">{{ result.title }}</a>
+          <div class="text-sm w-[64ch] truncate">{{ result.description }}</div>
+        </div>
+      </div>
+
+      <div v-if="dataStore.data.scrapedWebsiteData?.length" class="mt-16 max-w-3xl">
+        <h2 class="font-medium uppercase text-gray-500">Scraped Website Data</h2>
+        <div v-for="data in dataStore.data.scrapedWebsiteData" :key="data.website" class="mb-8 p-4 border rounded-lg">
+          <div class="flex items-start gap-4">
+            <img v-if="data.logo" :src="data.logo" :alt="data.businessName || 'Business logo'" class="w-16 h-16 object-contain" />
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold">
+                <a :href="data.website" target="_blank" class="hover:underline">
+                  {{ data.businessName || 'Unknown Business' }}
+                </a>
+              </h3>
+              <p v-if="data.address" class="text-gray-600 mt-1">{{ data.address }}</p>
+              <p v-if="data.description" class="text-gray-600 mt-2">{{ data.description }}</p>
+              
+              <div v-if="data.instagramLinks?.length" class="mt-2">
+                <span class="text-sm font-medium text-gray-500">Instagram:</span>
+                <div class="flex flex-wrap gap-2 mt-1">
+                  <a v-for="link in data.instagramLinks" 
+                     :key="link" 
+                     :href="link" 
+                     target="_blank"
+                     class="text-sm text-blue-600 hover:underline">
+                    {{ link }}
+                  </a>
+                </div>
+              </div>
+
+              <div v-if="data.facebookLinks?.length" class="mt-2">
+                <span class="text-sm font-medium text-gray-500">Facebook:</span>
+                <div class="flex flex-wrap gap-2 mt-1">
+                  <a v-for="link in data.facebookLinks" 
+                     :key="link" 
+                     :href="link" 
+                     target="_blank"
+                     class="text-sm text-blue-600 hover:underline">
+                    {{ link }}
+                  </a>
+                </div>
+              </div>
+
+              <div v-if="data.error" class="mt-2 text-red-500 text-sm">
+                Error: {{ data.error }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <template v-if="dataStore.ingesting">
         <h3 class="text-2xl font-medium mt-32">Searching the universe for your business...</h3>
