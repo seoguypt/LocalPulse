@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { ScrapedPageData } from './types';
 import { filterFacebookLinks, filterInstagramLinks } from '~~/shared/utils/social-links';
-import { getPageHtml } from './getPageHtml';
+import { stealthFetch } from './stealthFetch';
 import logger from './logger';
 
 // Helper function to extract data using Cheerio
@@ -50,8 +50,8 @@ export const scrapeWebsite = async (websiteUrl: string): Promise<ScrapedPageData
   try {
     logger.startGroup(`Scraping website: ${websiteUrl}`);
     
-    // Use our new getPageHtml utility to fetch the HTML
-    const html = await getPageHtml(websiteUrl);
+    // Use the stealthFetch function to fetch the HTML
+    const html = await stealthFetch(websiteUrl);
     
     // Process the HTML with Cheerio
     logger.step('Extracting data with Cheerio');

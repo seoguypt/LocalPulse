@@ -1,7 +1,6 @@
 import { PlacesClient } from '@googlemaps/places';
 import { compareTwoStrings } from 'string-similarity';
 import { z } from 'zod';
-import { defineEventHandler, readValidatedBody } from 'h3';
 
 // new: Zod schema to describe a classification result
 const classificationSchema = z.object({
@@ -180,6 +179,56 @@ export default defineEventHandler(async (event) => {
     const profilePattern = /^https?:\/\/(?:www\.)?facebook\.com\/(?:pages\/)?[^\/\?]+(?:\/)?$/;
     return profilePattern.test(url);
   });
+
+  // Scrape Facebook profiles
+  logger.step(`Found ${facebookProfileLinksToScrape.length} Facebook profiles to scrape`);
+  
+  if (facebookProfileLinksToScrape.length > 0) {
+    try {
+      // Deduplicate URLs
+      const uniqueUrls = [...new Set(facebookProfileLinksToScrape)];
+      if (uniqueUrls.length < facebookProfileLinksToScrape.length) {
+        logger.info(`Removed ${facebookProfileLinksToScrape.length - uniqueUrls.length} duplicate Facebook URLs`);
+      }
+      
+      // Process each URL individually
+      const profilePromises = uniqueUrls.map(url => scrapeFacebookProfile(url));
+      const profiles = await Promise.all(profilePromises);
+      
+      // Filter out null results
+      const scrapedProfiles = profiles.filter((profile): profile is FacebookProfile => profile !== null);
+      
+      if (scrapedProfiles.length > 0) {
+        // Set the scraped profiles in the data object
+        data.facebookProfiles = scrapedProfiles;
+        logger.result(`Added ${scrapedProfiles.length} Facebook profiles to the dataset`);
+        
+        // Add scraped Facebook data to scrapedSocialMediaData for classification
+        scrapedProfiles.forEach(profile => {
+          if (!data.scrapedSocialMediaData) {
+            data.scrapedSocialMediaData = [];
+          }
+          
+          data.scrapedSocialMediaData.push({
+            website: profile.url,
+            businessName: profile.title,
+            description: profile.description,
+            websiteLinks: [],
+            socialLinks: {
+              facebook: [profile.url],
+              instagram: [],
+            },
+          });
+        });
+      } else {
+        logger.warn('No Facebook profiles were successfully scraped');
+      }
+    } catch (e) {
+      logger.error('Failed to scrape Facebook profiles:', e);
+    }
+  } else {
+    logger.info('No Facebook profiles found to scrape');
+  }
 
   logger.endGroup();
 
