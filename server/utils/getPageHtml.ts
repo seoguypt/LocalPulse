@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer';
 import { Browser, HTTPRequest } from 'puppeteer';
 import UserAgent from 'user-agents';
 import { z } from 'zod';
+import logger from './logger';
 
 // Input validation schema
 const UrlSchema = z.string().url();
@@ -38,7 +39,7 @@ async function getBrowser(): Promise<Browser> {
     // Handle browser closure on process exit
     process.on('exit', () => {
       if (browserInstance) {
-        browserInstance.close().catch(console.error);
+        browserInstance.close().catch((err) => logger.error('Error closing browser:', err));
       }
     });
   }
@@ -71,15 +72,14 @@ export async function getPageHtml(url: string): Promise<string> {
   try {
     // Validate URL
     const validUrl = UrlSchema.parse(url);
-    
-    // Generate a random user agent
-    const userAgent = new UserAgent().toString();
+    logger.startGroup(`Fetching HTML: ${validUrl}`);
     
     // Try fast fetch first with ofetch
     try {
+      logger.step('Attempting fast fetch');
       const html = await ofetch(validUrl, {
         headers: {
-          'User-Agent': userAgent,
+          'User-Agent': new UserAgent().toString(),
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
           'Accept-Encoding': 'gzip, deflate, br',
@@ -94,16 +94,19 @@ export async function getPageHtml(url: string): Promise<string> {
       
       // Check if the fetched HTML is valid
       if (isValidHtml(html)) {
+        logger.result('Successfully fetched HTML using ofetch');
+        logger.endGroup();
         return html;
       }
       
       // If not valid, fall back to puppeteer
-      console.log(`Fast fetch returned invalid HTML for ${url}, falling back to puppeteer`);
+      logger.warn('Fast fetch returned invalid HTML, falling back to puppeteer');
     } catch (error) {
-      console.log(`Fast fetch failed for ${url}: ${(error as Error).message}, falling back to puppeteer`);
+      logger.warn(`Fast fetch failed: ${(error as Error).message}, falling back to puppeteer`);
     }
     
     // Fallback to puppeteer with stealth approach
+    logger.step('Using puppeteer fallback');
     const browser = await getBrowser();
     const page = await browser.newPage();
     
@@ -125,6 +128,7 @@ export async function getPageHtml(url: string): Promise<string> {
       });
       
       // Navigate to page
+      logger.debug('Navigating to page with puppeteer');
       await page.goto(validUrl, { 
         waitUntil: 'domcontentloaded', 
         timeout: 30000 
@@ -135,15 +139,19 @@ export async function getPageHtml(url: string): Promise<string> {
       
       // Get HTML content
       const html = await page.content();
+      logger.result('Successfully fetched HTML using puppeteer');
+      logger.endGroup();
       
       return html;
     } finally {
       // Clean up
       if (page) {
-        await page.close().catch(console.error);
+        await page.close().catch((err) => logger.error('Error closing page:', err));
       }
     }
   } catch (error) {
+    logger.error(`Failed to fetch HTML: ${(error as Error).message}`);
+    logger.endGroup(`Failed to fetch HTML: ${url}`);
     throw new Error(`Failed to fetch HTML: ${(error as Error).message}`);
   }
 }

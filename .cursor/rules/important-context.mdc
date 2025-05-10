@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Use `pnpm` to install node packages.
+- We are using Nuxt in v4 mode: https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4
+- Use NuxtUI and TailwindCSS for UI: https://ui.nuxt.com/getting-started
+- Use Zod in /shared/schema for types and typesafety

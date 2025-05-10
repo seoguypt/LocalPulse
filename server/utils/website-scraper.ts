@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type { ScrapedPageData } from './types';
 import { filterFacebookLinks, filterInstagramLinks } from '~~/shared/utils/social-links';
 import { getPageHtml } from './getPageHtml';
+import logger from './logger';
 
 // Helper function to extract data using Cheerio
 const extractDataWithCheerio = ($: cheerio.CheerioAPI): Omit<ScrapedPageData, 'website' | 'error' | 'websiteLinks'> => {
@@ -47,10 +48,13 @@ export const scrapeWebsite = async (websiteUrl: string): Promise<ScrapedPageData
   }
 
   try {
+    logger.startGroup(`Scraping website: ${websiteUrl}`);
+    
     // Use our new getPageHtml utility to fetch the HTML
     const html = await getPageHtml(websiteUrl);
     
     // Process the HTML with Cheerio
+    logger.step('Extracting data with Cheerio');
     const $ = cheerio.load(html);
     const cheerioData = extractDataWithCheerio($);
     
@@ -60,13 +64,23 @@ export const scrapeWebsite = async (websiteUrl: string): Promise<ScrapedPageData
       instagram: filterInstagramLinks(cheerioData.socialLinks?.instagram || []),
     };
     
-    return {
+    logger.debug(`Found ${cleanedSocialLinks.facebook.length} Facebook links and ${cleanedSocialLinks.instagram.length} Instagram links`);
+    
+    if (cheerioData.businessName) {
+      logger.result(`Found business name: ${cheerioData.businessName}`);
+    }
+    
+    const result = {
       website: websiteUrl,
       ...cheerioData,
       socialLinks: cleanedSocialLinks,
     };
+    
+    logger.endGroup('Scraping completed successfully');
+    return result;
   } catch (error) {
-    console.error(`Error scraping ${websiteUrl}: ${(error as Error).message}`);
+    logger.error(`Error scraping ${websiteUrl}: ${(error as Error).message}`);
+    logger.endGroup('Scraping failed');
     return { website: websiteUrl, error: `Failed to scrape: ${(error as Error).message}` };
   }
 }; 

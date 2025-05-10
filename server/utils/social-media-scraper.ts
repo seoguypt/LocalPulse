@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import { ofetch } from 'ofetch';
 import type { ScrapedPageData } from './types';
 import { getPageHtml } from './getPageHtml';
+import logger from './logger';
 
 // Helper function to extract data using Cheerio 
 const extractSocialDataWithCheerio = ($: cheerio.CheerioAPI, pageUrl: string): Omit<ScrapedPageData, 'website' | 'error' | 'socialLinks'> => {
@@ -65,19 +66,31 @@ export const scrapeSocialMediaPage = async (url: string): Promise<ScrapedPageDat
   }
 
   try {
+    logger.startGroup(`Scraping social media: ${url}`);
+    
     // Use getPageHtml to fetch the HTML content with stealth mode
     const html = await getPageHtml(url);
+    
+    logger.step('Processing page content');
     const $ = cheerio.load(html);
     
+    let result: ScrapedPageData;
+    
     if (isFacebookUrl) {
-      return processFacebookPage($, url);
+      logger.step('Processing as Facebook page');
+      result = processFacebookPage($, url);
     } else if (isInstagramUrl) {
-      return { website: url, error: 'Instagram scraping not yet implemented' };
+      logger.step('Instagram scraping not yet implemented');
+      result = { website: url, error: 'Instagram scraping not yet implemented' };
     } else {
-      return { website: url, error: 'Unsupported social media platform' };
+      result = { website: url, error: 'Unsupported social media platform' };
     }
+    
+    logger.endGroup('Social media scraping completed');
+    return result;
   } catch (error) {
-    console.error(`Error scraping social media page ${url}: ${(error as Error).message}`);
+    logger.error(`Error scraping social media page ${url}: ${(error as Error).message}`);
+    logger.endGroup('Social media scraping failed');
     return { website: url, error: `Failed to scrape: ${(error as Error).message}` };
   }
 };
@@ -125,6 +138,8 @@ const processFacebookPage = ($: cheerio.CheerioAPI, url: string): ScrapedPageDat
       }
     }
   });
+  
+  logger.result(`Extracted data from Facebook page: ${pageName || 'Unknown'}`);
   
   return {
     website: url,
