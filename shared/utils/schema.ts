@@ -43,6 +43,11 @@ export const dataSchema = z.object({
   })).default([]),
   scrapedWebsiteData: z.array(scrapedWebsiteDataSchema).default([]),
   scrapedSocialMediaData: z.array(scrapedWebsiteDataSchema).default([]),
+  validWebsites: z.array(z.string().url()).default([]),
+  validSocialProfiles: z.array(z.string().url()).default([]),
+  canonicalWebsite: z.string().url().optional(),
+  canonicalFacebook: z.string().url().optional(),
+  canonicalInstagram: z.string().url().optional(),
 })
 
 export type Data = z.infer<typeof dataSchema>

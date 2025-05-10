@@ -170,6 +170,47 @@ const handleSubmit = () => {
               </div>
             </div>
           </div>
+
+          <div v-if="dataStore.data.validWebsites?.length" class="mt-16 max-w-3xl">
+            <h2 class="font-medium uppercase text-gray-500">Valid Websites</h2>
+            <div v-for="website in dataStore.data.validWebsites" :key="website">
+              <a :href="website" target="_blank" class="text-blue-600 hover:underline">
+                {{ website }}
+              </a>
+            </div>
+          </div>
+
+          <div v-if="dataStore.data.validSocialProfiles?.length" class="mt-16 max-w-3xl">
+            <h2 class="font-medium uppercase text-gray-500">Valid Social Profiles</h2>
+            <div v-for="profile in dataStore.data.validSocialProfiles" :key="profile">
+              <a :href="profile" target="_blank" class="text-blue-600 hover:underline">
+                {{ profile }}
+              </a>
+            </div>
+          </div>
+          
+
+          <!-- Display the canonical urls -->
+          <div v-if="dataStore.data.canonicalWebsite" class="mt-16 max-w-3xl">
+            <h2 class="font-medium uppercase text-gray-500">Canonical Website</h2>
+            <a :href="dataStore.data.canonicalWebsite" target="_blank" class="text-blue-600 hover:underline">
+              {{ dataStore.data.canonicalWebsite }}
+            </a>
+          </div>
+
+          <div v-if="dataStore.data.canonicalFacebook" class="mt-16 max-w-3xl">
+            <h2 class="font-medium uppercase text-gray-500">Canonical Facebook</h2>
+            <a :href="dataStore.data.canonicalFacebook" target="_blank" class="text-blue-600 hover:underline">
+              {{ dataStore.data.canonicalFacebook }}
+            </a>
+          </div>
+
+          <div v-if="dataStore.data.canonicalInstagram" class="mt-16 max-w-3xl">
+            <h2 class="font-medium uppercase text-gray-500">Canonical Instagram</h2>
+            <a :href="dataStore.data.canonicalInstagram" target="_blank" class="text-blue-600 hover:underline">
+              {{ dataStore.data.canonicalInstagram }}
+            </a>
+          </div>
         </div>
       </div>
 
