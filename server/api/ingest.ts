@@ -1,11 +1,4 @@
 import { PlacesClient } from '@googlemaps/places';
-import { getPageHtml } from '../utils/getPageHtml';
-import { scrapeWebsite } from '../utils/website-scraper';
-import { scrapeSocialMediaPage } from '../utils/social-media-scraper';
-import { dataSchema, type Data } from '../../shared/utils/schema';
-import type { ScrapedPageData } from '../utils/types';
-import { googleSearch } from '../utils/googleSearch';
-import logger from '../utils/logger';
 
 export default defineEventHandler(async (event) => {
   logger.section('BUSINESS DATA INGESTION');
@@ -186,6 +179,8 @@ export default defineEventHandler(async (event) => {
   });
   
   logger.endGroup();
+
+  
 
   logger.section('INGESTION COMPLETE');
   logger.success('Completed business data ingestion process');

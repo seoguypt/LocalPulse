@@ -52,7 +52,6 @@ const consolaInstance = createConsola({
   // Default log level - can be adjusted via env variables
   level: process.env.LOG_LEVEL ? parseInt(process.env.LOG_LEVEL) : 3, // Lower default level to reduce noise
   // Enable fancy reporter in development
-  fancy: true,
   formatOptions: {
     date: true,
     colors: true,
