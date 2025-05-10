@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const data = await readValidatedBody(event, dataSchema.parse) as Data;
   logger.info(`Processing business: ${data.businessName || 'Unknown'}`);
 
-  const { googleApiKey } = useRuntimeConfig().public;
+  const { googleApiKey } = useRuntimeConfig();
   const placesClient = new PlacesClient({
     apiKey: googleApiKey,
   });
@@ -165,37 +165,22 @@ export default defineEventHandler(async (event) => {
   
   logger.endGroup();
 
-  // Social media scraping
-  logger.startGroup('Social Media Scraping');
-  
-  if (!data.scrapedSocialMediaData) {
-    data.scrapedSocialMediaData = [];
-  }
-  
-  const socialMediaLinksToScrape = new Set<string>([
+  logger.startGroup('Facebook Scraping');
+
+  const facebookProfileLinksToScrape = [
     ...data.facebookSearchResults.slice(0, 3).map((result: FacebookSearchResult) => result.url),
-    ...data.instagramSearchResults.slice(0, 3).map((result: InstagramSearchResult) => result.url),
-    ...data.scrapedWebsiteData.flatMap((site: ScrapedWebsiteData) => [
-      ...(site.socialLinks?.facebook || []),
-      // ...(site.socialLinks?.instagram || [])
-    ].filter((link): link is string => !!link))
-  ]);
-
-  logger.step(`Found ${socialMediaLinksToScrape.size} social media links to scrape`);
-  
-  // Use the social media scraper utility
-  const socialMediaScrapingPromises = Array.from(socialMediaLinksToScrape).map(url => scrapeSocialMediaPage(url));
-  const socialMediaResults = await Promise.all(socialMediaScrapingPromises);
-
-  const validSocialMediaResults = socialMediaResults
-    .filter((result: ScrapedPageData | null): result is ScrapedPageData => result !== null && !result.error);
-  
-  logger.result(`Successfully scraped ${validSocialMediaResults.length} out of ${socialMediaLinksToScrape.size} social media pages`);
-    
-  validSocialMediaResults.forEach((result: ScrapedPageData) => {
-    data.scrapedSocialMediaData!.push(result as any);
+    ...data.scrapedWebsiteData.flatMap((site: ScrapedWebsiteData) => site.socialLinks?.facebook || []),
+  ].filter(url => {
+    // Only keep URLs that match Facebook profile patterns
+    // Examples of valid profile URLs:
+    // - https://www.facebook.com/username
+    // - https://facebook.com/username
+    // - https://www.facebook.com/pages/username
+    // - https://www.facebook.com/username/
+    const profilePattern = /^https?:\/\/(?:www\.)?facebook\.com\/(?:pages\/)?[^\/\?]+(?:\/)?$/;
+    return profilePattern.test(url);
   });
-  
+
   logger.endGroup();
 
   logger.startGroup('Classification of Scraped Data');

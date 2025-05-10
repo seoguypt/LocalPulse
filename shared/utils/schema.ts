@@ -48,6 +48,11 @@ export const dataSchema = z.object({
   canonicalWebsite: z.string().url().optional(),
   canonicalFacebook: z.string().url().optional(),
   canonicalInstagram: z.string().url().optional(),
+  facebookProfiles: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+    description: z.string(),
+  })).default([]),
 })
 
 export type Data = z.infer<typeof dataSchema>

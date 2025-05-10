@@ -24,11 +24,9 @@ export async function googleSearch(query: string): Promise<GoogleSearchResult[]>
     logger.startGroup(`Google search: "${validQuery}"`);
     
     // Get API key and search engine ID from runtime config
-    const config = useRuntimeConfig();
-    const apiKey = config.public.googleApiKey;
-    const searchEngineId = config.public.googleProgrammableSearchEngineId;
+    const {googleApiKey, googleProgrammableSearchEngineId } = useRuntimeConfig();
     
-    if (!apiKey || !searchEngineId) {
+    if (!googleApiKey || !googleProgrammableSearchEngineId) {
       logger.error('Missing Google API key or Search Engine ID');
       logger.endGroup('Search failed - missing credentials');
       return [];
@@ -36,7 +34,7 @@ export async function googleSearch(query: string): Promise<GoogleSearchResult[]>
     
     // Build the API URL
     const encodedQuery = encodeURIComponent(validQuery);
-    const apiUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodedQuery}`;
+    const apiUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleProgrammableSearchEngineId}&q=${encodedQuery}`;
     
     // Fetch results from the API
     logger.step('Fetching results from Google API');

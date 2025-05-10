@@ -23,9 +23,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
-    public: {
-      googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
-      googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID
-    }
+    googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
+    googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
+    apifyApiToken: process.env.NUXT_APIFY_API_TOKEN,
+    brightdataApiToken: process.env.NUXT_BRIGHTDATA_API_TOKEN,
   }
 })
