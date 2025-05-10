@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { ofetch } from 'ofetch';
 import type { ScrapedPageData } from './types';
+import { getPageHtml } from './getPageHtml';
 
 // Helper function to extract data using Cheerio 
 const extractSocialDataWithCheerio = ($: cheerio.CheerioAPI, pageUrl: string): Omit<ScrapedPageData, 'website' | 'error' | 'socialLinks'> => {
@@ -56,90 +57,81 @@ export const scrapeSocialMediaPage = async (url: string): Promise<ScrapedPageDat
     return { website: '', error: 'No URL provided' };
   }
 
-  let html: string | null = null;
-  let errorFetchingHtml = false;
-  let cheerioData: Omit<ScrapedPageData, 'website' | 'error' | 'socialLinks'> | null = null;
+  const isFacebookUrl = url.includes('facebook.com');
+  const isInstagramUrl = url.includes('instagram.com');
 
-  // Attempt 1: Use ofetch to get HTML, then Cheerio to extract
+  if (!isFacebookUrl && !isInstagramUrl) {
+    return { website: url, error: 'Not a supported social media platform. Currently only Facebook is supported.' };
+  }
+
   try {
-    html = await ofetch(url, { responseType: 'text' });
+    // Use getPageHtml to fetch the HTML content with stealth mode
+    const html = await getPageHtml(url);
     const $ = cheerio.load(html);
-    cheerioData = extractSocialDataWithCheerio($, url); // Pass url for base URL context
-
-    // Basic validation for social media: primarily expect websiteLinks
-    if ((cheerioData.websiteLinks?.length ?? 0 > 0) || cheerioData.businessName || cheerioData.description) {
-      const cleanedWebsiteLinks = (cheerioData.websiteLinks || []).filter((link: string) => {
-        try {
-          const linkUrl = new URL(link);
-          return linkUrl.protocol === 'http:' || linkUrl.protocol === 'https:';
-        } catch { return false; }
-      });
-      return {
-        website: url,
-        ...cheerioData,
-        websiteLinks: cleanedWebsiteLinks,
-      };
+    
+    if (isFacebookUrl) {
+      return processFacebookPage($, url);
+    } else if (isInstagramUrl) {
+      return { website: url, error: 'Instagram scraping not yet implemented' };
+    } else {
+      return { website: url, error: 'Unsupported social media platform' };
     }
-    // If Cheerio didn't get much with ofetch HTML, log and prepare for Puppeteer fallback
-    console.warn(`Cheerio extracted minimal data for social page ${url} using ofetch HTML. Attempting Puppeteer HTML fallback.`);
-    errorFetchingHtml = true;
-  } catch (fetchError) {
-    console.warn(`Fetching social page ${url} with ofetch failed: ${(fetchError as Error).message}. Falling back to Puppeteer for HTML.`);
-    errorFetchingHtml = true;
+  } catch (error) {
+    console.error(`Error scraping social media page ${url}: ${(error as Error).message}`);
+    return { website: url, error: `Failed to scrape: ${(error as Error).message}` };
   }
+};
 
-  // Attempt 2: Use Puppeteer to get HTML if ofetch failed or returned minimal data
-  if (errorFetchingHtml || !html) {
-    let browser;
-    try {
-      browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-      const page = await browser.newPage();
-      await page.goto(url, { waitUntil: 'networkidle2' });
-      html = await page.content(); // Get HTML content from Puppeteer
-      await browser.close();
-
-      if (html) {
-        const $ = cheerio.load(html);
-        // Use Cheerio to extract data from Puppeteer-fetched HTML
-        cheerioData = extractSocialDataWithCheerio($, url); // Pass url for base URL context
-
-        const cleanedWebsiteLinks = (cheerioData.websiteLinks || []).filter((link: string) => {
-            try {
-              const linkUrl = new URL(link);
-              return linkUrl.protocol === 'http:' || linkUrl.protocol === 'https:';
-            } catch { return false; }
-          });
-
-        return {
-          website: url,
-          ...cheerioData,
-          websiteLinks: cleanedWebsiteLinks,
-        };
-      } else {
-        throw new Error('Puppeteer failed to retrieve HTML content.');
-      }
-    } catch (puppeteerError) {
-      console.error(`Error scraping social page ${url} with Puppeteer (for HTML fetching): ${(puppeteerError as Error).message}`);
-      if (browser) await browser.close();
-      return { website: url, error: `Failed with ofetch and Puppeteer: ${(puppeteerError as Error).message}` };
-    }
-  }
+const processFacebookPage = ($: cheerio.CheerioAPI, url: string): ScrapedPageData => {
+  const pageName = $('[property="og:title"]').attr('content') ||
+                   $('title').text().replace(' - Facebook', '').trim();
   
-  // Fallback if for some reason html was fetched by ofetch but deemed insufficient, and Puppeteer path wasn't taken or also failed.
-  // This should ideally be covered by the logic above, but as a safeguard:
-  if (cheerioData) { // This would be from the initial ofetch if it was minimal but Puppeteer wasn't triggered or failed before re-assigning
-      const cleanedWebsiteLinks = (cheerioData.websiteLinks || []).filter((link: string) => {
-        try {
-          const linkUrl = new URL(link);
-          return linkUrl.protocol === 'http:' || linkUrl.protocol === 'https:';
-        } catch { return false; }
-      });
-      return {
-        website: url,
-        ...cheerioData,
-        websiteLinks: cleanedWebsiteLinks,
-      };
-  }
-
-  return { website: url, error: 'Failed to scrape social media page using all available methods.' };
+  const description = $('[property="og:description"]').attr('content') ||
+                      $('meta[name="description"]').attr('content');
+  
+  const logoUrl = $('[property="og:image"]').attr('content');
+  
+  // Extract links from the page (especially useful for business pages with external website links)
+  const websiteLinks = $('a[href*="l.facebook.com/l.php"]')
+    .map((_, el) => {
+      const href = $(el).attr('href');
+      if (!href) return null;
+      
+      try {
+        // Extract the actual URL from Facebook's redirect link
+        const url = new URL(href);
+        const targetUrl = url.searchParams.get('u');
+        return targetUrl || null;
+      } catch {
+        return null;
+      }
+    })
+    .get()
+    .filter((url): url is string => !!url && !url.includes('facebook.com'));
+  
+  // Try to extract address from About section
+  const addressParts: string[] = [];
+  
+  // Look for address markers
+  $('*:contains("Address:")').each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.includes('Address:')) {
+      const addressStart = text.indexOf('Address:');
+      if (addressStart !== -1) {
+        const addressText = text.substring(addressStart + 8).trim();
+        if (addressText && !addressText.includes('Address:')) {
+          addressParts.push(addressText);
+        }
+      }
+    }
+  });
+  
+  return {
+    website: url,
+    businessName: pageName || null,
+    description: description || null,
+    logo: logoUrl || null,
+    address: addressParts.length > 0 ? addressParts[0] : null,
+    websiteLinks: websiteLinks.length > 0 ? [...new Set(websiteLinks)] : null,
+  };
 }; 

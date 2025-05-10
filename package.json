@@ -26,6 +26,7 @@
     "cheerio": "^1.0.0",
     "eslint": "^9.0.0",
     "google-sr": "^5.0.0",
+    "google-sr-selectors": "^2.0.0",
     "nuxt": "^3.17.2",
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.2.0",

@@ -1,12 +1,8 @@
 import { ofetch } from 'ofetch';
-import puppeteerExtra from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import puppeteer from 'puppeteer';
 import { Browser, HTTPRequest } from 'puppeteer';
 import UserAgent from 'user-agents';
 import { z } from 'zod';
-
-// Initialize puppeteer with stealth plugin
-puppeteerExtra.use(StealthPlugin());
 
 // Input validation schema
 const UrlSchema = z.string().url();
@@ -17,7 +13,7 @@ let browserInstance: Browser | null = null;
 // Initialize browser (lazy loading)
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance) {
-    browserInstance = await puppeteerExtra.launch({
+    browserInstance = await puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox',
@@ -111,11 +107,7 @@ export async function getPageHtml(url: string): Promise<string> {
     const browser = await getBrowser();
     const page = await browser.newPage();
     
-    try {
-      // Configure page
-      await page.setUserAgent(userAgent);
-      await page.setViewport({ width: 1920, height: 1080 });
-      
+    try {      
       // Block non-essential resources for faster loading
       await page.setRequestInterception(true);
       page.on('request', (req: HTTPRequest) => {
@@ -130,13 +122,6 @@ export async function getPageHtml(url: string): Promise<string> {
         } else {
           req.continue();
         }
-      });
-      
-      // Set additional headers to avoid detection
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
       });
       
       // Navigate to page

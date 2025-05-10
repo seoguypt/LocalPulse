@@ -1,6 +1,10 @@
 import { PlacesClient } from '@googlemaps/places';
-import { search } from 'google-sr';
-import UserAgent from 'user-agents';
+import { getPageHtml } from '../utils/getPageHtml';
+import { scrapeWebsite } from '../utils/website-scraper';
+import { scrapeSocialMediaPage } from '../utils/social-media-scraper';
+import { dataSchema, type Data } from '../../shared/utils/schema';
+import type { ScrapedPageData } from '../utils/types';
+import { googleSearch } from '../utils/googleSearch';
 
 export default defineEventHandler(async (event) => {
   const data = await readValidatedBody(event, dataSchema.parse) as Data;
@@ -47,57 +51,36 @@ export default defineEventHandler(async (event) => {
   const searchGoogle = async () => {
     if (!data.businessName) return;
 
-    const searchResults = await search({
-      query: `"${data.businessName}" Australia`,
-      requestConfig: {
-        headers: {
-          'User-Agent': new UserAgent().toString(),
-        },
-      },
-    });
+    const searchResults = await googleSearch(`"${data.businessName}" Australia`);
 
     data.googleSearchResults = searchResults.map(result => ({
-      url: result.link as string,
-      title: result.title as string,
-      description: result.description as string,
+      url: result.link,
+      title: result.title,
+      description: result.description,
     }));
   }
 
   const searchFacebook = async () => {
     if (!data.businessName) return;
 
-    const searchResults = await search({
-      query: `"${data.businessName}" Australia site:facebook.com`,
-      requestConfig: {
-        headers: {
-          'User-Agent': new UserAgent().toString(),
-        },
-      },
-    });
+    const searchResults = await googleSearch(`"${data.businessName}" Australia site:facebook.com`);
 
     data.facebookSearchResults = searchResults.map(result => ({
-      url: result.link as string,
-      title: result.title as string,
-      description: result.description as string,
+      url: result.link,
+      title: result.title,
+      description: result.description,
     }));
   }
 
   const searchInstagram = async () => {
     if (!data.businessName) return;
 
-    const searchResults = await search({
-      query: `"${data.businessName}" Australia site:instagram.com`,
-      requestConfig: {
-        headers: {
-          'User-Agent': new UserAgent().toString(),
-        },
-      },
-    });
+    const searchResults = await googleSearch(`"${data.businessName}" Australia site:instagram.com`);
 
     data.instagramSearchResults = searchResults.map(result => ({
-      url: result.link as string,
-      title: result.title as string,
-      description: result.description as string,
+      url: result.link,
+      title: result.title,
+      description: result.description,
     }));
   }
 
