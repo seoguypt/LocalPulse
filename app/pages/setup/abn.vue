@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 // Get the business name from the query
+const router = useRouter();
 const route = useRoute();
 const businessName = computed(() => route.query.businessName as string);
 
@@ -44,11 +45,30 @@ const processedState = computedAsync(async () => {
 );
 
 const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${processedState.value.abn}`);
+
+const onSubmit = async () => {
+  router.push({
+    path: '/setup/google-places',
+    query: {
+      businessName: businessName.value,
+      abn: processedState.value.abn,
+    },
+  });
+}
+
+const onNoAbn = () => {
+  router.push({
+    path: '/setup/google-places',
+    query: {
+      businessName: businessName.value,
+    },
+  });
+}
 </script>
 
 <template>
   <main class="flex justify-center items-center min-h-screen flex-col">
-    <UForm :schema="schema" :state="state" :validate-on-input-delay="50">
+    <UForm :schema="schema" :state="state" :validate-on-input-delay="50" @submit="onSubmit">
       <UCard>
         <template #header>
           <div class="text-3xl font-bold">
@@ -76,7 +96,7 @@ const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${
 
         <template #footer>
           <div class="flex justify-between items-center gap-6">
-            <UButton variant="link" color="neutral">
+            <UButton variant="link" color="neutral" @click="onNoAbn">
               I don't have an ABN
             </UButton>
 
