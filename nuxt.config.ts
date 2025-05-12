@@ -27,5 +27,7 @@ export default defineNuxtConfig({
     googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
     apifyApiToken: process.env.NUXT_APIFY_API_TOKEN,
     brightdataApiToken: process.env.NUXT_BRIGHTDATA_API_TOKEN,
+    dbPath: process.env.NUXT_DB_PATH,
+    abrGuid: process.env.NUXT_ABR_GUID,
   }
 })

@@ -11,7 +11,9 @@ alwaysApply: true
 - Prefer adding to pre-existing files, rather than creating new ones. Create new ones only if it absolutely makes sense.
 - exported functions, variables in `utils` (in shared, app and server) are autoimported. No need to manually import.
 - We intend to deploy this on Fly.io once development progresses far enough.
-- Our database will be sqlite with drizzle for simplicity and typescript.
+- Our database will be sqlite with drizzle and drizzle-kit for simplicity and typescript.
+- Rely on convention over configuration to keep code shorter and have less complexity
+
 
 
 

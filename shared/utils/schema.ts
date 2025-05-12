@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 // Schema for scraped website data
 const scrapedWebsiteDataSchema = z.object({
@@ -53,7 +54,20 @@ export const dataSchema = z.object({
     title: z.string(),
     description: z.string(),
   })).default([]),
-})
+});
 
-export type Data = z.infer<typeof dataSchema>
-export type ScrapedWebsiteData = z.infer<typeof scrapedWebsiteDataSchema>
+import { tables} from '../../server/utils/drizzle'
+
+export const businessInsertSchema = createInsertSchema(tables.businesses);
+export const businessSchema = createSelectSchema(tables.businesses);
+
+export type Data = z.infer<typeof dataSchema>;
+export type Business = z.infer<typeof businessSchema>;
+
+import { externalSearchResultSchema } from '../../server/api/businesses/external-search.get';
+export { externalSearchResultSchema }
+export type ExternalSearchResult = z.infer<typeof externalSearchResultSchema>;
+
+import { australianBusinessRegistarSearchResultSchema } from '../../server/api/abr-search';
+export { australianBusinessRegistarSearchResultSchema }
+export type AustralianBusinessRegistarSearchResult = z.infer<typeof australianBusinessRegistarSearchResultSchema>;
