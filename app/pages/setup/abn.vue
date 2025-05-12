@@ -1,61 +1,99 @@
 <script setup lang="ts">
+import { z } from 'zod';
+
 // Get the business name from the query
-const { businessName } = useRoute().query;
+const route = useRoute();
+const businessName = computed(() => route.query.businessName as string);
 
-const { data: abnResults } = useFetch('/api/abr-search', {
-  query: {
-    businessName: businessName as string,
-  },
+const { data: prefilledAbnResults } = await useFetch(() => `/api/abr/search-by-name?businessName=${businessName.value}`);
+
+const schema = z.object({
+  abn: z
+    // Remove spaces
+    .preprocess(abn => String(abn).replace(/\s/g, ''), z.string()
+      .min(11, 'ABN must be 11 digits')
+      .max(11, 'ABN must be 11 digits')
+      .refine(
+        async (abn) => {
+          if (!abn || abn.length !== 11) {
+            return false;
+          }
+          try {
+            const details = await $fetch(`/api/abr/search-by-abn?abn=${abn}`);
+            return details.isCurrent;
+          } catch (error) {
+            return false;
+          }
+        },
+        (abn) => ({
+          message: `${abn} is not a registered ABN`,
+        })
+      ))
+  ,
 });
 
-const abnItems = computed(() => {
-  return abnResults.value?.map((result) => ({
-    label: result.name,
-    description: result.ABN,
-    value: result.ABN,
-  })) ?? [];
+type Schema = z.output<typeof schema>;
+const state = reactive<Partial<Schema>>({
+  abn: prefilledAbnResults.value?.[0]?.ABN,
 });
 
-const radioGroupAbn = ref('');
-const manualAbn = ref('');
+const processedState = computedAsync(async () => {
+  return await schema.parseAsync(state);
+},
+  await schema.parseAsync(state),
+);
 
-const addABN = () => {
-  console.log(manualAbn.value);
-};
+const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${processedState.value.abn}`);
 </script>
 
 <template>
-  <main class="flex justify-center items-center min-h-screen">
-    <UCard class="w-full max-w-md">
-      <template #header>
-        <div class="text-3xl font-bold">
-          ABN
-        </div>
-        <div class="text-sm text-gray-400 mt-3">
-          Adding your ABN will allow us to identify your business and provide you with the best possible business insights.
-        </div>
-      </template>
+  <main class="flex justify-center items-center min-h-screen flex-col">
+    <UForm :schema="schema" :state="state" :validate-on-input-delay="50">
+      <UCard>
+        <template #header>
+          <div class="text-3xl font-bold">
+            Is this your ABN?
+          </div>
+        </template>
 
-      <!-- Choose from one of the results below -->
-      <div class="text-sm text-gray-400 mt-3">
-        Choose from one of the results below
+        <UFormField label="Business ABN" size="xl" name="abn" :help="abnDetails ? abnDetails.businessNames[0] : 'Searching...'">
+          <UInput v-model="state.abn" class="w-full" />
+        </UFormField>
+
+        <template #footer>
+          <div class="flex justify-between items-center gap-6">
+            <UButton variant="link" color="neutral">
+              I don't have an ABN
+            </UButton>
+
+            <UButton variant="solid" trailing-icon="i-lucide-arrow-right" type="submit">
+              Yes, that's mine
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </UForm>
+
+    <UPopover mode="hover">
+      <div class="mt-8 text-sm items-center flex text-gray-300">
+        <UIcon name="i-lucide-info" class="mr-2 text-gray-400" /> What is an ABN?
       </div>
 
-      <URadioGroup color="primary" variant="table" default-value="pro" :items="abnItems" v-model="radioGroupAbn" />
-
-      <USeparator label="Or" class="my-12" />
-
-      <!-- Or enter your ABN below -->
-      <UInput type="text" v-model="manualAbn" />
-
-      <template #footer>
-        <UButton>
-          Skip
-        </UButton>
-        <UButton :disabled="!manualAbn && !radioGroupAbn">
-          Next
-        </UButton>
+      <template #content>
+        <div class="max-w-sm p-6">
+          <p>
+            An ABN is a unique identifier for a business. It is a 11 digit number that is issued by the Australian
+            Business Register.
+          </p>
+          <p class="mt-3">
+            We use your ABN to discover your business and provide helpful insights.
+          </p>
+          <ULink external class="text-blue-500 mt-3 block"
+            href="https://www.abr.gov.au/business-super-funds-charities/applying-abn">How to apply for an ABN
+            <UIcon name="i-lucide-external-link" />
+          </ULink>
+        </div>
       </template>
-    </UCard>
+    </UPopover>
   </main>
 </template>

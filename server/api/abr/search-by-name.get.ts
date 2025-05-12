@@ -1,7 +1,7 @@
 import { Parser } from 'xml2js';
 
 // Define schema for search results
-export const australianBusinessRegistarSearchResultSchema = z.object({
+export const abnSearchByNameResultSchema = z.object({
   name: z.string(),
   ABN: z.string(),
   postcode: z.string().nullable(),
@@ -14,12 +14,14 @@ const fetchAbrData = defineCachedFunction(async (businessName: string, abrGuid: 
     responseType: 'text',
   });
 }, {
-  name: 'fetchAbrData',
+  name: 'fetchAbrName',
   maxAge: 60 * 60, // Cache for 1 hour (in seconds) 
 });
 
 export default defineEventHandler(async (event) => {
-  const { businessName } = getQuery(event);
+  const { businessName } = await getValidatedQuery(event, z.object({
+    businessName: z.string().min(1, 'Business name is required'),
+  }).parse);
 
   if (!businessName || typeof businessName !== 'string') {
     throw createError({
@@ -31,7 +33,7 @@ export default defineEventHandler(async (event) => {
   const { abrGuid } = useRuntimeConfig(event);
 
   // Fetch XML data from ABR API
-  const xmlResponse = await fetchAbrData(businessName as string, abrGuid);
+  const xmlResponse = await fetchAbrData(businessName, abrGuid);
   
   // Parse XML to JS object using xml2js
   const parser = new Parser({ explicitArray: false });
@@ -49,7 +51,7 @@ export default defineEventHandler(async (event) => {
     const name = nameInfo.organisationName || nameInfo.fullName || '';
     const score = nameInfo.score ? parseInt(nameInfo.score, 10) : undefined;
     
-    return australianBusinessRegistarSearchResultSchema.parse({
+    return abnSearchByNameResultSchema.parse({
       name,
       ABN: record.ABN?.identifierValue || '',
       postcode: record.mainBusinessPhysicalAddress?.postcode || null,

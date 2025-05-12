@@ -68,6 +68,10 @@ import { externalSearchResultSchema } from '../../server/api/businesses/external
 export { externalSearchResultSchema }
 export type ExternalSearchResult = z.infer<typeof externalSearchResultSchema>;
 
-import { australianBusinessRegistarSearchResultSchema } from '../../server/api/abr-search';
-export { australianBusinessRegistarSearchResultSchema }
-export type AustralianBusinessRegistarSearchResult = z.infer<typeof australianBusinessRegistarSearchResultSchema>;
+import { abnSearchByNameResultSchema } from '../../server/api/abr/search-by-name.get';
+export { abnSearchByNameResultSchema }
+export type AbnSearchByNameResult = z.infer<typeof abnSearchByNameResultSchema>;
+
+import { abnSearchByAbnResultSchema } from '../../server/api/abr/search-by-abn.get';
+export { abnSearchByAbnResultSchema }
+export type AbnSearchByAbnResult = z.infer<typeof abnSearchByAbnResultSchema>;
