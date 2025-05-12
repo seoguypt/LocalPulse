@@ -56,8 +56,22 @@ const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${
           </div>
         </template>
 
-        <UFormField label="Business ABN" size="xl" name="abn" :help="abnDetails ? abnDetails.businessNames[0] : 'Searching...'">
+        <UFormField label="Business ABN" size="xl" name="abn">
           <UInput v-model="state.abn" class="w-full" />
+          <template #help>
+            <p class="text-smtext-gray-400 font-medium">
+              <template v-if="abnDetails">
+                <span>{{ abnDetails.businessNames[0] }}</span>
+                <span v-if="abnDetails.state || abnDetails.postcode" class="text-gray-600">∙</span>
+                <span v-if="abnDetails.state">{{ abnDetails.state }}</span>
+                <span v-if="abnDetails.state && abnDetails.postcode" class="text-gray-600">&nbsp;</span>
+                <span v-if="abnDetails.postcode">{{ abnDetails.postcode }}</span>
+              </template>
+              <template v-else>
+                Searching...
+              </template>
+            </p>
+          </template>
         </UFormField>
 
         <template #footer>
