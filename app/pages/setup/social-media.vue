@@ -451,19 +451,14 @@ const onBack = () => {
                   <div class="flex items-center justify-center w-10 h-10">
                     <UIcon name="i-simple-icons-instagram" class="text-pink-500 text-xl" />
                   </div>
-                  <UInput v-model="state.instagramUsername" placeholder="username or URL"
-                    aria-label="Instagram username" @input="handleInput('instagram')" class="bg-gray-50" />
+                  <UInput
+                    v-model="state.instagramUsername"
+                    placeholder="username or URL"
+                    aria-label="Instagram username"
+                    @input="handleInput('instagram')"
+                    class="bg-gray-50"
+                  />
                   <template v-if="state.instagramUsername && !loadingState.instagram">
-                    <UButton
-                      v-if="suggestedProfiles.instagram"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-external-link"
-                      size="xs"
-                      :to="getProfileUrl('instagram', state.instagramUsername)"
-                      target="_blank"
-                      title="View on Instagram"
-                    />
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -473,11 +468,25 @@ const onBack = () => {
                       title="Remove suggestion"
                     />
                   </template>
-                  <UButton v-if="loadingState.instagram" color="neutral" variant="ghost" :loading="true" />
+                  <UButton
+                    v-if="loadingState.instagram"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
                 </UInputGroup>
                 <!-- Instagram Profile Preview -->
-                <div v-if="suggestedProfiles.instagram" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
-                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.instagram.title }}</div>
+                <div v-if="suggestedProfiles.instagram" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <a 
+                    :href="getProfileUrl('instagram', state.instagramUsername || '')" 
+                    target="_blank" 
+                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block"
+                  >
+                    {{ suggestedProfiles.instagram.title }}
+                  </a>
+                  <div class="text-blue-200/70 text-xs mb-2">
+                    instagram.com/{{ state.instagramUsername }}
+                  </div>
                   <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.instagram.description }}</div>
                 </div>
               </UFormGroup>
@@ -490,19 +499,14 @@ const onBack = () => {
                   <div class="flex items-center justify-center w-10 h-10">
                     <UIcon name="i-simple-icons-facebook" class="text-blue-600 text-xl" />
                   </div>
-                  <UInput v-model="state.facebookUsername" placeholder="username or URL" aria-label="Facebook username"
-                    @input="handleInput('facebook')" class="bg-gray-50" />
+                  <UInput
+                    v-model="state.facebookUsername"
+                    placeholder="username or URL"
+                    aria-label="Facebook username"
+                    @input="handleInput('facebook')"
+                    class="bg-gray-50"
+                  />
                   <template v-if="state.facebookUsername && !loadingState.facebook">
-                    <UButton
-                      v-if="suggestedProfiles.facebook"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-external-link"
-                      size="xs"
-                      :to="getProfileUrl('facebook', state.facebookUsername)"
-                      target="_blank"
-                      title="View on Facebook"
-                    />
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -512,11 +516,25 @@ const onBack = () => {
                       title="Remove suggestion"
                     />
                   </template>
-                  <UButton v-if="loadingState.facebook" color="neutral" variant="ghost" :loading="true" />
+                  <UButton
+                    v-if="loadingState.facebook"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
                 </UInputGroup>
                 <!-- Facebook Profile Preview -->
-                <div v-if="suggestedProfiles.facebook" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
-                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.facebook.title }}</div>
+                <div v-if="suggestedProfiles.facebook" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <a 
+                    :href="getProfileUrl('facebook', state.facebookUsername || '')" 
+                    target="_blank"
+                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block"
+                  >
+                    {{ suggestedProfiles.facebook.title }}
+                  </a>
+                  <div class="text-blue-200/70 text-xs mb-2">
+                    facebook.com/{{ state.facebookUsername }}
+                  </div>
                   <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.facebook.description }}</div>
                 </div>
               </UFormGroup>
@@ -529,19 +547,14 @@ const onBack = () => {
                   <div class="flex items-center justify-center w-10 h-10">
                     <UIcon name="i-simple-icons-x" class="text-gray-800 text-xl" />
                   </div>
-                  <UInput v-model="state.xUsername" placeholder="username or URL" aria-label="X (Twitter) username"
-                    @input="handleInput('x')" class="bg-gray-50" />
+                  <UInput
+                    v-model="state.xUsername"
+                    placeholder="username or URL"
+                    aria-label="X (Twitter) username"
+                    @input="handleInput('x')"
+                    class="bg-gray-50"
+                  />
                   <template v-if="state.xUsername && !loadingState.x">
-                    <UButton
-                      v-if="suggestedProfiles.x"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-external-link"
-                      size="xs"
-                      :to="getProfileUrl('x', state.xUsername)"
-                      target="_blank"
-                      title="View on X (Twitter)"
-                    />
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -551,11 +564,25 @@ const onBack = () => {
                       title="Remove suggestion"
                     />
                   </template>
-                  <UButton v-if="loadingState.x" color="neutral" variant="ghost" :loading="true" />
+                  <UButton
+                    v-if="loadingState.x"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
                 </UInputGroup>
                 <!-- X Profile Preview -->
-                <div v-if="suggestedProfiles.x" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
-                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.x.title }}</div>
+                <div v-if="suggestedProfiles.x" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <a 
+                    :href="getProfileUrl('x', state.xUsername || '')" 
+                    target="_blank"
+                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block"
+                  >
+                    {{ suggestedProfiles.x.title }}
+                  </a>
+                  <div class="text-blue-200/70 text-xs mb-2">
+                    x.com/{{ state.xUsername }}
+                  </div>
                   <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.x.description }}</div>
                 </div>
               </UFormGroup>
@@ -568,19 +595,14 @@ const onBack = () => {
                   <div class="flex items-center justify-center w-10 h-10">
                     <UIcon name="i-simple-icons-tiktok" class="text-black text-xl" />
                   </div>
-                  <UInput v-model="state.tiktokUsername" placeholder="username or URL" aria-label="TikTok username"
-                    @input="handleInput('tiktok')" class="bg-gray-50" />
+                  <UInput
+                    v-model="state.tiktokUsername"
+                    placeholder="username or URL"
+                    aria-label="TikTok username"
+                    @input="handleInput('tiktok')"
+                    class="bg-gray-50"
+                  />
                   <template v-if="state.tiktokUsername && !loadingState.tiktok">
-                    <UButton
-                      v-if="suggestedProfiles.tiktok"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-external-link"
-                      size="xs"
-                      :to="getProfileUrl('tiktok', state.tiktokUsername)"
-                      target="_blank"
-                      title="View on TikTok"
-                    />
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -590,11 +612,25 @@ const onBack = () => {
                       title="Remove suggestion"
                     />
                   </template>
-                  <UButton v-if="loadingState.tiktok" color="neutral" variant="ghost" :loading="true" />
+                  <UButton
+                    v-if="loadingState.tiktok"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
                 </UInputGroup>
                 <!-- TikTok Profile Preview -->
-                <div v-if="suggestedProfiles.tiktok" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
-                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.tiktok.title }}</div>
+                <div v-if="suggestedProfiles.tiktok" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <a 
+                    :href="getProfileUrl('tiktok', state.tiktokUsername || '')" 
+                    target="_blank"
+                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block"
+                  >
+                    {{ suggestedProfiles.tiktok.title }}
+                  </a>
+                  <div class="text-blue-200/70 text-xs mb-2">
+                    tiktok.com/@{{ state.tiktokUsername }}
+                  </div>
                   <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.tiktok.description }}</div>
                 </div>
               </UFormGroup>
@@ -607,19 +643,14 @@ const onBack = () => {
                   <div class="flex items-center justify-center w-10 h-10">
                     <UIcon name="i-simple-icons-youtube" class="text-red-600 text-xl" />
                   </div>
-                  <UInput v-model="state.youtubeUsername" placeholder="channel name or URL" aria-label="YouTube channel"
-                    @input="handleInput('youtube')" class="bg-gray-50" />
+                  <UInput
+                    v-model="state.youtubeUsername"
+                    placeholder="channel name or URL"
+                    aria-label="YouTube channel"
+                    @input="handleInput('youtube')"
+                    class="bg-gray-50"
+                  />
                   <template v-if="state.youtubeUsername && !loadingState.youtube">
-                    <UButton
-                      v-if="suggestedProfiles.youtube"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-external-link"
-                      size="xs"
-                      :to="getProfileUrl('youtube', state.youtubeUsername)"
-                      target="_blank"
-                      title="View on YouTube"
-                    />
                     <UButton
                       color="neutral"
                       variant="ghost"
@@ -629,11 +660,25 @@ const onBack = () => {
                       title="Remove suggestion"
                     />
                   </template>
-                  <UButton v-if="loadingState.youtube" color="neutral" variant="ghost" :loading="true" />
+                  <UButton
+                    v-if="loadingState.youtube"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
                 </UInputGroup>
                 <!-- YouTube Profile Preview -->
-                <div v-if="suggestedProfiles.youtube" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
-                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.youtube.title }}</div>
+                <div v-if="suggestedProfiles.youtube" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <a 
+                    :href="getProfileUrl('youtube', state.youtubeUsername || '')" 
+                    target="_blank"
+                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block"
+                  >
+                    {{ suggestedProfiles.youtube.title }}
+                  </a>
+                  <div class="text-blue-200/70 text-xs mb-2">
+                    youtube.com/@{{ state.youtubeUsername }}
+                  </div>
                   <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.youtube.description }}</div>
                 </div>
               </UFormGroup>
