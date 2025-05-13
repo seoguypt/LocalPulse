@@ -127,6 +127,8 @@ const calculateConfidence = (result: any, platform: string): number => {
   let score = 0;
   const bizRaw = businessName.value.toLowerCase();
   const normalizedBiz = bizRaw.replace(/\W+/g, '');       // e.g. "Daniel Faint Photo" → "danielfaintphoto"
+  // Split business name into significant words (3+ chars)
+  const bizWords = bizRaw.split(/\s+/).filter(word => word.length > 2);
 
   const title = result.title || '';
   const link = result.link || '';
@@ -136,13 +138,40 @@ const calculateConfidence = (result: any, platform: string): number => {
 
   const titleL = title.toLowerCase();
   const descL = description.toLowerCase();
+  const linkL = link.toLowerCase();
 
-  // 1) Exact/fuzzy in title
-  if (titleL.includes(bizRaw)) score += 0.20;
-  if (titleL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.10;
+  // NEW: URL-based scoring (highest priority)
+  try {
+    const urlObj = new URL(link);
+    const path = urlObj.pathname.toLowerCase();
+    const pathSegments = path.split('/').filter(Boolean);
+    
+    // Exact business name in URL path (strongest signal)
+    if (path.includes(normalizedBiz)) {
+      score += 0.60; // Major boost
+    }
+    
+    // Business name words in URL path
+    const pathStr = pathSegments.join(' ');
+    for (const word of bizWords) {
+      if (pathStr.includes(word)) {
+        score += 0.15; // Significant boost per matching word
+      }
+    }
+    
+    // Business name in subdomain or domain (excluding common domains)
+    const hostname = urlObj.hostname.replace(/\.(com|org|net|io|co).*$/, '');
+    if (hostname.includes(normalizedBiz)) {
+      score += 0.40;
+    }
+  } catch {}
 
-  // 2) Exact/fuzzy in description
-  if (descL.includes(bizRaw)) score += 0.20;
+  // 1) Exact/fuzzy in title (medium priority)
+  if (titleL.includes(bizRaw)) score += 0.15;
+  if (titleL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.05;
+
+  // 2) Exact/fuzzy in description (lower priority)
+  if (descL.includes(bizRaw)) score += 0.10;
   if (descL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.05;
 
   // 3) Domain sanity check
@@ -155,7 +184,7 @@ const calculateConfidence = (result: any, platform: string): number => {
       case 'tiktok': host.includes('tiktok.com') && (score += 0.30); break;
       case 'youtube': host.includes('youtube.com') && (score += 0.30); break;
     }
-  } catch { }
+  } catch {}
 
   // 4) Look for an explicit "@handle" mention in title/description
   const mentionMatch =
@@ -206,14 +235,14 @@ const searchSocialProfile = async (platform: string) => {
       case 'instagram': searchParams = 'site:instagram.com'; break;
       case 'facebook': searchParams = 'site:facebook.com'; break;
       case 'x': searchParams = '(site:twitter.com OR site:x.com) -inurl:status'; break;
-      case 'tiktok': searchParams = 'site:tiktok.com -inurl:discover'; break;
+      case 'tiktok': searchParams = 'site:tiktok.com -inurl:video intext:Follow'; break;
       case 'youtube': searchParams = 'site:youtube.com -inurl:watch'; break;
     }
     
     // Execute multiple search variants to improve chances of finding profiles
     const data = (await Promise.all([
       $fetch(`/api/google/search?query=${encodeURIComponent(`allintitle:"${businessName.value}" ${searchParams}`)}`),
-      $fetch(`/api/google/search?query=${encodeURIComponent(`"${businessName.value}"" ${searchParams}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`"${businessName.value}" ${searchParams}`)}`),
       $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value} ${searchParams}`)}`)
     ])).flat();
 
