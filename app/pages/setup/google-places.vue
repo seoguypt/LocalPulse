@@ -118,7 +118,7 @@ const onSubmit = async () => {
   if (!state.selectedPlaceId) return;
   
   router.push({
-    path: '/setup/social-media',
+    path: '/setup/social-media-and-website',
     query: {
       businessName: businessName.value,
       abn: abn.value,
@@ -129,7 +129,7 @@ const onSubmit = async () => {
 
 const onSkip = () => {
   router.push({
-    path: '/setup/social-media',
+    path: '/setup/social-media-and-website',
     query: {
       businessName: businessName.value,
       abn: abn.value,
