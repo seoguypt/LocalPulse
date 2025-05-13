@@ -633,7 +633,7 @@ const onBack = () => {
                   <UInput v-model="state.instagramUsername" placeholder="username or URL" icon="i-simple-icons-instagram"
                     aria-label="Instagram username" @input="handleInput('instagram')" class="w-full" :ui="{ leadingIcon: 'text-pink-500' }">
                     <template v-if="state.instagramUsername && !loadingState.instagram" #trailing>
-                      <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="xs"
+                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('instagram')" title="Remove suggestion" />
                     </template>
                   </UInput>
@@ -719,7 +719,7 @@ const onBack = () => {
                     @input="handleInput('tiktok')" icon="i-simple-icons-tiktok" :ui="{ leadingIcon: 'text-neutral-200' }"
                     class="w-full">
                     <template v-if="state.tiktokUsername && !loadingState.tiktok" #trailing>
-                      <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="xs"
+                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('tiktok')" title="Remove suggestion" />
                     </template>
                   </UInput>
@@ -775,7 +775,7 @@ const onBack = () => {
                   <UInput v-model="state.websiteUrl" placeholder="https://example.com" aria-label="Business website"
                     @input="handleInput('website')" icon="i-lucide-globe" :ui="{ leadingIcon: 'text-blue-500' }" class="w-full">
                     <template v-if="state.websiteUrl && !loadingState.website" #trailing>
-                      <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="xs" 
+                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('website')" title="Remove suggestion" />
                     </template>
                   </UInput>
