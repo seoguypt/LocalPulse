@@ -69,43 +69,56 @@ const onSkip = () => {
 <template>
   <main class="flex justify-center items-center min-h-screen flex-col">
     <UForm :schema="schema" :state="state" :validate-on-input-delay="50" @submit="onSubmit">
-      <UCard>
-        <template #header>
-          <div class="text-3xl font-bold">
-            Is this your ABN?
-          </div>
-        </template>
-
-        <UFormField label="Business ABN" size="xl" name="abn">
-          <UInput v-model="state.abn" class="w-full" />
-          <template #help>
-            <p class="text-smtext-gray-400 font-medium">
-              <template v-if="abnDetails">
-                <span>{{ abnDetails.businessNames[0] }}</span>
-                <span v-if="abnDetails.state || abnDetails.postcode" class="text-gray-600">∙</span>
-                <span v-if="abnDetails.state">{{ abnDetails.state }}</span>
-                <span v-if="abnDetails.state && abnDetails.postcode" class="text-gray-600">&nbsp;</span>
-                <span v-if="abnDetails.postcode">{{ abnDetails.postcode }}</span>
-              </template>
-              <template v-else>
-                Searching...
-              </template>
-            </p>
+      <div class="flex flex-col">
+        <UButton
+          class="self-start mb-2"
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          to="/"
+          aria-label="Go back"
+        >
+          Back
+        </UButton>
+        
+        <UCard>
+          <template #header>
+            <div class="text-3xl font-bold">
+              Is this your ABN?
+            </div>
           </template>
-        </UFormField>
 
-        <template #footer>
-          <div class="flex justify-between items-center gap-6">
-            <UButton variant="link" color="neutral" @click="onSkip">
-              I don't have an ABN
-            </UButton>
+          <UFormField label="Business ABN" size="xl" name="abn">
+            <UInput v-model="state.abn" class="w-full" />
+            <template #help>
+              <p class="text-smtext-gray-400 font-medium">
+                <template v-if="abnDetails">
+                  <span>{{ abnDetails.businessNames[0] }}</span>
+                  <span v-if="abnDetails.state || abnDetails.postcode" class="text-gray-600">∙</span>
+                  <span v-if="abnDetails.state">{{ abnDetails.state }}</span>
+                  <span v-if="abnDetails.state && abnDetails.postcode" class="text-gray-600">&nbsp;</span>
+                  <span v-if="abnDetails.postcode">{{ abnDetails.postcode }}</span>
+                </template>
+                <template v-else>
+                  Searching...
+                </template>
+              </p>
+            </template>
+          </UFormField>
 
-            <UButton variant="solid" trailing-icon="i-lucide-arrow-right" type="submit">
-              Yes, that's mine
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+          <template #footer>
+            <div class="flex justify-between items-center gap-6">
+              <UButton variant="link" color="neutral" @click="onSkip">
+                I don't have an ABN
+              </UButton>
+
+              <UButton variant="solid" trailing-icon="i-lucide-arrow-right" type="submit">
+                Yes, that's mine
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </div>
     </UForm>
 
     <UPopover mode="hover">
