@@ -17,7 +17,7 @@ const SearchQuerySchema = z.string().min(3);
  * @param query Search query string
  * @returns Array of search results with title, link, and description
  */
-export async function googleSearch(query: string): Promise<GoogleSearchResult[]> {
+export const googleSearch = defineCachedFunction(async (query: string): Promise<GoogleSearchResult[]> => {
   try {
     // Validate query
     const validQuery = SearchQuerySchema.parse(query);
@@ -64,4 +64,7 @@ export async function googleSearch(query: string): Promise<GoogleSearchResult[]>
     logger.endGroup('Search failed with error');
     return [];
   }
-} 
+}, {
+  maxAge: 60 * 60 * 24, // 24 hours
+  name: 'googleSearch',
+});

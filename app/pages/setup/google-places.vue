@@ -8,8 +8,6 @@ const businessName = computed(() => route.query.businessName as string);
 const abn = computed(() => route.query.abn as string | undefined);
 const { googleApiKey } = useRuntimeConfig().public;
 
-const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${abn.value}`);
-
 const formSchema = z.object({
   selectedPlaceId: z.string().optional(),
 });
