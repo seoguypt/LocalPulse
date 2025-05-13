@@ -63,6 +63,47 @@ const manualInput = reactive({
   youtube: false,
 });
 
+// Store the suggested profile information for previews
+const suggestedProfiles = reactive({
+  instagram: null as any,
+  facebook: null as any,
+  x: null as any,
+  tiktok: null as any,
+  youtube: null as any,
+});
+
+// Generate profile URLs for viewing
+const getProfileUrl = (platform: string, username: string): string => {
+  if (!username) return '';
+  
+  switch (platform) {
+    case 'instagram':
+      return `https://instagram.com/${username.replace('@', '')}`;
+    case 'facebook':
+      return `https://facebook.com/${username.replace('@', '')}`;
+    case 'x':
+      return `https://x.com/${username.replace('@', '')}`;
+    case 'tiktok':
+      return `https://tiktok.com/@${username.replace('@', '')}`;
+    case 'youtube':
+      // Handle various YouTube URL formats
+      if (username.startsWith('channel/') || username.startsWith('c/') || username.startsWith('user/')) {
+        return `https://youtube.com/${username}`;
+      }
+      return `https://youtube.com/@${username.replace('@', '')}`;
+    default:
+      return '';
+  }
+};
+
+// Function to clear a suggested profile
+const clearSuggestion = (platform: string) => {
+  state[`${platform}Username` as keyof typeof state] = '';
+  suggestedProfiles[platform as keyof typeof suggestedProfiles] = null;
+  validState[platform as keyof typeof validState] = false;
+  manualInput[platform as keyof typeof manualInput] = true; // Mark as manual to prevent re-suggestion
+};
+
 // Extract username from URL if needed
 const extractUsername = (url: string, platform: string): string => {
   if (!url) return '';
@@ -246,45 +287,49 @@ const searchSocialProfile = async (platform: string) => {
       $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value} ${searchParams}`)}`)
     ])).flat();
 
-    // Find best match
-    if (data && Array.isArray(data) && data.length > 0) {
-      // Process each result
-      const filteredResults = data.filter(result => {
-        // For TikTok, filter out non-profile URLs by looking for @ in the link
-        if (platform === 'tiktok') {
-          try {
-            const url = new URL(result.link);
-            const path = url.pathname;
-            // Only keep results with @ in the path (actual profiles)
-            return path.includes('@');
-          } catch {
-            return false;
-          }
-        }
-        return true;
-      });
-      
-      // Find the best match by confidence score
-      let bestMatch = null;
-      let bestScore = 0;
-
-      for (const result of filteredResults) {
-        const confidence = calculateConfidence(result, platform);
-        console.log(`${platform} result:`, result.link, 'confidence:', confidence);
-
-        if (confidence > bestScore) {
-          bestScore = confidence;
-          bestMatch = result;
+    // Process each result
+    const filteredResults = data.filter(result => {
+      // For TikTok, filter out non-profile URLs by looking for @ in the link
+      if (platform === 'tiktok') {
+        try {
+          const url = new URL(result.link);
+          const path = url.pathname;
+          // Only keep results with @ in the path (actual profiles)
+          return path.includes('@');
+        } catch {
+          return false;
         }
       }
+      return true;
+    });
+    
+    // Find the best match by confidence score
+    let bestMatch = null;
+    let bestScore = 0;
 
-      // Auto-fill if best match confidence is high enough
-      if (bestMatch && bestScore >= 0.75) {
-        const username = extractUsername(bestMatch.link, platform);
-        if (username) {
-          state[`${platform}Username` as keyof typeof state] = username;
-          validateInput(platform);
-        }
+    for (const result of filteredResults) {
+      const confidence = calculateConfidence(result, platform);
+      console.log(`${platform} result:`, result.link, 'confidence:', confidence);
+
+      if (confidence > bestScore) {
+        bestScore = confidence;
+        bestMatch = result;
+      }
+    }
+
+    // Auto-fill if best match confidence is high enough
+    if (bestMatch && bestScore >= 0.75) {
+      const username = extractUsername(bestMatch.link, platform);
+      if (username) {
+        state[`${platform}Username` as keyof typeof state] = username;
+        // Store the result information for preview
+        suggestedProfiles[platform as keyof typeof suggestedProfiles] = {
+          title: bestMatch.title || '',
+          description: bestMatch.description || '',
+          link: bestMatch.link,
+          username
+        };
+        validateInput(platform);
       }
     }
   } catch (error) {
@@ -408,8 +453,33 @@ const onBack = () => {
                   </div>
                   <UInput v-model="state.instagramUsername" placeholder="username or URL"
                     aria-label="Instagram username" @input="handleInput('instagram')" class="bg-gray-50" />
+                  <template v-if="state.instagramUsername && !loadingState.instagram">
+                    <UButton
+                      v-if="suggestedProfiles.instagram"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-external-link"
+                      size="xs"
+                      :to="getProfileUrl('instagram', state.instagramUsername)"
+                      target="_blank"
+                      title="View on Instagram"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="clearSuggestion('instagram')"
+                      title="Remove suggestion"
+                    />
+                  </template>
                   <UButton v-if="loadingState.instagram" color="neutral" variant="ghost" :loading="true" />
                 </UInputGroup>
+                <!-- Instagram Profile Preview -->
+                <div v-if="suggestedProfiles.instagram" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
+                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.instagram.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.instagram.description }}</div>
+                </div>
               </UFormGroup>
             </div>
 
@@ -422,8 +492,33 @@ const onBack = () => {
                   </div>
                   <UInput v-model="state.facebookUsername" placeholder="username or URL" aria-label="Facebook username"
                     @input="handleInput('facebook')" class="bg-gray-50" />
+                  <template v-if="state.facebookUsername && !loadingState.facebook">
+                    <UButton
+                      v-if="suggestedProfiles.facebook"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-external-link"
+                      size="xs"
+                      :to="getProfileUrl('facebook', state.facebookUsername)"
+                      target="_blank"
+                      title="View on Facebook"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="clearSuggestion('facebook')"
+                      title="Remove suggestion"
+                    />
+                  </template>
                   <UButton v-if="loadingState.facebook" color="neutral" variant="ghost" :loading="true" />
                 </UInputGroup>
+                <!-- Facebook Profile Preview -->
+                <div v-if="suggestedProfiles.facebook" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
+                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.facebook.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.facebook.description }}</div>
+                </div>
               </UFormGroup>
             </div>
 
@@ -436,8 +531,33 @@ const onBack = () => {
                   </div>
                   <UInput v-model="state.xUsername" placeholder="username or URL" aria-label="X (Twitter) username"
                     @input="handleInput('x')" class="bg-gray-50" />
+                  <template v-if="state.xUsername && !loadingState.x">
+                    <UButton
+                      v-if="suggestedProfiles.x"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-external-link"
+                      size="xs"
+                      :to="getProfileUrl('x', state.xUsername)"
+                      target="_blank"
+                      title="View on X (Twitter)"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="clearSuggestion('x')"
+                      title="Remove suggestion"
+                    />
+                  </template>
                   <UButton v-if="loadingState.x" color="neutral" variant="ghost" :loading="true" />
                 </UInputGroup>
+                <!-- X Profile Preview -->
+                <div v-if="suggestedProfiles.x" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
+                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.x.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.x.description }}</div>
+                </div>
               </UFormGroup>
             </div>
 
@@ -450,8 +570,33 @@ const onBack = () => {
                   </div>
                   <UInput v-model="state.tiktokUsername" placeholder="username or URL" aria-label="TikTok username"
                     @input="handleInput('tiktok')" class="bg-gray-50" />
+                  <template v-if="state.tiktokUsername && !loadingState.tiktok">
+                    <UButton
+                      v-if="suggestedProfiles.tiktok"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-external-link"
+                      size="xs"
+                      :to="getProfileUrl('tiktok', state.tiktokUsername)"
+                      target="_blank"
+                      title="View on TikTok"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="clearSuggestion('tiktok')"
+                      title="Remove suggestion"
+                    />
+                  </template>
                   <UButton v-if="loadingState.tiktok" color="neutral" variant="ghost" :loading="true" />
                 </UInputGroup>
+                <!-- TikTok Profile Preview -->
+                <div v-if="suggestedProfiles.tiktok" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
+                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.tiktok.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.tiktok.description }}</div>
+                </div>
               </UFormGroup>
             </div>
 
@@ -464,8 +609,33 @@ const onBack = () => {
                   </div>
                   <UInput v-model="state.youtubeUsername" placeholder="channel name or URL" aria-label="YouTube channel"
                     @input="handleInput('youtube')" class="bg-gray-50" />
+                  <template v-if="state.youtubeUsername && !loadingState.youtube">
+                    <UButton
+                      v-if="suggestedProfiles.youtube"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-external-link"
+                      size="xs"
+                      :to="getProfileUrl('youtube', state.youtubeUsername)"
+                      target="_blank"
+                      title="View on YouTube"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="clearSuggestion('youtube')"
+                      title="Remove suggestion"
+                    />
+                  </template>
                   <UButton v-if="loadingState.youtube" color="neutral" variant="ghost" :loading="true" />
                 </UInputGroup>
+                <!-- YouTube Profile Preview -->
+                <div v-if="suggestedProfiles.youtube" class="mt-2 p-3 rounded bg-gray-800 bg-opacity-30 border border-gray-700 text-sm">
+                  <div class="font-semibold text-white mb-1 truncate">{{ suggestedProfiles.youtube.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.youtube.description }}</div>
+                </div>
               </UFormGroup>
             </div>
           </div>
