@@ -34,7 +34,7 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
     
     // Build the API URL
     const encodedQuery = encodeURIComponent(validQuery);
-    const apiUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleProgrammableSearchEngineId}&q=${encodedQuery}`;
+    const apiUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleProgrammableSearchEngineId}&q=${encodedQuery}&gl=au`;
     
     // Fetch results from the API
     logger.step('Fetching results from Google API');

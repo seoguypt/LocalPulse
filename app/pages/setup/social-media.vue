@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
+import { compareTwoStrings } from 'string-similarity';
 
 // Get the business name from the query
 const router = useRouter();
@@ -10,11 +11,21 @@ const placeId = computed(() => route.query.placeId as string | undefined);
 
 const { data: abnDetails } = await useFetch(() => `/api/abr/search-by-abn?abn=${abn.value}`);
 
+// Validation patterns for social media handles/URLs
+const socialMediaSchema = {
+  instagram: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').optional(),
+  facebook: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').optional(),
+  x: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').optional(),
+  tiktok: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').optional(),
+  youtube: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').optional(),
+};
+
 const formSchema = z.object({
-  instagramUsername: z.string().optional(),
-  facebookUsername: z.string().optional(),
-  xUsername: z.string().optional(),
-  tiktokUsername: z.string().optional(),
+  instagramUsername: socialMediaSchema.instagram,
+  facebookUsername: socialMediaSchema.facebook,
+  xUsername: socialMediaSchema.x,
+  tiktokUsername: socialMediaSchema.tiktok,
+  youtubeUsername: socialMediaSchema.youtube,
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -23,11 +34,268 @@ const state = reactive<Partial<FormSchema>>({
   facebookUsername: '',
   xUsername: '',
   tiktokUsername: '',
+  youtubeUsername: '',
 });
+
+// Track loading and validation states for each platform
+const loadingState = reactive({
+  instagram: false,
+  facebook: false,
+  x: false,
+  tiktok: false,
+  youtube: false,
+});
+
+const validState = reactive({
+  instagram: false,
+  facebook: false,
+  x: false,
+  tiktok: false,
+  youtube: false,
+});
+
+// Tracks if user has manually entered input for a platform
+const manualInput = reactive({
+  instagram: false,
+  facebook: false,
+  x: false,
+  tiktok: false,
+  youtube: false,
+});
+
+// Extract username from URL if needed
+const extractUsername = (url: string, platform: string): string => {
+  if (!url) return '';
+  
+  try {
+    if (url.includes('http')) {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname;
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      
+      // Handle special cases for different platforms
+      switch (platform) {
+        case 'tiktok':
+          // TikTok URLs can be different formats
+          if (pathParts[0] === 'discover') {
+            // For discovery pages, try to extract a sensible name from the query
+            const searchTerm = pathParts[1] || '';
+            return searchTerm.replace(/-/g, '');
+          } else if (pathParts[0] === '@') {
+            // Direct profile @username format
+            return pathParts[1] || '';
+          } else if (pathParts[0]?.startsWith('@')) {
+            // Handle @username in the first path segment
+            return pathParts[0].replace('@', '');
+          }
+          return pathParts[0] || '';
+          
+        case 'x':
+          // Handle both x.com and twitter.com
+          // Skip status/tweets and other non-profile paths
+          if (['status', 'tweets', 'search'].includes(pathParts[1] || '')) {
+            return pathParts[0] || '';
+          } else if (pathParts[0]) {
+            return pathParts[0];
+          }
+          return '';
+          
+        case 'youtube':
+          // YouTube can have different formats
+          if (pathParts[0] === 'c' || pathParts[0] === 'user' || pathParts[0] === 'channel') {
+            return pathParts[1] || '';
+          } else if (pathParts[0]?.startsWith('@')) {
+            return pathParts[0].replace('@', '');
+          }
+          return pathParts[0] || '';
+          
+        default:
+          // Instagram, Facebook, etc.
+          return pathParts[0]?.replace('@', '') || '';
+      }
+    } else if (url.startsWith('@')) {
+      // Handle plain @username format
+      return url.replace('@', '');
+    } else {
+      // Just return the input as is
+      return url;
+    }
+  } catch (e) {
+    console.error('Error extracting username:', e);
+    return url.replace('@', '');
+  }
+};
+
+// Calculate confidence score for a search result
+const calculateConfidence = (result: any, platform: string): number => {
+  if (!result || !businessName.value) return 0;
+
+  let score = 0;
+  const bizRaw        = businessName.value.toLowerCase();
+  const normalizedBiz = bizRaw.replace(/\W+/g, '');       // e.g. "Daniel Faint Photo" → "danielfaintphoto"
+
+  const title       = result.title       || '';
+  const link        = result.link        || '';
+  const description = result.snippet     // from some APIs it's called "snippet"
+                      ?? result.description   // fallback to "description"
+                      ?? '';
+
+  const titleL = title.toLowerCase();
+  const descL  = description.toLowerCase();
+
+  // 1) Exact/fuzzy in title
+  if (titleL.includes(bizRaw))                          score += 0.20;
+  if (titleL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.10;
+
+  // 2) Exact/fuzzy in description
+  if (descL.includes(bizRaw))                           score += 0.20;
+  if (descL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.05;
+
+  // 3) Domain sanity check
+  try {
+    const host = new URL(link).hostname;
+    switch (platform) {
+      case 'instagram': host.includes('instagram.com') && (score += 0.30); break;
+      case 'facebook':  host.includes('facebook.com')  && (score += 0.30); break;
+      case 'x':         (host.includes('twitter.com') || host.includes('x.com')) && (score += 0.30); break;
+      case 'tiktok':    host.includes('tiktok.com')    && (score += 0.30); break;
+      case 'youtube':   host.includes('youtube.com')   && (score += 0.30); break;
+    }
+  } catch {}
+
+  // 4) Look for an explicit "@handle" mention in title/description
+  const mentionMatch =
+    titleL.match(/@([\w.]+)/)?.[1] ||
+    descL.match(/@([\w.]+)/)?.[1] ||
+    '';
+    
+  if (mentionMatch) {
+    const normMention = mentionMatch.toLowerCase().replace(/\W+/g, '');
+    if (normMention === normalizedBiz) {
+      // exact handle match → big boost
+      score += 0.40;
+    } else {
+      // Use string-similarity for better fuzzy matching
+      const similarity = compareTwoStrings(normMention, normalizedBiz);
+      if (similarity > 0.5) score += similarity * 0.30;
+    }
+  }
+
+  // 5) Finally, extract the path‐segment from the URL itself
+  const extracted = extractUsername(link, platform)
+    .toLowerCase()
+    .replace(/\W+/g, '');
+    
+  if (extracted) {
+    if (extracted === normalizedBiz) {
+      score += 0.50;              // exact match on path always trumps
+    } else {
+      // Use string-similarity for better fuzzy matching
+      const similarity = compareTwoStrings(extracted, normalizedBiz);
+      if (similarity > 0.6) score += similarity * 0.35;
+    }
+  }
+
+  return Math.min(score, 1);
+};
+
+// Search function for social media profiles
+const searchSocialProfile = async (platform: string) => {
+  if (!businessName.value || manualInput[platform as keyof typeof manualInput]) return;
+  
+  loadingState[platform as keyof typeof loadingState] = true;
+  
+  try {
+    let sitePrefix = '';
+    switch (platform) {
+      case 'instagram': sitePrefix = 'site:instagram.com'; break;
+      case 'facebook': sitePrefix = 'site:facebook.com'; break;
+      case 'x': sitePrefix = '(site:twitter.com OR site:x.com)'; break;
+      case 'tiktok': sitePrefix = 'site:tiktok.com'; break;
+      case 'youtube': sitePrefix = 'site:youtube.com'; break;
+    }
+    
+    const searchQuery = `allintitle:"${businessName.value}" ${sitePrefix}`;
+    const data = await $fetch(`/api/google/search?query=${encodeURIComponent(searchQuery)}`);
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      // Find the best match by confidence score
+      let bestMatch = null;
+      let bestScore = 0;
+      
+      for (const result of data) {
+        const confidence = calculateConfidence(result, platform);
+        console.log(`${platform} result:`, result.link, 'confidence:', confidence);
+        
+        if (confidence > bestScore) {
+          bestScore = confidence;
+          bestMatch = result;
+        }
+      }
+      
+      // Auto-fill if best match confidence is high enough
+      if (bestMatch && bestScore >= 0.75) {
+        const username = extractUsername(bestMatch.link, platform);
+        if (username) {
+          state[`${platform}Username` as keyof typeof state] = username;
+          validateInput(platform);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error searching for ${platform} profile:`, error);
+  } finally {
+    loadingState[platform as keyof typeof loadingState] = false;
+  }
+};
+
+// Handle input change - mark as manual input
+const handleInput = (platform: string) => {
+  manualInput[platform as keyof typeof manualInput] = true;
+  loadingState[platform as keyof typeof loadingState] = false;
+  validateInput(platform);
+};
+
+// Validate input
+const validateInput = (platform: string) => {
+  const fieldName = `${platform}Username` as keyof typeof state;
+  const value = state[fieldName] as string;
+  
+  if (!value) {
+    validState[platform as keyof typeof validState] = false;
+    return;
+  }
+  
+  try {
+    socialMediaSchema[platform as keyof typeof socialMediaSchema]?.parse(value);
+    validState[platform as keyof typeof validState] = true;
+  } catch (error) {
+    validState[platform as keyof typeof validState] = false;
+  }
+};
+
+// Watch for changes in inputs for validation
+watch(() => state.instagramUsername, (val) => validateInput('instagram'));
+watch(() => state.facebookUsername, (val) => validateInput('facebook'));
+watch(() => state.xUsername, (val) => validateInput('x'));
+watch(() => state.tiktokUsername, (val) => validateInput('tiktok'));
+watch(() => state.youtubeUsername, (val) => validateInput('youtube'));
+
+// Search for social profiles on component mount
+if (businessName.value) {
+  await Promise.all([
+    searchSocialProfile('instagram'),
+    searchSocialProfile('facebook'),
+    searchSocialProfile('x'),
+    searchSocialProfile('tiktok'),
+    searchSocialProfile('youtube')
+  ]);
+}
 
 
 const onSubmit = async () => {
-  if (!state.instagramUsername && !state.facebookUsername && !state.xUsername && !state.tiktokUsername) return;
+  if (!state.instagramUsername && !state.facebookUsername && !state.xUsername && 
+      !state.tiktokUsername && !state.youtubeUsername) return;
   
   router.push({
     path: '/setup/social-media',
@@ -39,6 +307,7 @@ const onSubmit = async () => {
       facebookUsername: state.facebookUsername,
       xUsername: state.xUsername,
       tiktokUsername: state.tiktokUsername,
+      youtubeUsername: state.youtubeUsername,
     },
   });
 }
@@ -85,21 +354,146 @@ const onBack = () => {
             <div class="text-3xl font-bold">
               Connect your social media
             </div>
+            <p class="text-gray-500 mt-2">
+              Let us know where to find your business on social media platforms
+            </p>
           </template>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <!-- Instagram -->
+            <div class="relative">
+              <UFormGroup label="Instagram">
+                <UInputGroup class="bg-gray-50">
+                  <div class="flex items-center justify-center w-10 h-10">
+                    <UIcon name="i-simple-icons-instagram" class="text-pink-500 text-xl" />
+                  </div>
+                  <UInput
+                    v-model="state.instagramUsername"
+                    placeholder="username or URL"
+                    aria-label="Instagram username"
+                    @input="handleInput('instagram')"
+                    class="bg-gray-50"
+                  />
+                  <UButton
+                    v-if="loadingState.instagram"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
+                </UInputGroup>
+              </UFormGroup>
+            </div>
+            
+            <!-- Facebook -->
+            <div class="relative">
+              <UFormGroup label="Facebook">
+                <UInputGroup class="bg-gray-50">
+                  <div class="flex items-center justify-center w-10 h-10">
+                    <UIcon name="i-simple-icons-facebook" class="text-blue-600 text-xl" />
+                  </div>
+                  <UInput
+                    v-model="state.facebookUsername"
+                    placeholder="username or URL"
+                    aria-label="Facebook username"
+                    @input="handleInput('facebook')"
+                    class="bg-gray-50"
+                  />
+                  <UButton
+                    v-if="loadingState.facebook"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
+                </UInputGroup>
+              </UFormGroup>
+            </div>
+            
+            <!-- X (Twitter) -->
+            <div class="relative">
+              <UFormGroup label="X (Twitter)">
+                <UInputGroup class="bg-gray-50">
+                  <div class="flex items-center justify-center w-10 h-10">
+                    <UIcon name="i-simple-icons-x" class="text-gray-800 text-xl" />
+                  </div>
+                  <UInput
+                    v-model="state.xUsername"
+                    placeholder="username or URL"
+                    aria-label="X (Twitter) username"
+                    @input="handleInput('x')"
+                    class="bg-gray-50"
+                  />
+                  <UButton
+                    v-if="loadingState.x"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
+                </UInputGroup>
+              </UFormGroup>
+            </div>
+            
+            <!-- TikTok -->
+            <div class="relative">
+              <UFormGroup label="TikTok">
+                <UInputGroup class="bg-gray-50">
+                  <div class="flex items-center justify-center w-10 h-10">
+                    <UIcon name="i-simple-icons-tiktok" class="text-black text-xl" />
+                  </div>
+                  <UInput
+                    v-model="state.tiktokUsername"
+                    placeholder="username or URL"
+                    aria-label="TikTok username"
+                    @input="handleInput('tiktok')"
+                    class="bg-gray-50"
+                  />
+                  <UButton
+                    v-if="loadingState.tiktok"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
+                </UInputGroup>
+              </UFormGroup>
+            </div>
+            
+            <!-- YouTube -->
+            <div class="relative">
+              <UFormGroup label="YouTube">
+                <UInputGroup class="bg-gray-50">
+                  <div class="flex items-center justify-center w-10 h-10">
+                    <UIcon name="i-simple-icons-youtube" class="text-red-600 text-xl" />
+                  </div>
+                  <UInput
+                    v-model="state.youtubeUsername"
+                    placeholder="channel name or URL"
+                    aria-label="YouTube channel"
+                    @input="handleInput('youtube')"
+                    class="bg-gray-50"
+                  />
+                  <UButton
+                    v-if="loadingState.youtube"
+                    color="neutral"
+                    variant="ghost"
+                    :loading="true"
+                  />
+                </UInputGroup>
+              </UFormGroup>
+            </div>
+          </div>
 
           <template #footer>
             <div class="flex justify-between items-center gap-6">
               <UButton variant="link" color="neutral" @click="onSkip">
-                Not listed? Skip
+                Skip this step
               </UButton>
 
               <UButton 
                 variant="solid" 
                 trailing-icon="i-lucide-arrow-right" 
                 type="submit"
-                :disabled="!state.instagramUsername && !state.facebookUsername && !state.xUsername && !state.tiktokUsername"
+                :disabled="!state.instagramUsername && !state.facebookUsername && !state.xUsername && !state.tiktokUsername && !state.youtubeUsername"
               >
-                Yep! That's us
+                Continue
               </UButton>
             </div>
           </template>
