@@ -56,7 +56,7 @@ const onSubmit = async () => {
   });
 }
 
-const onNoAbn = () => {
+const onSkip = () => {
   router.push({
     path: '/setup/google-places',
     query: {
@@ -96,7 +96,7 @@ const onNoAbn = () => {
 
         <template #footer>
           <div class="flex justify-between items-center gap-6">
-            <UButton variant="link" color="neutral" @click="onNoAbn">
+            <UButton variant="link" color="neutral" @click="onSkip">
               I don't have an ABN
             </UButton>
 

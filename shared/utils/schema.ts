@@ -75,3 +75,11 @@ export type AbnSearchByNameResult = z.infer<typeof abnSearchByNameResultSchema>;
 import { abnSearchByAbnResultSchema } from '../../server/api/abr/search-by-abn.get';
 export { abnSearchByAbnResultSchema }
 export type AbnSearchByAbnResult = z.infer<typeof abnSearchByAbnResultSchema>;
+
+import { googlePlacesSearchTextResponseSchema } from '../../server/api/google/places/searchText.post';
+export { googlePlacesSearchTextResponseSchema }
+export type GooglePlacesSearchTextResponse = z.infer<typeof googlePlacesSearchTextResponseSchema>;
+
+import { googlePlacesPlaceSchema } from '../../server/api/google/places/searchText.post';
+export { googlePlacesPlaceSchema }
+export type GooglePlacesPlace = z.infer<typeof googlePlacesPlaceSchema>;

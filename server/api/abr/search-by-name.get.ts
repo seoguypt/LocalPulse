@@ -1,4 +1,5 @@
 import { Parser } from 'xml2js';
+import { AbnSearchByNameResult } from '~~/shared/utils/schema';
 
 // Define schema for search results
 export const abnSearchByNameResultSchema = z.object({
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
   const resultsArray = Array.isArray(searchResults) ? searchResults : [searchResults];
   
   // Transform results into the requested format
-  const formattedResults: AustralianBusinessRegistarSearchResult[] = resultsArray.map(record => {
+  const formattedResults: AbnSearchByNameResult[] = resultsArray.map(record => {
     const nameInfo = record.businessName || record.mainTradingName || record.legalName || record.mainName || {};
     const name = nameInfo.organisationName || nameInfo.fullName || '';
     const score = nameInfo.score ? parseInt(nameInfo.score, 10) : undefined;
