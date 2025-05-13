@@ -25,10 +25,20 @@ const places = ref<GooglePlacesPlace[]>([]);
 const selectedPlace = ref<GooglePlacesPlace | null>(null);
 const isLoading = ref(false);
 const debouncedSearchQuery = refDebounced(searchQuery, 250);
+const abortController = ref<AbortController | null>(null);
 
 // Search for places
 watch(debouncedSearchQuery, async (query) => {
   if (!query) return;
+  
+  // Cancel previous request if it exists
+  if (abortController.value) {
+    abortController.value.abort();
+  }
+  
+  // Create new abort controller for this request
+  abortController.value = new AbortController();
+  const signal = abortController.value.signal;
   
   isLoading.value = true;
   try {
@@ -36,13 +46,31 @@ watch(debouncedSearchQuery, async (query) => {
       method: 'POST',
       body: {
         textQuery: query,
-      }
+      },
+      signal
     });
+    
+    // Auto-select first result if available
+    if (places.value.length > 0) {
+      const firstPlace = places.value[0];
+      if (firstPlace) {
+        selectPlace(firstPlace);
+      }
+    }
   } catch (error) {
-    console.error('Error fetching places:', error);
+    // Only log error if it's not an abort error
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      console.error('Error fetching places:', error);
+    }
+    if (signal.aborted) {
+      // Don't clear places if request was aborted
+      return;
+    }
     places.value = [];
   } finally {
-    isLoading.value = false;
+    if (!signal.aborted) {
+      isLoading.value = false;
+    }
   }
 }, { immediate: true });
 
@@ -124,7 +152,7 @@ const onSkip = () => {
 
         <div class="flex flex-col md:flex-row gap-6">
           <!-- Left column: Search and results list -->
-          <div class="flex-1 flex flex-col gap-4">
+          <div class="flex-1 flex flex-col gap-4 md:max-w-3/5 w-full min-w-0">
             <!-- Search input -->
             <UInput
               v-model="searchQuery"
@@ -136,15 +164,15 @@ const onSkip = () => {
 
             <!-- Loading state -->
             <div v-if="isLoading" class="space-y-4">
-              <USkeleton v-for="i in 3" :key="i" class="h-24 w-full" />
+              <USkeleton v-for="i in 3" :key="i" class="h-24 w-md" />
             </div>
 
             <!-- Results list -->
-            <div v-else-if="places.length > 0" class="space-y-4 max-h-96 overflow-y-auto">
+            <div v-else-if="places.length > 0" class="space-y-4 max-h-96 overflow-y-auto w-full">
               <UCard
                 v-for="place in places"
                 :key="place.id"
-                class="transition-all cursor-pointer"
+                class="transition-all cursor-pointer w-full max-w-md"
                 :class="{
                   'ring-2 ring-primary-500': selectedPlace?.id === place.id,
                   'shadow-lg': selectedPlace?.id === place.id,
@@ -177,7 +205,7 @@ const onSkip = () => {
           </div>
 
           <!-- Right column: Map preview -->
-          <div class="w-full md:w-2/5 flex flex-col items-center">
+          <div class="w-full md:w-2/5 flex flex-col items-center min-w-0">
             <div class="font-medium mb-2">Map Preview</div>
             <div 
               class="w-full h-[300px] bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden"
