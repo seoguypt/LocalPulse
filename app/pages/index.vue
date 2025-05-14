@@ -4,7 +4,7 @@
       <form class="flex flex-col gap-4" action="/setup/abn">
         <div>Search for your business</div>
         <UButtonGroup>
-          <UInput name="businessName" size="xl" />
+          <UInput name="name" size="xl" />
           <UButton size="xl" type="submit">Go</UButton>
         </UButtonGroup>
       </form>

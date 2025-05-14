@@ -4,9 +4,9 @@ import { z } from 'zod';
 // Get the business name from the query
 const router = useRouter();
 const route = useRoute();
-const businessName = computed(() => route.query.businessName as string);
+const name = computed(() => route.query.name as string);
 
-const { data: prefilledAbnResults } = await useFetch(() => `/api/abr/search-by-name?businessName=${businessName.value}`);
+const { data: prefilledAbnResults } = await useFetch(() => `/api/abr/search-by-name?businessName=${name.value}`);
 
 const schema = z.object({
   abn: z
@@ -50,7 +50,7 @@ const onSubmit = async () => {
   router.push({
     path: '/setup/google-places',
     query: {
-      businessName: businessName.value,
+      name: name.value,
       abn: processedState.value.abn,
     },
   });
@@ -60,7 +60,7 @@ const onSkip = () => {
   router.push({
     path: '/setup/google-places',
     query: {
-      businessName: businessName.value,
+      name: name.value,
     },
   });
 }

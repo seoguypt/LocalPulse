@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { z } from 'zod';
 import { compareTwoStrings } from 'string-similarity';
+import type { FormSubmitEvent } from '@nuxt/ui'
 
 // Get the business name from the query
 const router = useRouter();
 const route = useRoute();
-const businessName = computed(() => route.query.businessName as string);
+const name = computed(() => route.query.name as string);
 const abn = computed(() => route.query.abn as string | undefined);
 const placeId = computed(() => route.query.placeId as string | undefined);
 
@@ -68,12 +69,12 @@ type MetaData = {
 // Simplified schema pattern generation
 const createSocialSchema = () => {
   const socialMediaSchema = {
-    instagram: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').optional(),
-    facebook: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').optional(),
-    x: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').optional(),
-    tiktok: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').optional(),
-    youtube: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').optional(),
-    website: z.string().url('Please enter a valid URL').optional(),
+    instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL')).nullable(),
+    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL')).nullable(),
+    x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL')).nullable(),
+    tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL')).nullable(),
+    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL')).nullable(),
+    website: z.preprocess((val) => val || null, z.string().url('Please enter a valid URL')).nullable(),
   };
 
   return {
@@ -95,12 +96,12 @@ type FormSchema = z.infer<typeof formSchema>;
 // Create reactive objects with platform IDs
 const createPlatformState = () => {
   const state = reactive<FormSchema>({
-    instagramUsername: '',
-    facebookUsername: '',
-    xUsername: '',
-    tiktokUsername: '',
-    youtubeUsername: '',
-    websiteUrl: '',
+    instagramUsername: null,
+    facebookUsername: null,
+    xUsername: null,
+    tiktokUsername: null,
+    youtubeUsername: null,
+    websiteUrl: null,
   });
 
   const loadingState = reactive<Record<PlatformId, boolean>>(Object.fromEntries(
@@ -210,10 +211,10 @@ const extractUsername = (url: string, platform: PlatformId): string => {
 
 // Calculate confidence score for a search result
 const calculateConfidence = (result: any, platform: PlatformId): number => {
-  if (!result || !businessName.value) return 0;
+  if (!result || !name.value) return 0;
 
   let score = 0;
-  const bizRaw = businessName.value.toLowerCase();
+  const bizRaw = name.value.toLowerCase();
   const normalizedBiz = bizRaw.replace(/\W+/g, '');
   const bizWords = bizRaw.split(/\s+/).filter(word => word.length > 2);
 
@@ -239,17 +240,17 @@ const calculateConfidence = (result: any, platform: PlatformId): number => {
         score += 0.70;
       } else {
         const domainWords = domainParts.match(/[a-z]{3,}/g) || [];
-        const businessNameWords = normalizedBiz.match(/[a-z]{3,}/g) || [];
+        const nameWords = normalizedBiz.match(/[a-z]{3,}/g) || [];
         
         let matchCount = 0;
-        for (const bizWord of businessNameWords) {
+        for (const bizWord of nameWords) {
           if (domainWords.some(domainWord => domainWord.includes(bizWord) || bizWord.includes(domainWord))) {
             matchCount++;
           }
         }
         
         if (matchCount > 0) {
-          score += 0.35 * (matchCount / Math.max(1, businessNameWords.length));
+          score += 0.35 * (matchCount / Math.max(1, nameWords.length));
         }
       }
       
@@ -344,16 +345,16 @@ const calculateConfidence = (result: any, platform: PlatformId): number => {
 // Search function for profiles - uses platform config
 const searchSocialProfile = async (platform: PlatformId) => {
   const platformObj = platforms.find(p => p.id === platform);
-  if (!businessName.value || !platformObj || manualInput[platform]) return;
+  if (!name.value || !platformObj || manualInput[platform]) return;
 
   loadingState[platform] = true;
 
   try {
     // Execute multiple search variants
     const data = (await Promise.all([
-      $fetch(`/api/google/search?query=${encodeURIComponent(`allintitle:"${businessName.value}" ${platformObj.searchParam}`)}`),
-      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value} ${platformObj.searchParam}`)}`),
-      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value.replace(/\s+/g, '')} ${platformObj.searchParam}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`allintitle:"${name.value}" ${platformObj.searchParam}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`${name.value} ${platformObj.searchParam}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`${name.value.replace(/\s+/g, '')} ${platformObj.searchParam}`)}`),
     ])).flat();
 
     // Filter results based on platform
@@ -394,7 +395,6 @@ const searchSocialProfile = async (platform: PlatformId) => {
 
     for (const result of uniqueResults) {
       const confidence = calculateConfidence(result, platform);
-      console.log(`${platform} result:`, result.link, 'confidence:', confidence);
 
       if (confidence > bestScore) {
         bestScore = confidence;
@@ -545,7 +545,7 @@ platforms.forEach(platform => {
 });
 
 // Search for all profiles on component mount
-if (businessName.value) {
+if (name.value) {
   Promise.all(platforms.map(p => searchSocialProfile(p.id)));
 }
 
@@ -557,28 +557,32 @@ onUnmounted(() => {
 });
 
 // Navigation
-const onSubmit = async () => {
-  if (!Object.values(state).some(val => val)) return;
-
-  router.push({
-    path: '/setup/social-media',
-    query: {
-      businessName: businessName.value,
+const onSubmit = async (event: FormSubmitEvent<FormSchema>) => {
+  const business = await $fetch('/api/businesses', {
+    method: 'POST',
+    body: {
+      name: name.value,
       abn: abn.value,
       placeId: placeId.value,
-      ...Object.entries(state).reduce((acc, [key, value]) => ({
-        ...acc,
-        [key]: value || undefined
-      }), {})
+      websiteUrl: event.data.websiteUrl,
+      instagramUsername: event.data.instagramUsername,
+      facebookUsername: event.data.facebookUsername,
+      xUsername: event.data.xUsername,
+      tiktokUsername: event.data.tiktokUsername,
+      youtubeUsername: event.data.youtubeUsername,
     },
   });
+
+  if (business) {
+    router.push(`/${business.id}`);
+  }
 };
 
 const onSkip = () => {
   router.push({
     path: '/setup/social-media',
     query: {
-      businessName: businessName.value,
+      name: name.value,
       abn: abn.value,
       placeId: placeId.value,
     },
@@ -589,7 +593,7 @@ const onBack = () => {
   router.push({
     path: '/setup/google-places',
     query: {
-      businessName: businessName.value,
+      name: name.value,
       abn: abn.value,
     },
   });
@@ -617,7 +621,7 @@ const onBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <!-- Generate inputs for each platform -->
             <div v-for="platform in platforms" :key="platform.id" class="relative">
-              <UFormField :label="platform.label">
+              <UFormField :label="platform.label" :name="getFieldName(platform.id)">
                 <UInput v-model="state[getFieldName(platform.id)]" 
                   :placeholder="platform.isWebsite ? 'https://example.com' : 'username or URL'"
                   :icon="platform.icon"

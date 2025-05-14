@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Get the business name from the query
 const router = useRouter();
 const route = useRoute();
-const businessName = computed(() => route.query.businessName as string);
+const name = computed(() => route.query.name as string);
 const abn = computed(() => route.query.abn as string | undefined);
 const { googleApiKey } = useRuntimeConfig().public;
 
@@ -18,7 +18,7 @@ const state = reactive<Partial<FormSchema>>({
 });
 
 // Search and places state
-const searchQuery = ref(businessName.value || '');
+const searchQuery = ref(name.value || '');
 const places = ref<GooglePlacesPlace[]>([]);
 const selectedPlace = ref<GooglePlacesPlace | null>(null);
 const isLoading = ref(false);
@@ -120,7 +120,7 @@ const onSubmit = async () => {
   router.push({
     path: '/setup/social-media-and-website',
     query: {
-      businessName: businessName.value,
+      name: name.value,
       abn: abn.value,
       placeId: state.selectedPlaceId,
     },
@@ -131,7 +131,7 @@ const onSkip = () => {
   router.push({
     path: '/setup/social-media-and-website',
     query: {
-      businessName: businessName.value,
+      name: name.value,
       abn: abn.value,
     },
   });
@@ -141,7 +141,7 @@ const onBack = () => {
   router.push({
     path: '/setup/abn',
     query: {
-      businessName: businessName.value,
+      name: name.value,
     },
   });
 }

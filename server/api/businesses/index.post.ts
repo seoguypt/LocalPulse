@@ -1,5 +1,5 @@
 export default defineEventHandler(async (event) => {
-  const { businessName } = await readValidatedBody(event, z.object({ businessName: z.string() }).parse);
+  const business = await readValidatedBody(event, businessInsertSchema.parse);
 
-  return (await useDrizzle().insert(tables.businesses).values({ businessName }).returning())[0];
+  return (await useDrizzle().insert(tables.businesses).values(business).returning())[0];
 });
