@@ -563,6 +563,127 @@ if (businessName.value) {
   ]);
 }
 
+// --- Add platform descriptions ---
+const platformDescriptions = {
+  instagram: 'Instagram is a visual platform ideal for sharing photos and short videos, helping businesses build brand presence and engage with customers.',
+  facebook: 'Facebook is a popular social network for connecting with customers, sharing updates, and building a community around your business.',
+  x: 'X (formerly Twitter) is a fast-paced platform for sharing news, updates, and engaging in conversations with your audience.',
+  tiktok: 'TikTok is a short-form video platform that helps businesses reach younger audiences with creative and viral content.',
+  youtube: 'YouTube is the leading platform for sharing video content, tutorials, and building a subscriber base for your business.',
+  website: 'A business website is your digital home base, providing information, contact details, and a professional presence online.'
+};
+
+// --- Add metadata state and fetch logic ---
+const metaLoading: Record<string, boolean> = {
+  instagram: false,
+  facebook: false,
+  x: false,
+  tiktok: false,
+  youtube: false,
+  website: false,
+};
+const metaData: Record<string, null | { title: string; description: string }> = {
+  instagram: null,
+  facebook: null,
+  x: null,
+  tiktok: null,
+  youtube: null,
+  website: null,
+};
+
+// Track debounce timeouts
+const debounceTimers: Record<string, NodeJS.Timeout | null> = {
+  instagram: null,
+  facebook: null,
+  x: null,
+  tiktok: null,
+  youtube: null,
+  website: null,
+};
+
+function isMetaResult(obj: any): obj is { title: string; description: string } {
+  return obj && typeof obj.title === 'string' && typeof obj.description === 'string';
+}
+
+const fetchMeta = (platform: string, url: string) => {
+  // Clear existing timeout for this platform
+  if (debounceTimers[platform]) {
+    clearTimeout(debounceTimers[platform]!);
+    debounceTimers[platform] = null;
+  }
+  
+  if (!url) {
+    metaData[platform] = null;
+    return;
+  }
+  
+  // Set loading state immediately
+  metaLoading[platform] = true;
+  
+  // Set a timeout to prevent too many requests
+  debounceTimers[platform] = setTimeout(async () => {
+    try {
+      let fetchUrl = url;
+      if (!fetchUrl.startsWith('http')) {
+        fetchUrl = getProfileUrl(platform, url);
+      }
+      
+      if (/^https?:\/\//.test(fetchUrl)) {
+        const res = await $fetch(`/api/meta?url=${encodeURIComponent(fetchUrl)}`);
+        if (isMetaResult(res)) {
+          metaData[platform] = { title: res.title, description: res.description };
+        }
+      }
+    } catch (e) {
+      console.error(`Error fetching metadata for ${platform}:`, e);
+      metaData[platform] = null;
+    } finally {
+      metaLoading[platform] = false;
+      debounceTimers[platform] = null;
+    }
+  }, 1000); // Strong debouncing with 1 second delay
+};
+
+// --- Watch user input and suggestions to fetch metadata ---
+watch(() => state.instagramUsername, (val) => {
+  if (!val) metaData.instagram = null;
+  else fetchMeta('instagram', val);
+}, { immediate: true });
+
+watch(() => state.facebookUsername, (val) => {
+  if (!val) metaData.facebook = null;
+  else fetchMeta('facebook', val);
+}, { immediate: true });
+
+watch(() => state.xUsername, (val) => {
+  if (!val) metaData.x = null;
+  else fetchMeta('x', val);
+}, { immediate: true });
+
+watch(() => state.tiktokUsername, (val) => {
+  if (!val) metaData.tiktok = null;
+  else fetchMeta('tiktok', val);
+}, { immediate: true });
+
+watch(() => state.youtubeUsername, (val) => {
+  if (!val) metaData.youtube = null;
+  else fetchMeta('youtube', val);
+}, { immediate: true });
+
+watch(() => state.websiteUrl, (val) => {
+  if (!val) metaData.website = null;
+  else fetchMeta('website', val);
+}, { immediate: true });
+
+// Clean up any pending requests when component unmounts
+onUnmounted(() => {
+  Object.keys(debounceTimers).forEach(platform => {
+    if (debounceTimers[platform]) {
+      clearTimeout(debounceTimers[platform]!);
+      debounceTimers[platform] = null;
+    }
+  });
+});
 
 const onSubmit = async () => {
   if (!state.instagramUsername && !state.facebookUsername && !state.xUsername &&
@@ -628,177 +749,124 @@ const onBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
             <!-- Instagram -->
             <div class="relative">
-              <UFormGroup label="Instagram">
-                <UInputGroup>
-                  <UInput v-model="state.instagramUsername" placeholder="username or URL" icon="i-simple-icons-instagram"
-                    aria-label="Instagram username" @input="handleInput('instagram')" class="w-full" :ui="{ leadingIcon: 'text-pink-500' }">
-                    <template v-if="state.instagramUsername && !loadingState.instagram" #trailing>
+              <UFormField label="Instagram">
+                <UInput v-model="state.instagramUsername" placeholder="username or URL" icon="i-simple-icons-instagram"
+                  aria-label="Instagram username" @input="handleInput('instagram')" class="w-full" :ui="{ leadingIcon: 'text-pink-500' }">
+                  <template v-if="state.instagramUsername && !loadingState.instagram" #trailing>
                       <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('instagram')" title="Remove suggestion" />
                     </template>
                   </UInput>
-                  <UButton v-if="loadingState.instagram" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
                 <!-- Instagram Profile Preview -->
-                <div v-if="suggestedProfiles.instagram"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <a :href="getProfileUrl('instagram', state.instagramUsername || '')" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.instagram.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    instagram.com/{{ state.instagramUsername }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.instagram.description }}</div>
+                <div v-if="metaLoading.instagram" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.instagram" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.instagram.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.instagram.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.instagramUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.instagram }}</div>
+              </UFormField>
             </div>
 
             <!-- Facebook -->
             <div class="relative">
-              <UFormGroup label="Facebook">
-                <UInputGroup>
-                  <UInput v-model="state.facebookUsername" placeholder="username or URL" aria-label="Facebook username"
-                    @input="handleInput('facebook')" icon="i-simple-icons-facebook" :ui="{ leadingIcon: 'text-blue-600' }"
-                    class="w-full">
-                    <template v-if="state.facebookUsername && !loadingState.facebook" #trailing>
-                      <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
-                        @click="clearSuggestion('facebook')" />
-                    </template>
-                  </UInput>
-                  <UButton v-if="loadingState.facebook" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
+              <UFormField label="Facebook">
+                <UInput v-model="state.facebookUsername" placeholder="username or URL" aria-label="Facebook username"
+                  @input="handleInput('facebook')" icon="i-simple-icons-facebook" :ui="{ leadingIcon: 'text-blue-600' }"
+                  class="w-full">
+                  <template v-if="state.facebookUsername && !loadingState.facebook" #trailing>
+                    <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
+                      @click="clearSuggestion('facebook')" />
+                  </template>
+                </UInput>
                 <!-- Facebook Profile Preview -->
-                <div v-if="suggestedProfiles.facebook"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <a :href="getProfileUrl('facebook', state.facebookUsername || '')" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.facebook.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    facebook.com/{{ state.facebookUsername }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.facebook.description }}</div>
+                <div v-if="metaLoading.facebook" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.facebook" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.facebook.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.facebook.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.facebookUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.facebook }}</div>
+              </UFormField>
             </div>
 
             <!-- X (Twitter) -->
             <div class="relative">
-              <UFormGroup label="X (Twitter)">
-                <UInputGroup>
-                  <UInput v-model="state.xUsername" placeholder="username or URL" aria-label="X (Twitter) username"
+              <UFormField label="X (Twitter)">
+                <UInput v-model="state.xUsername" placeholder="username or URL" aria-label="X (Twitter) username"
                     @input="handleInput('x')" icon="i-simple-icons-x" :ui="{ leadingIcon: 'text-neutral-200' }" class="w-full">
                     <template v-if="state.xUsername && !loadingState.x" #trailing>
                       <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
                         @click="clearSuggestion('x')" />
                     </template>
                   </UInput>
-                  <UButton v-if="loadingState.x" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
                 <!-- X Profile Preview -->
-                <div v-if="suggestedProfiles.x"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <a :href="getProfileUrl('x', state.xUsername || '')" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.x.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    x.com/{{ state.xUsername }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.x.description }}</div>
+                <div v-if="metaLoading.x" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.x" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.x.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.x.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.xUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.x }}</div>
+              </UFormField>
             </div>
 
             <!-- TikTok -->
             <div class="relative">
-              <UFormGroup label="TikTok">
-                <UInputGroup>
-                  <UInput v-model="state.tiktokUsername" placeholder="username or URL" aria-label="TikTok username"
-                    @input="handleInput('tiktok')" icon="i-simple-icons-tiktok" :ui="{ leadingIcon: 'text-neutral-200' }"
-                    class="w-full">
+              <UFormField label="TikTok">
+                <UInput v-model="state.tiktokUsername" placeholder="username or URL" aria-label="TikTok username"
+                  @input="handleInput('tiktok')" icon="i-simple-icons-tiktok" :ui="{ leadingIcon: 'text-neutral-200' }"
+                  class="w-full">
                     <template v-if="state.tiktokUsername && !loadingState.tiktok" #trailing>
                       <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('tiktok')" title="Remove suggestion" />
                     </template>
                   </UInput>
-                  <UButton v-if="loadingState.tiktok" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
                 <!-- TikTok Profile Preview -->
-                <div v-if="suggestedProfiles.tiktok"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <a :href="getProfileUrl('tiktok', state.tiktokUsername || '')" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.tiktok.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    tiktok.com/@{{ state.tiktokUsername }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.tiktok.description }}</div>
+                <div v-if="metaLoading.tiktok" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.tiktok" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.tiktok.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.tiktok.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.tiktokUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.tiktok }}</div>
+              </UFormField>
             </div>
 
             <!-- YouTube -->
             <div class="relative">
-              <UFormGroup label="YouTube">
-                <UInputGroup>
-                  <UInput v-model="state.youtubeUsername" placeholder="channel name or URL" aria-label="YouTube channel"
-                    @input="handleInput('youtube')" icon="i-simple-icons-youtube" :ui="{ leadingIcon: 'text-red-600' }" class="w-full">
-                    <template v-if="state.youtubeUsername && !loadingState.youtube" #trailing>
+              <UFormField label="YouTube">
+                <UInput v-model="state.youtubeUsername" placeholder="channel name or URL" aria-label="YouTube channel"
+                  @input="handleInput('youtube')" icon="i-simple-icons-youtube" :ui="{ leadingIcon: 'text-red-600' }" class="w-full">
+                  <template v-if="state.youtubeUsername && !loadingState.youtube" #trailing>
                       <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
                         @click="clearSuggestion('youtube')" />
                     </template>
                   </UInput>
-                  <UButton v-if="loadingState.youtube" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
                 <!-- YouTube Profile Preview -->
-                <div v-if="suggestedProfiles.youtube"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <a :href="getProfileUrl('youtube', state.youtubeUsername || '')" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.youtube.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    youtube.com/@{{ state.youtubeUsername }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.youtube.description }}</div>
+                <div v-if="metaLoading.youtube" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.youtube" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.youtube.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.youtube.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.youtubeUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.youtube }}</div>
+              </UFormField>
             </div>
 
             <!-- Website -->
             <div class="relative">
-              <UFormGroup label="Website">
-                <UInputGroup>
-                  <UInput v-model="state.websiteUrl" placeholder="https://example.com" aria-label="Business website"
+              <UFormField label="Website">
+                <UInput v-model="state.websiteUrl" placeholder="https://example.com" aria-label="Business website"
                     @input="handleInput('website')" icon="i-lucide-globe" :ui="{ leadingIcon: 'text-blue-500' }" class="w-full">
                     <template v-if="state.websiteUrl && !loadingState.website" #trailing>
                       <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
                         @click="clearSuggestion('website')" title="Remove suggestion" />
                     </template>
                   </UInput>
-                  <UButton v-if="loadingState.website" color="neutral" variant="ghost" :loading="true" />
-                </UInputGroup>
                 <!-- Website Preview -->
-                <div v-if="suggestedProfiles.website"
-                  class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div v-if="suggestedProfiles.website.tentative" 
-                    class="text-amber-400 text-xs mb-1 flex items-center">
-                    <span class="i-lucide-alert-triangle mr-1"></span>
-                    <span>Possible match - please verify</span>
-                  </div>
-                  <a :href="state.websiteUrl" target="_blank"
-                    class="font-semibold text-blue-400 hover:text-blue-300 transition-colors mb-1 truncate block">
-                    {{ suggestedProfiles.website.title }}
-                  </a>
-                  <div class="text-blue-200/70 text-xs mb-2">
-                    {{ suggestedProfiles.website.domain }}
-                  </div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ suggestedProfiles.website.description }}</div>
+                <div v-if="metaLoading.website" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
+                <div v-else-if="metaData.website" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.website.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.website.description }}</div>
                 </div>
-              </UFormGroup>
+                <div v-else-if="!state.websiteUrl" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.website }}</div>
+              </UFormField>
             </div>
           </div>
 

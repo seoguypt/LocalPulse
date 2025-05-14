@@ -3,7 +3,7 @@ import { logger } from './logger';
 import path from 'path';
 
 // Proxy configuration
-const PROXY_URL = 'http://brd-customer-hl_016d8caa-zone-isp_proxy1:bi132k4lf0ue@brd.superproxy.io:33335';
+const PROXY_URL = 'http://brd-customer-hl_016d8caa-zone-residential_proxy1:6tqf6w2ci5mk@brd.superproxy.io:33335';
 const proxyConfiguration = new ProxyConfiguration({ proxyUrls: [PROXY_URL] });
 
 Configuration.set('persistStorage', false);
