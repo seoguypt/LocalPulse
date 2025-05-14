@@ -68,12 +68,12 @@ type MetaData = {
 // Simplified schema pattern generation
 const createSocialSchema = () => {
   const socialMediaSchema = {
-    instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL')).nullable(),
-    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL')).nullable(),
-    x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL')).nullable(),
-    tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL')).nullable(),
-    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL')).nullable(),
-    website: z.preprocess((val) => val || null, z.string().url('Please enter a valid URL')).nullable(),
+    instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').nullable()),
+    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').nullable()),
+    x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').nullable()),
+    tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').nullable()),
+    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
+    website: z.preprocess((val) => val || null, z.string().url('Please enter a valid URL').nullable()),
   };
 
   return {
