@@ -21,7 +21,7 @@ export type AbnSearchResult = z.infer<typeof abnSearchByAbnResultSchema>;
 
 const fetchAbrData = defineCachedFunction(async (abn: string, abrGuid: string) => {
   const url = `https://abr.business.gov.au/abrxmlsearch/AbrXmlSearch.asmx/SearchByABNv202001?searchString=${encodeURIComponent(abn)}&authenticationGuid=${abrGuid}&includeHistoricalDetails=N`
-  logger.info(`Fetching ABR data for ABN: ${abn} from ${url}`);
+  console.log(`Fetching ABR data for ABN: ${abn} from ${url}`);
   return $fetch(url, {
     responseType: 'text',
   });

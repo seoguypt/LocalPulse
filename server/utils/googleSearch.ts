@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { useRuntimeConfig } from '#imports';
-import logger from './logger';
 
 // Define the search result interface
 export interface GoogleSearchResult {
@@ -21,14 +20,13 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
   try {
     // Validate query
     const validQuery = SearchQuerySchema.parse(query);
-    logger.startGroup(`Google search: "${validQuery}"`);
+    console.log(`Google search: "${validQuery}"`);
     
     // Get API key and search engine ID from runtime config
     const {googleApiKey, googleProgrammableSearchEngineId } = useRuntimeConfig();
     
     if (!googleApiKey || !googleProgrammableSearchEngineId) {
-      logger.error('Missing Google API key or Search Engine ID');
-      logger.endGroup('Search failed - missing credentials');
+      console.error('Missing Google API key or Search Engine ID');
       return [];
     }
     
@@ -37,13 +35,11 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
     const apiUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleProgrammableSearchEngineId}&q=${encodedQuery}&gl=au`;
     
     // Fetch results from the API
-    logger.step('Fetching results from Google API');
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
       const errorData = await response.json();
-      logger.error(`Google API error: ${errorData.error?.message || response.statusText}`);
-      logger.endGroup('Search failed - API error');
+      console.error(`Google API error: ${errorData.error?.message || response.statusText}`);
       throw new Error(`Google API error: ${errorData.error?.message || response.statusText}`);
     }
     
@@ -56,12 +52,10 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
       description: item.snippet || ''
     })) || [];
     
-    logger.result(`Found ${results.length} results`);
-    logger.endGroup('Search completed successfully');
+    console.log(`Found ${results.length} results`);
     return results;
   } catch (error) {
-    logger.error(`Error performing Google search: ${(error as Error).message}`);
-    logger.endGroup('Search failed with error');
+    console.error(`Error performing Google search: ${(error as Error).message}`);
     return [];
   }
 }, {

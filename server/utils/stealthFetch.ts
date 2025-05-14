@@ -1,4 +1,3 @@
-import { logger } from './logger';
 import { Camoufox } from 'camoufox-js';
 
 let browser: Awaited<ReturnType<typeof Camoufox>>;
@@ -23,7 +22,7 @@ async function getBrowser() {
  * @throws Error if the page cannot be fetched
  */
 export const stealthFetch = defineCachedFunction(async (url: string): Promise<string> => {
-  logger.info(`Fetching ${url} with stealth techniques`);
+  console.log(`Fetching ${url} with stealth techniques`);
   
   const browser = await getBrowser();
   const page = await browser.newPage();
