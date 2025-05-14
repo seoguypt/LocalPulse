@@ -4,7 +4,7 @@ import { Camoufox } from 'camoufox-js';
 let browser: Awaited<ReturnType<typeof Camoufox>>;
 async function getBrowser() {
   if (!browser) {
-    browser = await Camoufox({});
+    browser = await Camoufox({headless: true});
     const nitroApp = useNitroApp();
     nitroApp.hooks.hook('close', async () => {
       await browser.close();

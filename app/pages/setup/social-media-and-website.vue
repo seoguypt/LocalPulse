@@ -60,6 +60,7 @@ type SuggestedProfile = {
 } | null;
 
 type MetaData = {
+  url: string;
   title: string;
   description: string;
 } | null;
@@ -222,7 +223,6 @@ const calculateConfidence = (result: any, platform: PlatformId): number => {
 
   const titleL = title.toLowerCase();
   const descL = description.toLowerCase();
-  const linkL = link.toLowerCase();
 
   // URL-based scoring
   try {
@@ -259,16 +259,6 @@ const calculateConfidence = (result: any, platform: PlatformId): number => {
         score += 0.25;
       } else {
         score -= 0.05 * Math.min(5, pathSegments.length);
-      }
-      
-      const directoryPatterns = [
-        'directory', 'listing', 'listings', 'businesses', 'profile',
-        'visit', 'tourism', 'weddings', 'vendors', 'professionals'
-      ];
-      
-      if (directoryPatterns.some(pattern => 
-          domain.includes(pattern) || pathSegments.some(segment => segment.includes(pattern)))) {
-        score -= 0.30;
       }
       
       if (abn.value && (titleL.includes(abn.value) || descL.includes(abn.value))) {
@@ -531,7 +521,7 @@ const fetchMeta = (platform: PlatformId, url: string) => {
       if (/^https?:\/\//.test(fetchUrl)) {
         const res = await $fetch(`/api/meta?url=${encodeURIComponent(fetchUrl)}`);
         if (isMetaResult(res)) {
-          metaData[platform] = { title: res.title, description: res.description };
+          metaData[platform] = { url: fetchUrl, title: res.title, description: res.description };
         }
       }
     } catch (e) {
@@ -647,8 +637,9 @@ const onBack = () => {
                   <USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" />
                 </div>
                 <div v-else-if="metaData[platform.id]" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData[platform.id]?.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData[platform.id]?.description }}</div>
+                  <div class="text-gray-400 text-xs">{{ metaData[platform.id]?.url }}</div>
+                  <a :href="metaData[platform.id]?.url" target="_blank" class="font-semibold text-blue-400 mt-1 block line-clamp-1 truncate">{{ metaData[platform.id]?.title }}</a>
+                  <div class="text-gray-300 text-xs line-clamp-2 mt-1">{{ metaData[platform.id]?.description }}</div>
                 </div>
                 <div v-else-if="!state[getFieldName(platform.id)]" class="mt-2 text-xs text-gray-400">
                   {{ platformDescriptions[platform.id] }}

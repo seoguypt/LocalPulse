@@ -40,10 +40,7 @@ export default defineEventHandler(async (event) => {
       };
     }
     
-    return {
-      url,
-      ...metadata,
-    };
+    return metadata;
   } catch (error) {
     // Handle validation errors (H3 handles these automatically)
     if (error instanceof z.ZodError) {
