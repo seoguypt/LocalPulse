@@ -9,166 +9,196 @@ const businessName = computed(() => route.query.businessName as string);
 const abn = computed(() => route.query.abn as string | undefined);
 const placeId = computed(() => route.query.placeId as string | undefined);
 
-// Validation patterns for social media handles/URLs
-const socialMediaSchema = {
-  instagram: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').optional(),
-  facebook: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').optional(),
-  x: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').optional(),
-  tiktok: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').optional(),
-  youtube: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').optional(),
-  website: z.string().url('Please enter a valid URL').optional(),
+// Define platform types
+type PlatformId = 'instagram' | 'facebook' | 'x' | 'tiktok' | 'youtube' | 'website';
+type Platform = {
+  id: PlatformId;
+  label: string;
+  icon: string;
+  iconColor: string;
+  searchParam: string;
+  urlPattern: string;
+  isWebsite?: boolean;
 };
 
-const formSchema = z.object({
-  instagramUsername: socialMediaSchema.instagram,
-  facebookUsername: socialMediaSchema.facebook,
-  xUsername: socialMediaSchema.x,
-  tiktokUsername: socialMediaSchema.tiktok,
-  youtubeUsername: socialMediaSchema.youtube,
-  websiteUrl: socialMediaSchema.website,
-});
+// Define platform config once to reduce repetition
+const platforms: Platform[] = [
+  { id: 'instagram', label: 'Instagram', icon: 'i-simple-icons-instagram', iconColor: 'text-pink-500', 
+    searchParam: 'site:instagram.com', urlPattern: 'instagram.com' },
+  { id: 'facebook', label: 'Facebook', icon: 'i-simple-icons-facebook', iconColor: 'text-blue-600', 
+    searchParam: 'site:facebook.com', urlPattern: 'facebook.com' },
+  { id: 'x', label: 'X (Twitter)', icon: 'i-simple-icons-x', iconColor: 'text-neutral-200', 
+    searchParam: '(site:twitter.com OR site:x.com) -inurl:status', urlPattern: 'twitter.com|x.com' },
+  { id: 'tiktok', label: 'TikTok', icon: 'i-simple-icons-tiktok', iconColor: 'text-neutral-200', 
+    searchParam: 'site:tiktok.com -inurl:video intext:Follow', urlPattern: 'tiktok.com' },
+  { id: 'youtube', label: 'YouTube', icon: 'i-simple-icons-youtube', iconColor: 'text-red-600', 
+    searchParam: 'site:youtube.com -inurl:watch', urlPattern: 'youtube.com' },
+  { id: 'website', label: 'Website', icon: 'i-lucide-globe', iconColor: 'text-blue-500', 
+    searchParam: '-site:facebook.com -site:instagram.com -site:twitter.com -site:x.com -site:tiktok.com -site:youtube.com', 
+    urlPattern: '', isWebsite: true }
+];
 
+// Platform descriptions
+const platformDescriptions: Record<PlatformId, string> = {
+  instagram: 'Instagram is a visual platform ideal for sharing photos and short videos, helping businesses build brand presence and engage with customers.',
+  facebook: 'Facebook is a popular social network for connecting with customers, sharing updates, and building a community around your business.',
+  x: 'X (formerly Twitter) is a fast-paced platform for sharing news, updates, and engaging in conversations with your audience.',
+  tiktok: 'TikTok is a short-form video platform that helps businesses reach younger audiences with creative and viral content.',
+  youtube: 'YouTube is the leading platform for sharing video content, tutorials, and building a subscriber base for your business.',
+  website: 'A business website is your digital home base, providing information, contact details, and a professional presence online.'
+};
+
+// Types for suggested profiles and metadata
+type SuggestedProfile = {
+  title: string;
+  description: string;
+  link: string;
+  username?: string;
+  domain?: string;
+  confidence?: number;
+  tentative?: boolean;
+} | null;
+
+type MetaData = {
+  title: string;
+  description: string;
+} | null;
+
+// Simplified schema pattern generation
+const createSocialSchema = () => {
+  const socialMediaSchema = {
+    instagram: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').optional(),
+    facebook: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').optional(),
+    x: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').optional(),
+    tiktok: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').optional(),
+    youtube: z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').optional(),
+    website: z.string().url('Please enter a valid URL').optional(),
+  };
+
+  return {
+    socialMediaSchema,
+    formSchema: z.object({
+      instagramUsername: socialMediaSchema.instagram,
+      facebookUsername: socialMediaSchema.facebook,
+      xUsername: socialMediaSchema.x,
+      tiktokUsername: socialMediaSchema.tiktok,
+      youtubeUsername: socialMediaSchema.youtube,
+      websiteUrl: socialMediaSchema.website,
+    })
+  };
+};
+
+const { socialMediaSchema, formSchema } = createSocialSchema();
 type FormSchema = z.infer<typeof formSchema>;
-const state = reactive<Partial<FormSchema>>({
-  instagramUsername: '',
-  facebookUsername: '',
-  xUsername: '',
-  tiktokUsername: '',
-  youtubeUsername: '',
-  websiteUrl: '',
-});
 
-// Track loading and validation states for each platform
-const loadingState = reactive({
-  instagram: false,
-  facebook: false,
-  x: false,
-  tiktok: false,
-  youtube: false,
-  website: false,
-});
+// Create reactive objects with platform IDs
+const createPlatformState = () => {
+  const state = reactive<FormSchema>({
+    instagramUsername: '',
+    facebookUsername: '',
+    xUsername: '',
+    tiktokUsername: '',
+    youtubeUsername: '',
+    websiteUrl: '',
+  });
 
-const validState = reactive({
-  instagram: false,
-  facebook: false,
-  x: false,
-  tiktok: false,
-  youtube: false,
-  website: false,
-});
+  const loadingState = reactive<Record<PlatformId, boolean>>(Object.fromEntries(
+    platforms.map(p => [p.id, false])
+  ) as Record<PlatformId, boolean>);
 
-// Tracks if user has manually entered input for a platform
-const manualInput = reactive({
-  instagram: false,
-  facebook: false,
-  x: false,
-  tiktok: false,
-  youtube: false,
-  website: false,
-});
+  const validState = reactive<Record<PlatformId, boolean>>(Object.fromEntries(
+    platforms.map(p => [p.id, false])
+  ) as Record<PlatformId, boolean>);
 
-// Store the suggested profile information for previews
-const suggestedProfiles = reactive({
-  instagram: null as any,
-  facebook: null as any,
-  x: null as any,
-  tiktok: null as any,
-  youtube: null as any,
-  website: null as any,
-});
+  const manualInput = reactive<Record<PlatformId, boolean>>(Object.fromEntries(
+    platforms.map(p => [p.id, false])
+  ) as Record<PlatformId, boolean>);
 
-// Generate profile URLs for viewing
-const getProfileUrl = (platform: string, username: string): string => {
+  const suggestedProfiles = reactive<Record<PlatformId, SuggestedProfile>>(Object.fromEntries(
+    platforms.map(p => [p.id, null])
+  ) as Record<PlatformId, SuggestedProfile>);
+
+  const metaLoading = reactive<Record<PlatformId, boolean>>(Object.fromEntries(
+    platforms.map(p => [p.id, false])
+  ) as Record<PlatformId, boolean>);
+
+  const metaData = reactive<Record<PlatformId, MetaData>>(Object.fromEntries(
+    platforms.map(p => [p.id, null])
+  ) as Record<PlatformId, MetaData>);
+
+  const debounceTimers = reactive<Record<PlatformId, NodeJS.Timeout | null>>(Object.fromEntries(
+    platforms.map(p => [p.id, null])
+  ) as Record<PlatformId, NodeJS.Timeout | null>);
+
+  return {
+    state, loadingState, validState, manualInput, 
+    suggestedProfiles, metaLoading, metaData, debounceTimers
+  };
+};
+
+const {
+  state, loadingState, validState, manualInput,
+  suggestedProfiles, metaLoading, metaData, debounceTimers
+} = createPlatformState();
+
+// Get field name for a platform
+const getFieldName = (platform: PlatformId): keyof FormSchema => 
+  platform === 'website' ? 'websiteUrl' : `${platform}Username` as keyof FormSchema;
+
+// Shared URL handling functions
+const getProfileUrl = (platform: PlatformId, username: string): string => {
   if (!username) return '';
 
+  // Handle social profiles vs websites
+  if (platform === 'website') {
+    return username.startsWith('http') ? username : `https://${username}`;
+  }
+
+  // Remove @ and prepare the username
+  const cleanUsername = username.replace('@', '');
+  
   switch (platform) {
-    case 'instagram':
-      return `https://instagram.com/${username.replace('@', '')}`;
-    case 'facebook':
-      return `https://facebook.com/${username.replace('@', '')}`;
-    case 'x':
-      return `https://x.com/${username.replace('@', '')}`;
-    case 'tiktok':
-      return `https://tiktok.com/@${username.replace('@', '')}`;
+    case 'instagram': return `https://instagram.com/${cleanUsername}`;
+    case 'facebook': return `https://facebook.com/${cleanUsername}`;
+    case 'x': return `https://x.com/${cleanUsername}`;
+    case 'tiktok': return `https://tiktok.com/@${cleanUsername}`;
     case 'youtube':
       // Handle various YouTube URL formats
-      if (username.startsWith('channel/') || username.startsWith('c/') || username.startsWith('user/')) {
-        return `https://youtube.com/${username}`;
+      if (cleanUsername.startsWith('channel/') || cleanUsername.startsWith('c/') || cleanUsername.startsWith('user/')) {
+        return `https://youtube.com/${cleanUsername}`;
       }
-      return `https://youtube.com/@${username.replace('@', '')}`;
-    case 'website':
-      // Ensure URL has protocol
-      return username.startsWith('http') ? username : `https://${username}`;
-    default:
-      return '';
+      return `https://youtube.com/@${cleanUsername}`;
+    default: return '';
   }
-};
-
-// Function to clear a suggested profile
-const clearSuggestion = (platform: string) => {
-  if (platform === 'website') {
-    state.websiteUrl = '';
-    suggestedProfiles.website = null;
-    validState.website = false;
-    manualInput.website = true; // Mark as manual to prevent re-suggestion
-    return;
-  }
-
-  state[`${platform}Username` as keyof typeof state] = '';
-  suggestedProfiles[platform as keyof typeof suggestedProfiles] = null;
-  validState[platform as keyof typeof validState] = false;
-  manualInput[platform as keyof typeof manualInput] = true; // Mark as manual to prevent re-suggestion
 };
 
 // Extract username from URL if needed
-const extractUsername = (url: string, platform: string): string => {
+const extractUsername = (url: string, platform: PlatformId): string => {
   if (!url) return '';
 
   try {
     if (url.includes('http')) {
       const urlObj = new URL(url);
-      const hostname = urlObj.hostname;
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
 
-      // Handle special cases for different platforms
       switch (platform) {
         case 'tiktok':
-          // TikTok profiles always start with @ in the URL path
-          // Ignore discovery pages and any non-profile URLs
-          if (pathParts[0] === 'discover' || !pathParts[0]?.startsWith('@')) {
-            return ''; // Not a profile URL
-          }
-          // Extract username from @username format
-          return pathParts[0].replace('@', '');
-
+          return pathParts[0]?.startsWith('@') ? pathParts[0].replace('@', '') : '';
         case 'x':
-          // Handle both x.com and twitter.com
-          // Skip status/tweets and other non-profile paths
-          if (['status', 'tweets', 'search'].includes(pathParts[1] || '')) {
-            return pathParts[0] || '';
-          } else if (pathParts[0]) {
-            return pathParts[0];
-          }
-          return '';
-
+          return ['status', 'tweets', 'search'].includes(pathParts[1] || '') ? pathParts[0] || '' : pathParts[0] || '';
         case 'youtube':
-          // YouTube can have different formats
           if (pathParts[0] === 'c' || pathParts[0] === 'user' || pathParts[0] === 'channel') {
             return pathParts[1] || '';
           } else if (pathParts[0]?.startsWith('@')) {
             return pathParts[0].replace('@', '');
           }
           return pathParts[0] || '';
-
         default:
-          // Instagram, Facebook, etc.
           return pathParts[0]?.replace('@', '') || '';
       }
     } else if (url.startsWith('@')) {
-      // Handle plain @username format
       return url.replace('@', '');
     } else {
-      // Just return the input as is
       return url;
     }
   } catch (e) {
@@ -178,47 +208,39 @@ const extractUsername = (url: string, platform: string): string => {
 };
 
 // Calculate confidence score for a search result
-const calculateConfidence = (result: any, platform: string): number => {
+const calculateConfidence = (result: any, platform: PlatformId): number => {
   if (!result || !businessName.value) return 0;
 
   let score = 0;
   const bizRaw = businessName.value.toLowerCase();
-  const normalizedBiz = bizRaw.replace(/\W+/g, '');       // e.g. "Daniel Faint Photo" → "danielfaintphoto"
-  // Split business name into significant words (3+ chars)
+  const normalizedBiz = bizRaw.replace(/\W+/g, '');
   const bizWords = bizRaw.split(/\s+/).filter(word => word.length > 2);
 
   const title = result.title || '';
   const link = result.link || '';
-  const description = result.snippet     // from some APIs it's called "snippet"
-    ?? result.description   // fallback to "description"
-    ?? '';
+  const description = result.snippet ?? result.description ?? '';
 
   const titleL = title.toLowerCase();
   const descL = description.toLowerCase();
   const linkL = link.toLowerCase();
 
-  // NEW: URL-based scoring (highest priority)
+  // URL-based scoring
   try {
     const urlObj = new URL(link);
     const path = urlObj.pathname.toLowerCase();
     const pathSegments = path.split('/').filter(Boolean);
     const hostname = urlObj.hostname.toLowerCase();
-    const domain = hostname.replace(/^www\./, ''); // Remove www. prefix
+    const domain = hostname.replace(/^www\./, '');
     
-    // Website-specific scoring adjustments
     if (platform === 'website') {
-      // MAJOR BOOST: Domain name contains full business name or significant parts
-      const domainParts = domain.split('.')[0] || ''; // Get the main part before the TLD
+      const domainParts = domain.split('.')[0] || '';
       
-      // Exact business name in domain (best signal for a website)
       if (domainParts.includes(normalizedBiz)) {
-        score += 0.70; // Huge boost
+        score += 0.70;
       } else {
-        // Check if domain contains significant parts of business name
         const domainWords = domainParts.match(/[a-z]{3,}/g) || [];
         const businessNameWords = normalizedBiz.match(/[a-z]{3,}/g) || [];
         
-        // Count matching significant words
         let matchCount = 0;
         for (const bizWord of businessNameWords) {
           if (domainWords.some(domainWord => domainWord.includes(bizWord) || bizWord.includes(domainWord))) {
@@ -227,128 +249,100 @@ const calculateConfidence = (result: any, platform: string): number => {
         }
         
         if (matchCount > 0) {
-          // Proportional score based on how many words match
           score += 0.35 * (matchCount / Math.max(1, businessNameWords.length));
         }
       }
       
-      // Prioritize root domains or shallow paths
       if (pathSegments.length === 0) {
-        score += 0.50; // Home page is most likely the main site
+        score += 0.50;
       } else if (pathSegments.length === 1) {
-        score += 0.25; // Simple path like /about is still good
+        score += 0.25;
       } else {
-        // Penalize deep paths, which are often directory listings
         score -= 0.05 * Math.min(5, pathSegments.length);
       }
       
-      // Penalize directory sites (common patterns for directories rather than business sites)
       const directoryPatterns = [
         'directory', 'listing', 'listings', 'businesses', 'profile',
         'visit', 'tourism', 'weddings', 'vendors', 'professionals'
       ];
-      for (const pattern of directoryPatterns) {
-        if (domain.includes(pattern) || pathSegments.some(segment => segment.includes(pattern))) {
-          score -= 0.30;
-          break;
-        }
+      
+      if (directoryPatterns.some(pattern => 
+          domain.includes(pattern) || pathSegments.some(segment => segment.includes(pattern)))) {
+        score -= 0.30;
       }
       
-      // Check if ABN is in the website details (common for Australian businesses)
       if (abn.value && (titleL.includes(abn.value) || descL.includes(abn.value))) {
         score += 0.20;
       }
       
-      // Look for contact information keywords in description (signals official site)
       const contactPatterns = ['contact us', 'phone', 'email', 'address', '@', 'call:', 'tel:'];
-      for (const pattern of contactPatterns) {
-        if (descL.includes(pattern)) {
-          score += 0.15;
-          break;
-        }
+      if (contactPatterns.some(pattern => descL.includes(pattern))) {
+        score += 0.15;
       }
     }
 
-    // Exact business name in URL path (strongest signal)
     if (path.includes(normalizedBiz)) {
-      score += 0.30; // For website, we already boosted domain matches more
+      score += 0.30;
     }
 
-    // Business name words in URL path
     const pathStr = pathSegments.join(' ');
     for (const word of bizWords) {
       if (pathStr.includes(word)) {
-        score += 0.05; // Reduced for websites as domain is more important
+        score += 0.05;
       }
     }
 
-    // Business name in subdomain or domain (excluding common domains)
     const hostnameNoDomain = hostname.replace(/\.(com|org|net|io|co).*$/, '');
     if (hostnameNoDomain.includes(normalizedBiz)) {
       score += platform === 'website' ? 0.25 : 0.40;
     }
   } catch { }
 
-  // 1) Exact/fuzzy in title (medium priority)
+  // Title and description scoring
   if (titleL.includes(bizRaw)) score += 0.15;
   if (titleL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.05;
-
-  // 2) Exact/fuzzy in description (lower priority)
   if (descL.includes(bizRaw)) score += 0.10;
   if (descL.split(' ').some((word: string) => bizRaw.includes(word) && word.length > 3)) score += 0.05;
 
-  // 3) Domain sanity check
+  // Domain verification
   try {
     const host = new URL(link).hostname;
-    switch (platform) {
-      case 'instagram': host.includes('instagram.com') && (score += 0.30); break;
-      case 'facebook': host.includes('facebook.com') && (score += 0.30); break;
-      case 'x': (host.includes('twitter.com') || host.includes('x.com')) && (score += 0.30); break;
-      case 'tiktok': host.includes('tiktok.com') && (score += 0.30); break;
-      case 'youtube': host.includes('youtube.com') && (score += 0.30); break;
-      case 'website': 
-        // Penalize if it's a social media domain
-        if (host.includes('facebook.com') || host.includes('instagram.com') || 
-            host.includes('twitter.com') || host.includes('x.com') || 
-            host.includes('tiktok.com') || host.includes('youtube.com')) {
+    const platformObj = platforms.find(p => p.id === platform);
+    
+    if (platformObj) {
+      if (platform === 'website') {
+        // Penalize social media domains for website results
+        if (platforms.filter(p => p.id !== 'website' && p.urlPattern).some(p => host.includes(p.urlPattern))) {
           score -= 0.50;
         }
         // Boost Australian domains
         if (host.endsWith('.com.au') || host.endsWith('.net.au') || host.endsWith('.org.au')) {
-          score += 0.10; // Reduced boost to avoid prioritizing .au directories over direct .com domains
+          score += 0.10;
         }
-        break;
+      } else if (platformObj.urlPattern && new RegExp(platformObj.urlPattern).test(host)) {
+        score += 0.30; // Correct domain for social platform
+      }
     }
   } catch { }
 
-  // 4) Look for an explicit "@handle" mention in title/description
-  const mentionMatch =
-    titleL.match(/@([\w.]+)/)?.[1] ||
-    descL.match(/@([\w.]+)/)?.[1] ||
-    '';
-
+  // Handle mentions in content
+  const mentionMatch = titleL.match(/@([\w.]+)/)?.[1] || descL.match(/@([\w.]+)/)?.[1] || '';
   if (mentionMatch) {
     const normMention = mentionMatch.toLowerCase().replace(/\W+/g, '');
     if (normMention === normalizedBiz) {
-      // exact handle match → big boost
       score += 0.40;
     } else {
-      // Use string-similarity for better fuzzy matching
       const similarity = compareTwoStrings(normMention, normalizedBiz);
       if (similarity > 0.5) score += similarity * 0.30;
     }
   }
 
-  // 5) Finally, extract the path‐segment from the URL itself
-  const extracted = extractUsername(link, platform)
-    .toLowerCase()
-    .replace(/\W+/g, '');
-
+  // Path segment matching
+  const extracted = extractUsername(link, platform).toLowerCase().replace(/\W+/g, '');
   if (extracted) {
     if (extracted === normalizedBiz) {
-      score += 0.50;              // exact match on path always trumps
+      score += 0.50;
     } else {
-      // Use string-similarity for better fuzzy matching
       const similarity = compareTwoStrings(extracted, normalizedBiz);
       if (similarity > 0.6) score += similarity * 0.35;
     }
@@ -357,57 +351,38 @@ const calculateConfidence = (result: any, platform: string): number => {
   return Math.min(score, 1);
 };
 
-// Search function for social media profiles
-const searchSocialProfile = async (platform: string) => {
-  if (!businessName.value || manualInput[platform as keyof typeof manualInput]) return;
+// Search function for profiles - uses platform config
+const searchSocialProfile = async (platform: PlatformId) => {
+  const platformObj = platforms.find(p => p.id === platform);
+  if (!businessName.value || !platformObj || manualInput[platform]) return;
 
-  loadingState[platform as keyof typeof loadingState] = true;
+  loadingState[platform] = true;
 
   try {
-    let searchParams = '';
-
-    switch (platform) {
-      case 'instagram': searchParams = 'site:instagram.com'; break;
-      case 'facebook': searchParams = 'site:facebook.com'; break;
-      case 'x': searchParams = '(site:twitter.com OR site:x.com) -inurl:status'; break;
-      case 'tiktok': searchParams = 'site:tiktok.com -inurl:video intext:Follow'; break;
-      case 'youtube': searchParams = 'site:youtube.com -inurl:watch'; break;
-      case 'website': searchParams = '-site:facebook.com -site:instagram.com -site:twitter.com -site:x.com -site:tiktok.com -site:youtube.com'; break;
-    }
-
-    // Execute multiple search variants to improve chances of finding profiles
+    // Execute multiple search variants
     const data = (await Promise.all([
-      $fetch(`/api/google/search?query=${encodeURIComponent(`allintitle:"${businessName.value}" ${searchParams}`)}`),
-      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value} ${searchParams}`)}`),
-      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value.replace(/\s+/g, '')} ${searchParams}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`allintitle:"${businessName.value}" ${platformObj.searchParam}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value} ${platformObj.searchParam}`)}`),
+      $fetch(`/api/google/search?query=${encodeURIComponent(`${businessName.value.replace(/\s+/g, '')} ${platformObj.searchParam}`)}`),
     ])).flat();
 
-    // Process each result
+    // Filter results based on platform
     const filteredResults = data.filter(result => {
-      // For TikTok, filter out non-profile URLs by looking for @ in the link
       if (platform === 'tiktok') {
         try {
-          const url = new URL(result.link);
-          const path = url.pathname;
-          // Only keep results with @ in the path (actual profiles)
-          return path.includes('@');
+          return new URL(result.link).pathname.includes('@');
         } catch {
           return false;
         }
       }
       
-      // For website, filter out known non-website domains
       if (platform === 'website') {
         try {
-          const url = new URL(result.link);
-          const host = url.hostname.toLowerCase();
-          // Exclude common non-business-website domains
-          const excludedDomains = [
-            'facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com', 'youtube.com',
-            'linkedin.com', 'yelp.com', 'yellowpages.com.au', 'tripadvisor.com', 'amazon.com',
-            'ebay.com', 'wikipedia.org', 'pinterest.com'
-          ];
-          return !excludedDomains.some(domain => host.includes(domain));
+          const host = new URL(result.link).hostname.toLowerCase();
+          // Exclude social media domains from website results
+          return !platforms
+            .filter(p => p.id !== 'website' && p.urlPattern)
+            .some(p => host.includes(p.urlPattern));
         } catch {
           return false;
         }
@@ -416,16 +391,14 @@ const searchSocialProfile = async (platform: string) => {
       return true;
     });
 
-    // Deduplicate results by URL to avoid duplicate scoring
+    // Deduplicate and score results
     const uniqueResults = filteredResults.reduce((acc: any[], current) => {
       const isDuplicate = acc.some(item => item.link === current.link);
-      if (!isDuplicate) {
-        acc.push(current);
-      }
+      if (!isDuplicate) acc.push(current);
       return acc;
     }, []);
 
-    // Find the best match by confidence score
+    // Find best match
     let bestMatch = null;
     let bestScore = 0;
 
@@ -439,13 +412,11 @@ const searchSocialProfile = async (platform: string) => {
       }
     }
 
-    // Auto-fill if best match confidence is high enough
-    // Website needs a higher confidence threshold than social media profiles
+    // Apply result based on confidence
     const confidenceThreshold = platform === 'website' ? 0.80 : 0.75;
     
     if (bestMatch && bestScore >= confidenceThreshold) {
       if (platform === 'website') {
-        // For website, use the full URL
         try {
           const url = new URL(bestMatch.link);
           state.websiteUrl = url.toString();
@@ -458,16 +429,15 @@ const searchSocialProfile = async (platform: string) => {
             tentative: false
           };
           validateInput('website');
-          console.log(`Selected website: ${url.toString()} with confidence ${bestScore.toFixed(2)}`);
         } catch (error) {
           console.error('Error parsing website URL:', error);
         }
       } else {
         const username = extractUsername(bestMatch.link, platform);
         if (username) {
-          state[`${platform}Username` as keyof typeof state] = username;
-          // Store the result information for preview
-          suggestedProfiles[platform as keyof typeof suggestedProfiles] = {
+          const field = getFieldName(platform);
+          state[field] = username;
+          suggestedProfiles[platform] = {
             title: bestMatch.title || '',
             description: bestMatch.description || '',
             link: bestMatch.link,
@@ -477,7 +447,7 @@ const searchSocialProfile = async (platform: string) => {
         }
       }
     } else if (platform === 'website' && bestMatch && bestScore >= 0.50) {
-      // For websites, still suggest but mark as tentative if confidence is moderate
+      // For websites with moderate confidence
       try {
         const url = new URL(bestMatch.link);
         state.websiteUrl = url.toString();
@@ -490,7 +460,6 @@ const searchSocialProfile = async (platform: string) => {
           tentative: true
         };
         validateInput('website');
-        console.log(`Tentative website suggestion: ${url.toString()} with confidence ${bestScore.toFixed(2)}`);
       } catch (error) {
         console.error('Error parsing tentative website URL:', error);
       }
@@ -498,115 +467,48 @@ const searchSocialProfile = async (platform: string) => {
   } catch (error) {
     console.error(`Error searching for ${platform} profile:`, error);
   } finally {
-    loadingState[platform as keyof typeof loadingState] = false;
+    loadingState[platform] = false;
   }
 };
 
-// Handle input change - mark as manual input
-const handleInput = (platform: string) => {
-  manualInput[platform as keyof typeof manualInput] = true;
-  loadingState[platform as keyof typeof loadingState] = false;
+// Validation and input handling
+const clearSuggestion = (platform: PlatformId) => {
+  const field = getFieldName(platform);
+  state[field] = '';
+  suggestedProfiles[platform] = null;
+  validState[platform] = false;
+  manualInput[platform] = true;
+};
+
+const handleInput = (platform: PlatformId) => {
+  manualInput[platform] = true;
+  loadingState[platform] = false;
   validateInput(platform);
 };
 
-// Validate input
-const validateInput = (platform: string) => {
-  if (platform === 'website') {
-    const value = state.websiteUrl as string;
-    if (!value) {
-      validState.website = false;
-      return;
-    }
-    
-    try {
-      socialMediaSchema.website?.parse(value);
-      validState.website = true;
-    } catch (error) {
-      validState.website = false;
-    }
-    return;
-  }
-  
-  const fieldName = `${platform}Username` as keyof typeof state;
-  const value = state[fieldName] as string;
+const validateInput = (platform: PlatformId) => {
+  const field = getFieldName(platform);
+  const value = state[field];
 
   if (!value) {
-    validState[platform as keyof typeof validState] = false;
+    validState[platform] = false;
     return;
   }
 
   try {
-    socialMediaSchema[platform as keyof typeof socialMediaSchema]?.parse(value);
-    validState[platform as keyof typeof validState] = true;
+    socialMediaSchema[platform]?.parse(value);
+    validState[platform] = true;
   } catch (error) {
-    validState[platform as keyof typeof validState] = false;
+    validState[platform] = false;
   }
 };
 
-// Watch for changes in inputs for validation
-watch(() => state.instagramUsername, (val) => validateInput('instagram'));
-watch(() => state.facebookUsername, (val) => validateInput('facebook'));
-watch(() => state.xUsername, (val) => validateInput('x'));
-watch(() => state.tiktokUsername, (val) => validateInput('tiktok'));
-watch(() => state.youtubeUsername, (val) => validateInput('youtube'));
-watch(() => state.websiteUrl, (val) => validateInput('website'));
-
-// Search for social profiles on component mount
-if (businessName.value) {
-  await Promise.all([
-    searchSocialProfile('instagram'),
-    searchSocialProfile('facebook'),
-    searchSocialProfile('x'),
-    searchSocialProfile('tiktok'),
-    searchSocialProfile('youtube'),
-    searchSocialProfile('website')
-  ]);
-}
-
-// --- Add platform descriptions ---
-const platformDescriptions = {
-  instagram: 'Instagram is a visual platform ideal for sharing photos and short videos, helping businesses build brand presence and engage with customers.',
-  facebook: 'Facebook is a popular social network for connecting with customers, sharing updates, and building a community around your business.',
-  x: 'X (formerly Twitter) is a fast-paced platform for sharing news, updates, and engaging in conversations with your audience.',
-  tiktok: 'TikTok is a short-form video platform that helps businesses reach younger audiences with creative and viral content.',
-  youtube: 'YouTube is the leading platform for sharing video content, tutorials, and building a subscriber base for your business.',
-  website: 'A business website is your digital home base, providing information, contact details, and a professional presence online.'
-};
-
-// --- Add metadata state and fetch logic ---
-const metaLoading: Record<string, boolean> = {
-  instagram: false,
-  facebook: false,
-  x: false,
-  tiktok: false,
-  youtube: false,
-  website: false,
-};
-const metaData: Record<string, null | { title: string; description: string }> = {
-  instagram: null,
-  facebook: null,
-  x: null,
-  tiktok: null,
-  youtube: null,
-  website: null,
-};
-
-// Track debounce timeouts
-const debounceTimers: Record<string, NodeJS.Timeout | null> = {
-  instagram: null,
-  facebook: null,
-  x: null,
-  tiktok: null,
-  youtube: null,
-  website: null,
-};
-
+// Metadata functions
 function isMetaResult(obj: any): obj is { title: string; description: string } {
   return obj && typeof obj.title === 'string' && typeof obj.description === 'string';
 }
 
-const fetchMeta = (platform: string, url: string) => {
-  // Clear existing timeout for this platform
+const fetchMeta = (platform: PlatformId, url: string) => {
   if (debounceTimers[platform]) {
     clearTimeout(debounceTimers[platform]!);
     debounceTimers[platform] = null;
@@ -617,10 +519,8 @@ const fetchMeta = (platform: string, url: string) => {
     return;
   }
   
-  // Set loading state immediately
   metaLoading[platform] = true;
   
-  // Set a timeout to prevent too many requests
   debounceTimers[platform] = setTimeout(async () => {
     try {
       let fetchUrl = url;
@@ -641,53 +541,34 @@ const fetchMeta = (platform: string, url: string) => {
       metaLoading[platform] = false;
       debounceTimers[platform] = null;
     }
-  }, 1000); // Strong debouncing with 1 second delay
+  }, 1000);
 };
 
-// --- Watch user input and suggestions to fetch metadata ---
-watch(() => state.instagramUsername, (val) => {
-  if (!val) metaData.instagram = null;
-  else fetchMeta('instagram', val);
-}, { immediate: true });
+// Set up watchers for all platforms
+platforms.forEach(platform => {
+  const field = getFieldName(platform.id);
+  watch(() => state[field], (val) => {
+    if (!val) metaData[platform.id] = null;
+    else fetchMeta(platform.id, val as string);
+    validateInput(platform.id);
+  }, { immediate: true });
+});
 
-watch(() => state.facebookUsername, (val) => {
-  if (!val) metaData.facebook = null;
-  else fetchMeta('facebook', val);
-}, { immediate: true });
+// Search for all profiles on component mount
+if (businessName.value) {
+  Promise.all(platforms.map(p => searchSocialProfile(p.id)));
+}
 
-watch(() => state.xUsername, (val) => {
-  if (!val) metaData.x = null;
-  else fetchMeta('x', val);
-}, { immediate: true });
-
-watch(() => state.tiktokUsername, (val) => {
-  if (!val) metaData.tiktok = null;
-  else fetchMeta('tiktok', val);
-}, { immediate: true });
-
-watch(() => state.youtubeUsername, (val) => {
-  if (!val) metaData.youtube = null;
-  else fetchMeta('youtube', val);
-}, { immediate: true });
-
-watch(() => state.websiteUrl, (val) => {
-  if (!val) metaData.website = null;
-  else fetchMeta('website', val);
-}, { immediate: true });
-
-// Clean up any pending requests when component unmounts
+// Clean up debounce timers on unmount
 onUnmounted(() => {
-  Object.keys(debounceTimers).forEach(platform => {
-    if (debounceTimers[platform]) {
-      clearTimeout(debounceTimers[platform]!);
-      debounceTimers[platform] = null;
-    }
+  Object.entries(debounceTimers).forEach(([platform, timer]) => {
+    if (timer) clearTimeout(timer);
   });
 });
 
+// Navigation
 const onSubmit = async () => {
-  if (!state.instagramUsername && !state.facebookUsername && !state.xUsername &&
-    !state.tiktokUsername && !state.youtubeUsername && !state.websiteUrl) return;
+  if (!Object.values(state).some(val => val)) return;
 
   router.push({
     path: '/setup/social-media',
@@ -695,15 +576,13 @@ const onSubmit = async () => {
       businessName: businessName.value,
       abn: abn.value,
       placeId: placeId.value,
-      instagramUsername: state.instagramUsername,
-      facebookUsername: state.facebookUsername,
-      xUsername: state.xUsername,
-      tiktokUsername: state.tiktokUsername,
-      youtubeUsername: state.youtubeUsername,
-      websiteUrl: state.websiteUrl,
+      ...Object.entries(state).reduce((acc, [key, value]) => ({
+        ...acc,
+        [key]: value || undefined
+      }), {})
     },
   });
-}
+};
 
 const onSkip = () => {
   router.push({
@@ -714,7 +593,7 @@ const onSkip = () => {
       placeId: placeId.value,
     },
   });
-}
+};
 
 const onBack = () => {
   router.push({
@@ -724,15 +603,14 @@ const onBack = () => {
       abn: abn.value,
     },
   });
-}
+};
 </script>
 
 <template>
   <main class="flex justify-center items-center min-h-screen p-6">
     <UForm :schema="formSchema" :state="state" :validate-on-input-delay="50" @submit="onSubmit">
       <div class="flex flex-col w-full max-w-5xl">
-        <UButton class="self-start mb-2" icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="onBack"
-          aria-label="Go back">
+        <UButton class="self-start mb-2" icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="onBack">
           Back
         </UButton>
 
@@ -747,125 +625,34 @@ const onBack = () => {
           </template>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <!-- Instagram -->
-            <div class="relative">
-              <UFormField label="Instagram">
-                <UInput v-model="state.instagramUsername" placeholder="username or URL" icon="i-simple-icons-instagram"
-                  aria-label="Instagram username" @input="handleInput('instagram')" class="w-full" :ui="{ leadingIcon: 'text-pink-500' }">
-                  <template v-if="state.instagramUsername && !loadingState.instagram" #trailing>
-                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
-                        @click="clearSuggestion('instagram')" title="Remove suggestion" />
-                    </template>
-                  </UInput>
-                <!-- Instagram Profile Preview -->
-                <div v-if="metaLoading.instagram" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.instagram" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.instagram.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.instagram.description }}</div>
-                </div>
-                <div v-else-if="!state.instagramUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.instagram }}</div>
-              </UFormField>
-            </div>
-
-            <!-- Facebook -->
-            <div class="relative">
-              <UFormField label="Facebook">
-                <UInput v-model="state.facebookUsername" placeholder="username or URL" aria-label="Facebook username"
-                  @input="handleInput('facebook')" icon="i-simple-icons-facebook" :ui="{ leadingIcon: 'text-blue-600' }"
-                  class="w-full">
-                  <template v-if="state.facebookUsername && !loadingState.facebook" #trailing>
-                    <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
-                      @click="clearSuggestion('facebook')" />
+            <!-- Generate inputs for each platform -->
+            <div v-for="platform in platforms" :key="platform.id" class="relative">
+              <UFormField :label="platform.label">
+                <UInput v-model="state[getFieldName(platform.id)]" 
+                  :placeholder="platform.isWebsite ? 'https://example.com' : 'username or URL'"
+                  :icon="platform.icon"
+                  :aria-label="`${platform.label} ${platform.isWebsite ? 'URL' : 'username'}`"
+                  @input="handleInput(platform.id)" 
+                  class="w-full"
+                  :ui="{ leadingIcon: platform.iconColor }">
+                  
+                  <template v-if="state[getFieldName(platform.id)] && !loadingState[platform.id]" #trailing>
+                    <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
+                      @click="clearSuggestion(platform.id)" title="Remove suggestion" />
                   </template>
                 </UInput>
-                <!-- Facebook Profile Preview -->
-                <div v-if="metaLoading.facebook" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.facebook" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.facebook.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.facebook.description }}</div>
+                
+                <!-- Preview/description -->
+                <div v-if="metaLoading[platform.id]" class="mt-2">
+                  <USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" />
                 </div>
-                <div v-else-if="!state.facebookUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.facebook }}</div>
-              </UFormField>
-            </div>
-
-            <!-- X (Twitter) -->
-            <div class="relative">
-              <UFormField label="X (Twitter)">
-                <UInput v-model="state.xUsername" placeholder="username or URL" aria-label="X (Twitter) username"
-                    @input="handleInput('x')" icon="i-simple-icons-x" :ui="{ leadingIcon: 'text-neutral-200' }" class="w-full">
-                    <template v-if="state.xUsername && !loadingState.x" #trailing>
-                      <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
-                        @click="clearSuggestion('x')" />
-                    </template>
-                  </UInput>
-                <!-- X Profile Preview -->
-                <div v-if="metaLoading.x" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.x" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.x.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.x.description }}</div>
+                <div v-else-if="metaData[platform.id]" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
+                  <div class="font-semibold text-blue-400 mb-1">{{ metaData[platform.id]?.title }}</div>
+                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData[platform.id]?.description }}</div>
                 </div>
-                <div v-else-if="!state.xUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.x }}</div>
-              </UFormField>
-            </div>
-
-            <!-- TikTok -->
-            <div class="relative">
-              <UFormField label="TikTok">
-                <UInput v-model="state.tiktokUsername" placeholder="username or URL" aria-label="TikTok username"
-                  @input="handleInput('tiktok')" icon="i-simple-icons-tiktok" :ui="{ leadingIcon: 'text-neutral-200' }"
-                  class="w-full">
-                    <template v-if="state.tiktokUsername && !loadingState.tiktok" #trailing>
-                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
-                        @click="clearSuggestion('tiktok')" title="Remove suggestion" />
-                    </template>
-                  </UInput>
-                <!-- TikTok Profile Preview -->
-                <div v-if="metaLoading.tiktok" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.tiktok" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.tiktok.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.tiktok.description }}</div>
+                <div v-else-if="!state[getFieldName(platform.id)]" class="mt-2 text-xs text-gray-400">
+                  {{ platformDescriptions[platform.id] }}
                 </div>
-                <div v-else-if="!state.tiktokUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.tiktok }}</div>
-              </UFormField>
-            </div>
-
-            <!-- YouTube -->
-            <div class="relative">
-              <UFormField label="YouTube">
-                <UInput v-model="state.youtubeUsername" placeholder="channel name or URL" aria-label="YouTube channel"
-                  @input="handleInput('youtube')" icon="i-simple-icons-youtube" :ui="{ leadingIcon: 'text-red-600' }" class="w-full">
-                  <template v-if="state.youtubeUsername && !loadingState.youtube" #trailing>
-                      <UButton color="neutral" variant="link" size="md" icon="i-lucide-x" aria-label="Clear input"
-                        @click="clearSuggestion('youtube')" />
-                    </template>
-                  </UInput>
-                <!-- YouTube Profile Preview -->
-                <div v-if="metaLoading.youtube" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.youtube" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.youtube.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.youtube.description }}</div>
-                </div>
-                <div v-else-if="!state.youtubeUsername" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.youtube }}</div>
-              </UFormField>
-            </div>
-
-            <!-- Website -->
-            <div class="relative">
-              <UFormField label="Website">
-                <UInput v-model="state.websiteUrl" placeholder="https://example.com" aria-label="Business website"
-                    @input="handleInput('website')" icon="i-lucide-globe" :ui="{ leadingIcon: 'text-blue-500' }" class="w-full">
-                    <template v-if="state.websiteUrl && !loadingState.website" #trailing>
-                      <UButton color="neutral" variant="link" icon="i-lucide-x" size="md"
-                        @click="clearSuggestion('website')" title="Remove suggestion" />
-                    </template>
-                  </UInput>
-                <!-- Website Preview -->
-                <div v-if="metaLoading.website" class="mt-2"><USkeleton class="h-6 w-2/3 mb-1" /><USkeleton class="h-4 w-full" /></div>
-                <div v-else-if="metaData.website" class="mt-2 p-3 rounded bg-gray-800/50 border border-blue-900/30 text-sm">
-                  <div class="font-semibold text-blue-400 mb-1">{{ metaData.website.title }}</div>
-                  <div class="text-gray-400 text-xs line-clamp-2">{{ metaData.website.description }}</div>
-                </div>
-                <div v-else-if="!state.websiteUrl" class="mt-2 text-xs text-gray-400">{{ platformDescriptions.website }}</div>
               </UFormField>
             </div>
           </div>
@@ -877,7 +664,7 @@ const onBack = () => {
               </UButton>
 
               <UButton variant="solid" trailing-icon="i-lucide-arrow-right" type="submit"
-                :disabled="!state.instagramUsername && !state.facebookUsername && !state.xUsername && !state.tiktokUsername && !state.youtubeUsername && !state.websiteUrl">
+                :disabled="!Object.values(state).some(val => val)">
                 Continue
               </UButton>
             </div>
