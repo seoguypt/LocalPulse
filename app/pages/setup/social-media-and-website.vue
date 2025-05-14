@@ -11,7 +11,6 @@ const abn = computed(() => route.query.abn as string | undefined);
 const placeId = computed(() => route.query.placeId as string | undefined);
 
 // Define platform types
-type PlatformId = 'instagram' | 'facebook' | 'x' | 'tiktok' | 'youtube' | 'website';
 type Platform = {
   id: PlatformId;
   label: string;
@@ -146,33 +145,6 @@ const {
 // Get field name for a platform
 const getFieldName = (platform: PlatformId): keyof FormSchema => 
   platform === 'website' ? 'websiteUrl' : `${platform}Username` as keyof FormSchema;
-
-// Shared URL handling functions
-const getProfileUrl = (platform: PlatformId, username: string): string => {
-  if (!username) return '';
-
-  // Handle social profiles vs websites
-  if (platform === 'website') {
-    return username.startsWith('http') ? username : `https://${username}`;
-  }
-
-  // Remove @ and prepare the username
-  const cleanUsername = username.replace('@', '');
-  
-  switch (platform) {
-    case 'instagram': return `https://instagram.com/${cleanUsername}`;
-    case 'facebook': return `https://facebook.com/${cleanUsername}`;
-    case 'x': return `https://x.com/${cleanUsername}`;
-    case 'tiktok': return `https://tiktok.com/@${cleanUsername}`;
-    case 'youtube':
-      // Handle various YouTube URL formats
-      if (cleanUsername.startsWith('channel/') || cleanUsername.startsWith('c/') || cleanUsername.startsWith('user/')) {
-        return `https://youtube.com/${cleanUsername}`;
-      }
-      return `https://youtube.com/@${cleanUsername}`;
-    default: return '';
-  }
-};
 
 // Extract username from URL if needed
 const extractUsername = (url: string, platform: PlatformId): string => {
@@ -515,7 +487,7 @@ const fetchMeta = (platform: PlatformId, url: string) => {
     try {
       let fetchUrl = url;
       if (!fetchUrl.startsWith('http')) {
-        fetchUrl = getProfileUrl(platform, url);
+        fetchUrl = getPlatformProfileUrl(platform, url);
       }
       
       if (/^https?:\/\//.test(fetchUrl)) {
