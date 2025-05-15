@@ -12,5 +12,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return { type: 'check' as const, value: !!business.placeId };
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Not implemented. Requires Google My Business API',
+  });
 });

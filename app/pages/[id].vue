@@ -4,20 +4,34 @@ import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
 const UBadge = resolveComponent('UBadge')
+const UProgress = resolveComponent('UProgress')
+const USkeleton = resolveComponent('USkeleton')
 
 const route = useRoute();
 const id = route.params.id as string;
 
-const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
+const { data: business } = await useFetch<Business>(`/api/businesses/${id}`); 
+
+const resultSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('check'),
+    label: z.string().nullable().default(null),
+    value: z.boolean().nullable().default(null),
+  }),
+  z.object({
+    type: z.literal('progress'),
+    label: z.string().nullable().default(null),
+    value: z.number().nullable().default(null),
+    max: z.number().nullable().default(null),
+    color: z.string().nullable().default(null),
+  }),
+])
 
 const insightSchema = z.object({
   id: z.string(),
   name: z.string(),
   status: z.enum(['idle', 'pending', 'success', 'error']),
-  data: z.object({
-    type: z.enum(['check']),
-    status: z.boolean(),
-  }).nullable().default(null),
+  result: resultSchema.nullable().default(null),
 })
 
 type Insight = z.infer<typeof insightSchema>
@@ -27,12 +41,22 @@ const insights = ref<Insight[]>([])
 const addInsight = async (name: string, insightId: string) => {
   const insight: Ref<Insight> = ref(insightSchema.parse({ id: insightId, name, status: 'pending' }))
   insights.value.push(unref(insight))
-  const data = await $fetch(`/api/businesses/${id}/insights/${insightId}`)
-  insight.value.status = 'success'
-  insight.value.data = data as Insight['data']
+  try {
+    const result = await $fetch(`/api/businesses/${id}/insights/${insightId}`)
+    insight.value.result = result
+    insight.value.status = 'success'
+  } catch (error) {
+    insight.value.status = 'error'
+  }
 }
 
 addInsight('Google Map Listing', 'google-listing')
+addInsight('Google Map Listing Opening Times', 'google-listing-opening-times')
+addInsight('Google Map Listing Phone Number', 'google-listing-phone-number')
+addInsight('Google Map Listing Website', 'google-listing-website')
+addInsight('Google Map Listing Website Matches', 'google-listing-website-matches')
+addInsight('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
+addInsight('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
 
 const columns: TableColumn<Insight>[] = [
   {
@@ -43,18 +67,48 @@ const columns: TableColumn<Insight>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
+      const status = row.getValue('status') as Insight['status']
       const color = {
         success: 'success' as const,
         error: 'error' as const,
         pending: 'warning' as const,
         idle: 'neutral' as const,
-      }[row.getValue('status') as string]
+      }[status]
 
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color, icon: row.getValue('status') === 'pending' ? 'i-lucide-loader' : undefined, ui: { leadingIcon: 'animate-spin' } }, () =>
-        row.getValue('status')
+      return h(UBadge, { class: 'capitalize', variant: 'subtle', color, icon: status === 'pending' ? 'i-lucide-loader' : undefined, ui: { leadingIcon: 'animate-spin' } }, () =>
+        status
       )
     }
   },
+  {
+    accessorKey: 'result',
+    header: 'Result',
+    cell: ({ row }) => {
+      const result = row.getValue('result') as Insight['result']
+      const status = row.getValue('status') as Insight['status']
+      if (!result && status === 'pending') return h(USkeleton, { class: 'w-full h-4' });
+      if (!result) return null;
+
+      const type = result.type
+      const value = result.value
+
+      let component = null
+      if (type === 'progress') {
+        component = h(UProgress, { color: result.color, modelValue: result.value, max: result.max })
+      } else if (type === 'check') {
+        const color = value === true ? 'success' : value === false ? 'error' : 'neutral'
+        component = h(UBadge, { variant: 'subtle', color, icon: value === true ? 'i-lucide-check' : value === false ? 'i-lucide-x' : 'i-lucide-clock' })
+      }
+
+      if (result.label) {
+        return h('div', { class: 'flex flex-col gap-2' }, [result.label, component])
+      } else if (component) {
+        return component
+      }
+
+      return value
+    }
+  }
 ]
 </script>
 

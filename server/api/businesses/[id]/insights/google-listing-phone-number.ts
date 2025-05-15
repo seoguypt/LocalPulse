@@ -12,5 +12,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return { type: 'check' as const, value: !!business.placeId };
+  const response = await $fetch(`/api/google/places/getPlace?id=${business.placeId}`);
+  return { type: 'check' as const, value: !!response[0].nationalPhoneNumber };
 });
