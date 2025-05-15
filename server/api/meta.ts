@@ -1,7 +1,7 @@
 import { defineEventHandler, getValidatedQuery } from "h3";
 import { z } from "zod";
 import { load } from "cheerio";
-import { stealthFetch } from "../utils/stealthFetch";
+import { stealthGetHtml } from "../utils/stealthyRequests";
 
 // Schema for validating the URL query parameter
 const MetaQuerySchema = z.object({
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     const url = query.url;
     
     // Fetch the HTML content stealthily
-    const html = await stealthFetch(url);
+    const html = await stealthGetHtml(url);
     
     // Extract and return metadata
     const metadata = extractMeta(html);

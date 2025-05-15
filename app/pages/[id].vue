@@ -15,12 +15,12 @@ const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 const resultSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('check'),
-    label: z.string().nullable().default(null),
+    label: z.string().optional(),
     value: z.boolean().nullable().default(null),
   }),
   z.object({
     type: z.literal('progress'),
-    label: z.string().nullable().default(null),
+    label: z.string().optional(),
     value: z.number().nullable().default(null),
     max: z.number().nullable().default(null),
     color: z.string().nullable().default(null),
@@ -57,6 +57,8 @@ addInsight('Google Map Listing Website', 'google-listing-website')
 addInsight('Google Map Listing Website Matches', 'google-listing-website-matches')
 addInsight('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
 addInsight('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
+addInsight('Website', 'website')
+addInsight('Website status code is in 200-299 range', 'website-200-299')
 
 const columns: TableColumn<Insight>[] = [
   {
