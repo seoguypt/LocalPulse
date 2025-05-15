@@ -115,7 +115,7 @@ const columns: TableColumn<Insight>[] = [
 </script>
 
 <template>
-  <main v-if="business" class="max-w-4xl mx-auto py-8 px-4">
+  <main v-if="business" class="container mx-auto py-8 px-4">
     <UButton class="self-start mb-2" icon="i-lucide-arrow-left" color="neutral" variant="ghost" to="/"
       aria-label="Go back">
       Back
