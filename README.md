@@ -51,25 +51,11 @@ Instantly find what's costing you customers—then fix it in minutes.
 ## Matching Pipeline
 
 1. **Google Places First**
-   - Fetch business record → use its website URL as primary source
-
 2. **Social via Google Search**
-   - site:facebook.com "[Business Name]" & site:instagram.com "[Business Name]"
-   - Grab top 3 URLs per channel
-
 3. **Heuristic Confidence**
-   - Compute name/URL similarity
-   - ≥0.85 → High (auto-select, still confirm)
-   - 0.6–0.85 → Medium (user pick)
-   - <0.6 → Hidden (manual entry only)
-
 4. **UI Safeguards**
-   - Show top 3 matches with ✔/?/⚠ badges
-   - "Can't find it? Enter URL" fallback
-
 5. **Learning Loop**
    - Log user overrides → refine thresholds & patterns
-
 6. **Defer for Later**
    - Skip Open Graph & deep scraping until Tier 2
 
