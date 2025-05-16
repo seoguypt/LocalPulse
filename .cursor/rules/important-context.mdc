@@ -3,6 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
+- Readme.md contains saas idea, UX flow guidelines, in scope, out of scope
 - Use `pnpm` to install node packages.
 - We are using Nuxt in v4 mode: https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4
 - Use NuxtUI and TailwindCSS for UI: https://ui.nuxt.com/getting-started
@@ -13,6 +14,8 @@ alwaysApply: true
 - We intend to deploy this on Fly.io once development progresses far enough.
 - Our database will be sqlite with drizzle and drizzle-kit for simplicity and typescript.
 - Rely on convention over configuration to keep code shorter and have less complexity
+- Prefer typescript inference
+
 
 
 
