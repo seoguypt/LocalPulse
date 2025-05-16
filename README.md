@@ -113,3 +113,36 @@ Instantly find what's costing you customers—then fix it in minutes.
 - Recommendations: action step + [Learn More]
 - Footer CTAs: [Email this report], [Download PDF], [Need help fixing?]→ Opens a lead-capture form (name, email, brief note) for follow-up or scheduling assistance
 
+## MVP Report Structure
+
+### 1. Cover  
+- **Title**: Digital Presence Report for _[Business Name]_  
+- **Date** • Logo & Tagline
+
+### 2. Snapshot  
+- **Overall**: e.g. “Listed on 4/6 channels”  
+- **Top 3 Issues** (one-line each)
+
+### 3. Scorecard  
+| Channel                 | Status |
+|-------------------------|:------:|
+| Google Business Profile | ✔      |
+| Website                 | ✔      |
+| Facebook Page           | ⚠      |
+| Instagram               | ✔      |
+| Apple Business Connect  | ✗      |
+| Bing Places             | ✗      |
+
+### 4. Top 3 Fixes  
+1. Claim Apple & Bing listings  
+2. Add mobile viewport tag + compress images  
+3. Refresh Facebook “About” section
+
+### 5. Quick To-Dos  
+1. Claim missing listings  
+2. Update website for mobile speed  
+3. Solicit 8–10 new Google reviews
+
+### 6. Resources  
+- Full how-to guide (link)  
+- Free consult (link)
