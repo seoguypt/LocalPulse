@@ -5,7 +5,6 @@ import { z } from 'zod';
 const router = useRouter();
 const route = useRoute();
 const name = computed(() => route.query.name as string);
-const abn = computed(() => route.query.abn as string | undefined);
 const { googleApiKey } = useRuntimeConfig().public;
 
 const formSchema = z.object({
@@ -121,7 +120,6 @@ const onSubmit = async () => {
     path: '/setup/social-media-and-website',
     query: {
       name: name.value,
-      abn: abn.value,
       placeId: state.selectedPlaceId,
     },
   });
@@ -132,14 +130,13 @@ const onSkip = () => {
     path: '/setup/social-media-and-website',
     query: {
       name: name.value,
-      abn: abn.value,
     },
   });
 }
 
 const onBack = () => {
   router.push({
-    path: '/setup/abn',
+    path: '/',
     query: {
       name: name.value,
     },

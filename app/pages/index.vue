@@ -12,7 +12,7 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
       </div>
     </div>
     <div class="flex justify-center items-center flex-col gap-4">
-      <form class="flex flex-col gap-4" action="/setup/abn">
+      <form class="flex flex-col gap-4" action="/setup/google-places">
         <div>Add a new business</div>
         <UButtonGroup>
           <UInput name="name" size="xl" />

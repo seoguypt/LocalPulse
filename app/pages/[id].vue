@@ -129,11 +129,6 @@ const columns: TableColumn<Insight>[] = [
       </template>
 
       <div class="space-y-4">
-        <div v-if="business.abn">
-          <h3 class="text-sm font-medium text-gray-500">ABN</h3>
-          <p>{{ business.abn }}</p>
-        </div>
-
         <div v-if="business.placeId">
           <h3 class="text-sm font-medium text-gray-500">Place ID</h3>
           <p>{{ business.placeId }}</p>

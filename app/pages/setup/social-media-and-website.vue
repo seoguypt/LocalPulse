@@ -7,7 +7,6 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 const router = useRouter();
 const route = useRoute();
 const name = computed(() => route.query.name as string);
-const abn = computed(() => route.query.abn as string | undefined);
 const placeId = computed(() => route.query.placeId as string | undefined);
 
 // Define platform types
@@ -232,10 +231,6 @@ const calculateConfidence = (result: any, platform: PlatformId): number => {
         score += 0.25;
       } else {
         score -= 0.05 * Math.min(5, pathSegments.length);
-      }
-      
-      if (abn.value && (titleL.includes(abn.value) || descL.includes(abn.value))) {
-        score += 0.20;
       }
       
       const contactPatterns = ['contact us', 'phone', 'email', 'address', '@', 'call:', 'tel:'];
@@ -534,7 +529,6 @@ const onSubmit = async (event: FormSubmitEvent<FormSchema>) => {
     method: 'POST',
     body: {
       name: name.value,
-      abn: abn.value,
       placeId: placeId.value,
       websiteUrl: event.data.websiteUrl,
       instagramUsername: event.data.instagramUsername,
@@ -555,7 +549,6 @@ const onSkip = () => {
     path: '/setup/social-media',
     query: {
       name: name.value,
-      abn: abn.value,
       placeId: placeId.value,
     },
   });
@@ -566,7 +559,6 @@ const onBack = () => {
     path: '/setup/google-places',
     query: {
       name: name.value,
-      abn: abn.value,
     },
   });
 };

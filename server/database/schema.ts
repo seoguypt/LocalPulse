@@ -4,7 +4,6 @@ import { sql } from 'drizzle-orm';
 export const businesses = sqliteTable('businesses', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
-  abn: text('abn'),
   placeId: text('place_id'),
   websiteUrl: text('website_url'),
   facebookUsername: text('facebook_username'),
