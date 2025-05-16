@@ -8,7 +8,7 @@ export const businesses = sqliteTable('businesses', {
   websiteUrl: text('website_url'),
   facebookUsername: text('facebook_username'),
   instagramUsername: text('instagram_username'),
-  twitterUsername: text('twitter_username'),
+  xUsername: text('x_username'),
   tiktokUsername: text('tiktok_username'),
   youtubeUsername: text('youtube_username'),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),

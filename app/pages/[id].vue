@@ -10,7 +10,7 @@ const USkeleton = resolveComponent('USkeleton')
 const route = useRoute();
 const id = route.params.id as string;
 
-const { data: business } = await useFetch<Business>(`/api/businesses/${id}`); 
+const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
 const resultSchema = z.discriminatedUnion('type', [
   z.object({
@@ -116,90 +116,40 @@ const columns: TableColumn<Insight>[] = [
 
 <template>
   <main v-if="business" class="container mx-auto py-8 px-4">
-    <UButton class="self-start mb-2" icon="i-lucide-arrow-left" color="neutral" variant="ghost" to="/"
+    <UButton class="self-start" icon="i-lucide-arrow-left" color="neutral" variant="ghost" to="/"
       aria-label="Go back">
       Back
     </UButton>
 
-    <h1 class="text-3xl font-bold mb-6">{{ business.name }}</h1>
+    <h1 class="text-4xl font-bold mb-6 text-center">{{ business.name }}</h1>
 
-    <UCard class="mb-6">
-      <template #header>
-        <div class="font-medium">Business Details</div>
-      </template>
+    <div class="flex flex-wrap gap-4">
+      <!-- TODO: Strip out https://, www. and trailing slashes to make it look cleaner -->
+      <NuxtLink v-if="business.websiteUrl" :to="business.websiteUrl" target="_blank">
+        <UBadge icon="i-lucide-globe" size="lg" color="neutral" variant="soft">{{ business.websiteUrl }}</UBadge>
+      </NuxtLink>
 
-      <div class="space-y-4">
-        <div v-if="business.placeId">
-          <h3 class="text-sm font-medium text-gray-500">Place ID</h3>
-          <p>{{ business.placeId }}</p>
-        </div>
-      </div>
-    </UCard>
+      <NuxtLink v-if="business.facebookUsername" :to="getPlatformProfileUrl('facebook', business.facebookUsername)" target="_blank">
+        <UBadge icon="logos-facebook" size="lg" color="neutral" variant="soft">{{ business.facebookUsername }}</UBadge>
+      </NuxtLink>
 
-    <UCard class="mb-6">
-      <template #header>
-        <div class="font-medium">Online Presence</div>
-      </template>
+      <NuxtLink v-if="business.instagramUsername" :to="getPlatformProfileUrl('instagram', business.instagramUsername)" target="_blank">
+        <UBadge icon="logos-instagram-icon" size="lg" color="neutral" variant="soft">{{ business.instagramUsername }}</UBadge>
+      </NuxtLink>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div v-if="business.websiteUrl" class="flex items-center gap-2">
-          <UIcon name="i-heroicons-globe-alt" class="text-primary" />
-          <UButton variant="link" as="a" :to="business.websiteUrl" target="_blank">Website</UButton>
-        </div>
+      <NuxtLink v-if="business.xUsername" :to="getPlatformProfileUrl('x', business.xUsername)" target="_blank">
+        <UBadge icon="logos-x" size="lg" color="neutral" variant="soft">{{ business.xUsername }}</UBadge>
+      </NuxtLink>
 
-        <div v-if="business.facebookUsername" class="flex items-center gap-2">
-          <UIcon name="i-mdi-facebook" class="text-blue-600" />
-          <UButton variant="link" as="a" :to="getPlatformProfileUrl('facebook', business.facebookUsername)"
-            target="_blank">
-            Facebook</UButton>
-        </div>
+      <NuxtLink v-if="business.youtubeUsername" :to="getPlatformProfileUrl('youtube', business.youtubeUsername)" target="_blank">
+        <UBadge icon="logos-youtube-icon" size="lg" color="neutral" variant="soft">{{ business.youtubeUsername }}</UBadge>
+      </NuxtLink>
 
-        <div v-if="business.instagramUsername" class="flex items-center gap-2">
-          <UIcon name="i-mdi-instagram" class="text-pink-600" />
-          <UButton variant="link" as="a" :to="getPlatformProfileUrl('instagram', business.instagramUsername)"
-            target="_blank">Instagram</UButton>
-        </div>
-
-        <div v-if="business.twitterUsername" class="flex items-center gap-2">
-          <UIcon name="i-mdi-twitter" class="text-blue-400" />
-          <UButton variant="link" as="a" :to="getPlatformProfileUrl('x', business.twitterUsername)" target="_blank">
-            Twitter
-          </UButton>
-        </div>
-
-        <div v-if="business.youtubeUsername" class="flex items-center gap-2">
-          <UIcon name="i-mdi-youtube" class="text-red-600" />
-          <UButton variant="link" as="a" :to="getPlatformProfileUrl('youtube', business.youtubeUsername)"
-            target="_blank">
-            YouTube</UButton>
-        </div>
-
-        <div v-if="business.tiktokUsername" class="flex items-center gap-2">
-          <UIcon name="i-mdi-tiktok" class="text-black" />
-          <UButton variant="link" as="a" :to="getPlatformProfileUrl('tiktok', business.tiktokUsername)" target="_blank">
-            TikTok</UButton>
-        </div>
-      </div>
-    </UCard>
+      <NuxtLink v-if="business.tiktokUsername" :to="getPlatformProfileUrl('tiktok', business.tiktokUsername)" target="_blank">
+        <UBadge icon="logos-tiktok-icon" size="lg" color="neutral" variant="soft">{{ business.tiktokUsername }}</UBadge>
+      </NuxtLink>
+    </div>
 
     <UTable :data="insights" :columns="columns" class="mb-6 flex-1" />
-
-    <UCard>
-      <template #header>
-        <div class="font-medium">Timestamps</div>
-      </template>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Created</h3>
-          <NuxtTime :datetime="business.createdAt" />
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium text-gray-500">Last Updated</h3>
-          <NuxtTime :datetime="business.updatedAt" />
-        </div>
-      </div>
-    </UCard>
   </main>
 </template>
