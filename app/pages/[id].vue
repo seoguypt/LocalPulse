@@ -333,6 +333,15 @@ const getProgressColor = (percent: number) => {
   if (percent >= 40) return 'bg-warning-500 dark:bg-warning-400'
   return 'bg-error-500 dark:bg-error-400'
 }
+
+const mode = ref('food-beverage')
+const modes = [
+  { label: 'Food & Beverage', value: 'food-beverage' },
+  { label: 'Trades (coming soon)', value: 'tradie', disabled: true },
+  { label: 'Health (coming soon)', value: 'health-wellness', disabled: true },
+  { label: 'Retail (coming soon)', value: 'retail', disabled: true },
+  { label: 'Pet Services (coming soon)', value: 'pet', disabled: true },
+]
 </script>
 
 <template>
@@ -350,7 +359,8 @@ const getProgressColor = (percent: number) => {
       <!-- Header -->
       <div class="bg-slate-900 dark:bg-slate-800 py-7 px-10 border-b border-slate-200 dark:border-slate-700 text-white relative overflow-hidden">
         <div class="flex items-center justify-between relative z-10">
-          <h1 class="text-2xl sm:text-3xl font-bold">Digital Presence Report</h1>
+          <h1 class="text-2xl sm:text-3xl font-bold">VisiMate Score</h1>
+          <USelect v-model="mode" :items="modes" class="w-48" />
           <UBadge color="neutral" variant="soft" size="sm" class="text-white">
             {{ todayDate }}
           </UBadge>
@@ -425,7 +435,7 @@ const getProgressColor = (percent: number) => {
               </div>
               
               <div class="flex justify-between text-xs text-slate-300">
-                <span>Digital visibility score</span>
+                <span>Online visibility score</span>
                 <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} checks passing</span>
               </div>
             </div>
