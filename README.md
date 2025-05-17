@@ -101,15 +101,15 @@ Instantly find what's costing you customers—then fix it in minutes.
 
 ## MVP Report Structure
 
-### 1. Cover  
-- **Title**: Digital Presence Report for _[Business Name]_  
-- **Date** • Logo & Tagline
+### 1. Header  
+- **Title**: _[Business Name]_  
+- Show connected channels + the ability to edit or add more channels
 
-### 2. Snapshot  
-- **Overall**: e.g. “Listed on 4/6 channels”  
+### 2. Snapshot (Example)
+- **Overall Summary**: e.g. “Listed on 4/6 channels”  
 - **Top 3 Issues** (one-line each)
 
-### 3. Scorecard  
+### 3. Scorecard (Example)
 | Channel                 | Status |
 |-------------------------|:------:|
 | Google Business Profile | ✔      |
@@ -119,12 +119,12 @@ Instantly find what's costing you customers—then fix it in minutes.
 | Apple Business Connect  | ✗      |
 | Bing Places             | ✗      |
 
-### 4. Top 3 Fixes  
+### 4. Top 3 Fixes (Example)
 1. Claim Apple & Bing listings  
 2. Add mobile viewport tag + compress images  
 3. Refresh Facebook “About” section
 
-### 5. Quick To-Dos  
+### 5. Quick To-Dos (Example)
 1. Claim missing listings  
 2. Update website for mobile speed  
 3. Solicit 8–10 new Google reviews
