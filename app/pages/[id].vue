@@ -27,47 +27,47 @@ const resultSchema = z.discriminatedUnion('type', [
   }),
 ])
 
-const insightSchema = z.object({
+const checkSchema = z.object({
   id: z.string(),
   name: z.string(),
   status: z.enum(['idle', 'pending', 'success', 'error']),
   result: resultSchema.nullable().default(null),
 })
 
-type Insight = z.infer<typeof insightSchema>
+type Check = z.infer<typeof checkSchema>
 
-const insights = ref<Insight[]>([])
+const checks = ref<Check[]>([])
 
-const addInsight = async (name: string, insightId: string) => {
-  const insight: Ref<Insight> = ref(insightSchema.parse({ id: insightId, name, status: 'pending' }))
-  insights.value.push(unref(insight))
+const addCheck = async (name: string, checkId: string) => {
+  const check: Ref<Check> = ref(checkSchema.parse({ id: checkId, name, status: 'pending' }))
+  checks.value.push(unref(check))
   try {
-    const result = await $fetch(`/api/businesses/${id}/insights/${insightId}`)
-    insight.value.result = resultSchema.parse(result)
-    insight.value.status = 'success'
+    const result = await $fetch(`/api/businesses/${id}/checks/${checkId}`)
+    check.value.result = resultSchema.parse(result)
+    check.value.status = 'success'
   } catch (error) {
-    insight.value.status = 'error'
+    check.value.status = 'error'
   }
 }
 
-// Google Business Profile insights
-addInsight('Google Map Listing', 'google-listing')
-addInsight('Google Map Listing Opening Times', 'google-listing-opening-times')
-addInsight('Google Map Listing Phone Number', 'google-listing-phone-number')
-addInsight('Google Map Listing Website', 'google-listing-website')
-addInsight('Google Map Listing Website Matches', 'google-listing-website-matches')
-addInsight('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
-addInsight('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
+// Google Business Profile checks
+addCheck('Google Map Listing', 'google-listing')
+addCheck('Google Map Listing Opening Times', 'google-listing-opening-times')
+addCheck('Google Map Listing Phone Number', 'google-listing-phone-number')
+addCheck('Google Map Listing Website', 'google-listing-website')
+addCheck('Google Map Listing Website Matches', 'google-listing-website-matches')
+addCheck('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
+addCheck('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
 
-// Website insights
-addInsight('Website', 'website')
-addInsight('Website status code is in 200-299 range', 'website-200-299')
+// Website checks
+addCheck('Website', 'website')
+addCheck('Website status code is in 200-299 range', 'website-200-299')
 
-// Organize insights by channel
-const channelInsights = computed(() => {
+// Organize checks by channel
+const channelChecks = computed(() => {
   const channels = {
-    'Google Business Profile': insights.value.filter(i => i.id.startsWith('google-')),
-    'Website': insights.value.filter(i => i.id.startsWith('website')),
+    'Google Business Profile': checks.value.filter(i => i.id.startsWith('google-')),
+    'Website': checks.value.filter(i => i.id.startsWith('website')),
     'Facebook Page': [], // To be implemented
     'Instagram': [], // To be implemented
     'Apple Business Connect': [], // To be implemented
@@ -86,7 +86,7 @@ type ChannelStatus = {
 
 // Calculate channel status for scorecard
 const channelStatus = computed<ChannelStatus[]>(() => {
-  return Object.entries(channelInsights.value).map(([name, items]) => {
+  return Object.entries(channelChecks.value).map(([name, items]) => {
     let status: 'active' | 'warning' | 'missing' = 'missing'
     let score = 0
     const total = items.length
@@ -144,14 +144,14 @@ const topIssues = computed(() => {
   }
   
   // Add website specific issues
-  const websiteIssues = insights.value
+  const websiteIssues = checks.value
     .filter(i => i.id.startsWith('website') && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)
     .map(i => `Website issue: ${i.name}`)
   
   issues.push(...websiteIssues)
   
   // Add Google specific issues
-  const googleIssues = insights.value
+  const googleIssues = checks.value
     .filter(i => i.id.startsWith('google-') && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)
     .map(i => `Google issue: ${i.name.replace('Google Map Listing ', '')}`)
   
@@ -175,7 +175,7 @@ const topFixes = computed(() => {
   }
   
   // Website specific fixes
-  if (insights.value.some(i => i.id === 'website-200-299' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+  if (checks.value.some(i => i.id === 'website-200-299' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
     fixes.push({
       id: 'fix-website',
       text: 'Fix website accessibility issues',
@@ -184,7 +184,7 @@ const topFixes = computed(() => {
   }
   
   // Google specific fixes
-  if (insights.value.some(i => i.id === 'google-listing-opening-times' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+  if (checks.value.some(i => i.id === 'google-listing-opening-times' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
     fixes.push({
       id: 'add-hours',
       text: 'Add business hours to Google listing',
@@ -192,7 +192,7 @@ const topFixes = computed(() => {
     })
   }
   
-  if (insights.value.some(i => i.id === 'google-listing-website' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+  if (checks.value.some(i => i.id === 'google-listing-website' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
     fixes.push({
       id: 'add-website',
       text: 'Add website link to Google listing',
@@ -200,7 +200,7 @@ const topFixes = computed(() => {
     })
   }
   
-  if (insights.value.some(i => i.id === 'google-listing-replies-to-reviews' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+  if (checks.value.some(i => i.id === 'google-listing-replies-to-reviews' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
     fixes.push({
       id: 'respond-reviews',
       text: 'Respond to Google reviews',
@@ -245,7 +245,7 @@ const quickTodos = computed(() => {
   return todos.slice(0, 4) // Return top 4
 })
 
-const columns: TableColumn<Insight>[] = [
+const columns: TableColumn<Check>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
@@ -254,7 +254,7 @@ const columns: TableColumn<Insight>[] = [
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
-      const status = row.getValue('status') as Insight['status']
+      const status = row.getValue('status') as Check['status']
       const color = {
         success: 'success' as const,
         error: 'error' as const,
@@ -271,8 +271,8 @@ const columns: TableColumn<Insight>[] = [
     accessorKey: 'result',
     header: 'Result',
     cell: ({ row }) => {
-      const result = row.getValue('result') as Insight['result']
-      const status = row.getValue('status') as Insight['status']
+      const result = row.getValue('result') as Check['result']
+      const status = row.getValue('status') as Check['status']
       if (!result && status === 'pending') return h(USkeleton, { class: 'w-full h-4' });
       if (!result) return null;
 
@@ -305,8 +305,8 @@ const todayDate = new Date().toLocaleDateString('en-US', {
   day: '2-digit'
 });
 
-// Toggle for the detailed insights
-const showInsights = ref(false);
+// Toggle for the detailed checks
+const showChecks = ref(false);
 
 // Get status colors for semantic UI
 const getStatusColor = (status: string) => {
@@ -533,18 +533,18 @@ const modes = [
           </div>
         </section>
 
-        <!-- 6. DETAILED INSIGHTS SECTION -->
+        <!-- 6. DETAILED CHECKS SECTION -->
         <section>
           <div class="flex justify-between items-center mb-4">
-            <UButton color="neutral" variant="ghost" size="xs" :icon="showInsights ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
-              @click="showInsights = !showInsights" class="text-slate-600 dark:text-slate-400 ml-auto">
-              {{ showInsights ? 'Hide technical details' : 'Show technical details' }}
+            <UButton color="neutral" variant="ghost" size="xs" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
+              @click="showChecks = !showChecks" class="text-slate-600 dark:text-slate-400 ml-auto">
+              {{ showChecks ? 'Hide technical details' : 'Show technical details' }}
             </UButton>
           </div>
           
           <Transition name="fade">
-            <div v-if="showInsights" class="border border-slate-200 dark:border-slate-700 rounded overflow-hidden transition-all">
-              <UTable :data="insights" :columns="columns" class="mb-6 flex-1" />
+            <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded overflow-hidden transition-all">
+              <UTable :data="checks" :columns="columns" class="mb-6 flex-1" />
             </div>
           </Transition>
         </section>
