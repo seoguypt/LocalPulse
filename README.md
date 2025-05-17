@@ -1,4 +1,4 @@
-# Visibility Potion: Get Your Digital Presence Report
+# VisiMate.au: Your AI-Powered Guide to Restaurants Being Found Online
 
 ## Problem Statement
 You're invisible online—and losing customers.
@@ -18,8 +18,8 @@ Instantly find what's costing you customers—then fix it in minutes.
 - Website
 - Facebook Page
 - Instagram
-- Apple Business Connect
-- Bing Places
+- Yelp
+- TripAdvisor
 
 ### User Flow
 1. Enter business name
@@ -62,28 +62,28 @@ Instantly find what's costing you customers—then fix it in minutes.
 ## High-Impact, Low-Barrier Checks
 
 ### Tier 1 (Must-Have for MVP)
-- **Google**: presence, claimed status, star rating, review count, business hours, website & phone listed
-- **Website**: meta title, meta description, HTTPS secure, mobile viewport tag, clear CTA, mobile PageSpeed ≥ 50
-- **Facebook**: page existence, profile & cover images, website link in About
-- **Instagram**: account existence, bio link to website, recent post date
-- **Apple Business Connect**: listing existence, claim status, opening hours
-- **Bing Places**: listing existence, claim status, opening hours
-- **NAP Consistency**: compare name, address, phone across Google, website, Facebook
+- **Google Business Profile**: presence, claimed status, star rating, review count, menu listing, business hours, reservation link, photos
+- **Website**: meta title, meta description, HTTPS secure, mobile viewport tag, clear CTA, mobile PageSpeed ≥ 50, menu page and online ordering link
+- **Facebook Page**: page existence, profile & cover images, website link in About, menu tab or linked menu
+- **Instagram**: account existence, bio link to menu/website, recent post date, food photos highlights
+- **Yelp**: listing existence, star rating, review count, photos, website link
+- **TripAdvisor**: listing existence, star rating, review count, photos, website link
+- **NAP Consistency**: compare name, address, phone across Google, Yelp, TripAdvisor, website
 
 ### Tier 2 (Possible Later / Quick Wins)
-- **Search**: own site ranks top 3 for brand name
-- **Reviews**: avg rating ≥ 4.0, total reviews ≥ 10 across GBP & FB
-- **Directories**: other directories (Yelp, Yellow Pages, etc.)
-- **Contact & Trust**: visible email (mailto:), privacy policy page
-- **Quick Wins**: post a Google Post, implement FAQ schema for rich snippets
+- **Apple Business Connect**: listing existence, claim status, opening hours
+- **Bing Places**: listing existence, claim status, opening hours
+- **Search**: own site ranks top 3 for restaurant name
+- **Contact & Trust**: visible email (mailto:), reservation link, privacy policy page
+- **Quick Wins**: implement FAQ schema for restaurant menu, Open Graph menu markup
 
 *Tier 2 items are marked "possible" and can be phased in after MVP validation.*
 
 ## Core Flow Sketch
 
 ### 1. Entry Screen
-- Header: "Visibility Potion"
-- Input: "Enter your business name"
+- Header: "VisiMate.au"
+- Input: "Enter your restaurant name"
 - Button: [Search]
 
 ### 2. Confirmation Screen
@@ -106,28 +106,28 @@ Instantly find what's costing you customers—then fix it in minutes.
 - Show connected channels + the ability to edit or add more channels
 
 ### 2. Snapshot (Example)
-- **Overall Summary**: e.g. “Listed on 4/6 channels”  
+- **Overall Summary**: e.g. "Listed on 4/6 channels"  
 - **Top 3 Issues** (one-line each)
 
 ### 3. Scorecard (Example)
-| Channel                 | Status |
-|-------------------------|:------:|
-| Google Business Profile | ✔      |
-| Website                 | ✔      |
-| Facebook Page           | ⚠      |
-| Instagram               | ✔      |
-| Apple Business Connect  | ✗      |
-| Bing Places             | ✗      |
+| Channel                      | Status |
+|------------------------------|:------:|
+| Google Business Profile      | ✔      |
+| Website                      | ✔      |
+| Facebook Page                | ⚠      |
+| Instagram                    | ✔      |
+| Yelp                         | ✗      |
+| TripAdvisor                  | ✗      |
 
 ### 4. Top 3 Fixes (Example)
-1. Claim Apple & Bing listings  
-2. Add mobile viewport tag + compress images  
-3. Refresh Facebook “About” section
+1. Claim Yelp & TripAdvisor listings  
+2. Add menu to Google Restaurant Profile + compress images  
+3. Update restaurant website for mobile speed
 
 ### 5. Quick To-Dos (Example)
-1. Claim missing listings  
-2. Update website for mobile speed  
-3. Solicit 8–10 new Google reviews
+1. Claim missing restaurant listings (Yelp & TripAdvisor)  
+2. Add and optimize menu on website  
+3. Encourage customers to leave reviews on Google & Yelp
 
 ### 6. Resources  
 - Full how-to guide (link)  
