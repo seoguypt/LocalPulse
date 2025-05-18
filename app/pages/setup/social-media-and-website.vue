@@ -68,7 +68,7 @@ type MetaData = {
 const createSocialSchema = () => {
   const socialMediaSchema = {
     instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').nullable()),
-    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/[\w.]+\/?$/, 'Please enter a valid Facebook username or URL').nullable()),
+    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/(?!p$)(?:p\/)?[\w\-.]+(?:\/[\w\-.]+)*\/?$/, 'Please enter a valid Facebook username or URL').nullable()),
     x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').nullable()),
     tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').nullable()),
     youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
@@ -155,6 +155,19 @@ const extractUsername = (url: string, platform: PlatformId): string => {
       const pathParts = urlObj.pathname.split('/').filter(Boolean);
 
       switch (platform) {
+        case 'facebook':
+          // Handle Facebook /p/ URLs by extracting the page name or ID
+          if (pathParts[0] === 'p' && pathParts.length > 1) {
+            // Extract the numeric ID if it exists
+            const idMatch = url.match(/\d{10,}/);
+            if (idMatch) return idMatch[0];
+            // Otherwise return the meaningful part after /p/
+            return pathParts.slice(1).join('-');
+          } else if (pathParts[0] === 'p' && pathParts.length <= 1) {
+            // Don't return just 'p'
+            return '';
+          }
+          return pathParts[0] || '';
         case 'tiktok':
           return pathParts[0]?.startsWith('@') ? pathParts[0].replace('@', '') : '';
         case 'x':

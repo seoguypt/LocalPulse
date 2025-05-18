@@ -13,7 +13,12 @@ export const getPlatformProfileUrl = (platform: PlatformId, identifier: string):
   
   switch (platform) {
     case 'instagram': return `https://instagram.com/${cleanUsername}`;
-    case 'facebook': return `https://facebook.com/${cleanUsername}`;
+    case 'facebook': 
+      // Check if it's a numeric ID (typically business pages)
+      if (/^\d{10,}$/.test(cleanUsername)) {
+        return `https://facebook.com/profile.php?id=${cleanUsername}`;
+      }
+      return `https://facebook.com/${cleanUsername}`;
     case 'x': return `https://x.com/${cleanUsername}`;
     case 'tiktok': return `https://tiktok.com/@${cleanUsername}`;
     case 'youtube':
