@@ -58,6 +58,8 @@ addCheck('Google Map Listing Website', 'google-listing-website')
 addCheck('Google Map Listing Website Matches', 'google-listing-website-matches')
 addCheck('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
 addCheck('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
+addCheck('Google Map Listing Name Matches Signage', 'google-listing-name-matches-signage')
+addCheck('Google Map Listing Name Cleanliness', 'google-listing-name-cleanliness')
 
 // Website checks
 addCheck('Website', 'website')
@@ -208,6 +210,22 @@ const topFixes = computed(() => {
     })
   }
   
+  if (checks.value.some(i => i.id === 'google-listing-name-matches-signage' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+    fixes.push({
+      id: 'update-gmbp-name',
+      text: 'Update Google listing name to match signage',
+      icon: 'i-lucide-store'
+    })
+  }
+  
+  if (checks.value.some(i => i.id === 'google-listing-name-cleanliness' && i.status === 'success' && i.result?.type === 'check' && i.result.value === false)) {
+    fixes.push({
+      id: 'cleanup-gmbp-name',
+      text: 'Clean up Google listing name (remove excessive keywords or special characters)',
+      icon: 'i-lucide-edit'
+    })
+  }
+  
   return fixes.slice(0, 3) // Return only top 3
 })
 
@@ -224,6 +242,10 @@ const quickTodos = computed(() => {
   // Only add these if they're not already in the fixes
   if (!fixIds.includes('nap-consistency')) {
     todos.push('Ensure NAP consistency across all channels')
+  }
+  
+  if (!fixIds.includes('name-consistency') && !fixIds.includes('cleanup-gmbp-name')) {
+    todos.push('Ensure business name is consistent and clean across all channels')
   }
   
   if (!fixIds.includes('solicit-reviews')) {
