@@ -13,10 +13,10 @@ const id = route.params.id as string;
 const mode = ref('food-beverage')
 const modes = [
   { label: 'Food & Beverage', value: 'food-beverage' },
-  { label: 'Trades', value: 'tradie' },
-  { label: 'Health', value: 'health-wellness' },
-  { label: 'Retail', value: 'retail' },
-  { label: 'Pet Services', value: 'pet' },
+  { label: 'Trades (Coming Soon)', value: 'tradie', disabled: true },
+  { label: 'Health (Coming Soon)', value: 'health-wellness', disabled: true },
+  { label: 'Retail (Coming Soon)', value: 'retail', disabled: true },
+  { label: 'Pet Services (Coming Soon)', value: 'pet', disabled: true },
 ]
 
 // Definition of check weights by business mode (out of 100 total points)
