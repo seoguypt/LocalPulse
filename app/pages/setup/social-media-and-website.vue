@@ -71,7 +71,7 @@ const createSocialSchema = () => {
     facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/(?!p$)(?:p\/)?[\w\-.]+(?:\/[\w\-.]+)*\/?$/, 'Please enter a valid Facebook username or URL').nullable()),
     x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').nullable()),
     tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').nullable()),
-    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
+    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w\-.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w\-.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
     website: z.preprocess((val) => val || null, z.string().url('Please enter a valid URL').nullable()),
   };
 
@@ -174,6 +174,8 @@ const extractUsername = (url: string, platform: PlatformId): string => {
           return ['status', 'tweets', 'search'].includes(pathParts[1] || '') ? pathParts[0] || '' : pathParts[0] || '';
         case 'youtube':
           if (pathParts[0] === 'c' || pathParts[0] === 'user' || pathParts[0] === 'channel') {
+            // For channel URLs like youtube.com/channel/UCXJOO5-ZnLewJIP_MQGrSWQ
+            // Extract just the channel ID
             return pathParts[1] || '';
           } else if (pathParts[0]?.startsWith('@')) {
             return pathParts[0].replace('@', '');
@@ -453,6 +455,16 @@ const clearSuggestion = (platform: PlatformId) => {
 const handleInput = (platform: PlatformId) => {
   manualInput[platform] = true;
   loadingState[platform] = false;
+  
+  // Extract username if a URL was entered (except for website)
+  const field = getFieldName(platform);
+  if (platform !== 'website' && state[field] && state[field]?.includes('http')) {
+    const extractedUsername = extractUsername(state[field] as string, platform);
+    if (extractedUsername) {
+      state[field] = extractedUsername;
+    }
+  }
+  
   validateInput(platform);
 };
 
@@ -477,6 +489,34 @@ const validateInput = (platform: PlatformId) => {
 function isMetaResult(obj: any): obj is { title: string; description: string } {
   return obj && typeof obj.title === 'string' && typeof obj.description === 'string';
 }
+
+// Helper function to get a social profile URL from username
+const getPlatformProfileUrl = (platform: PlatformId, username: string): string => {
+  if (!username) return '';
+  if (username.startsWith('http')) return username;
+  
+  // Clean the username by removing @ if present
+  const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+  
+  switch (platform) {
+    case 'instagram': return `https://www.instagram.com/${cleanUsername}/`;
+    case 'facebook': return `https://www.facebook.com/${cleanUsername}/`;
+    case 'x': return `https://x.com/${cleanUsername}/`;
+    case 'tiktok': return `https://www.tiktok.com/@${cleanUsername}/`;
+    case 'youtube': 
+      // If it looks like a channel ID with a pattern like UCXJOO5-ZnLewJIP_MQGrSWQ
+      if (/^UC[\w-]{22}$/.test(cleanUsername)) {
+        return `https://www.youtube.com/channel/${cleanUsername}`;
+      }
+      return `https://www.youtube.com/@${cleanUsername}`;
+    case 'website': 
+      if (!/^https?:\/\//i.test(username)) {
+        return `https://${username}`;
+      }
+      return username;
+    default: return '';
+  }
+};
 
 const fetchMeta = (platform: PlatformId, url: string) => {
   if (debounceTimers[platform]) {

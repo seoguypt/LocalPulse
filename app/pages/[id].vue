@@ -625,7 +625,7 @@ const getProgressColor = (percent: number) => {
 
         <!-- Footer -->
         <footer class="mt-16 pt-4 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400 dark:text-slate-500">
-          <p>© {{ new Date().getFullYear() }} Visibility Potion | Generated on {{ todayDate }}</p>
+          <p>© {{ new Date().getFullYear() }} VisiMate | Generated on {{ todayDate }}</p>
         </footer>
       </div>
     </div>
