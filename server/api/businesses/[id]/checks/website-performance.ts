@@ -24,50 +24,40 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  try {    
-    // Launch Chrome
-    const chrome = await chromeLauncher.launch({chromeFlags: ['--headless']});
-    
-    // Run Lighthouse
-    const options = {
-      logLevel: 'info' as const,
-      output: 'json' as const,
-      onlyCategories: ['performance'],
-      port: chrome.port,
+  const { googleApiKey } = useRuntimeConfig(event);
+  if (!googleApiKey) {
+    return {
+      type: 'check' as const,
+      value: null,
+      label: 'No Google API key configured for CrUX API',
     };
-    
-    const runnerResult = await lighthouse(business.websiteUrl, options);
-    
-    if (!runnerResult || !runnerResult.lhr || !runnerResult.lhr.categories || !runnerResult.lhr.categories.performance) {
-      throw new Error('Invalid Lighthouse result structure');
-    }
-    
-    // Get performance score (0-1 range)
-    const performanceScore = runnerResult.lhr.categories.performance.score;
-    
-    if (performanceScore === null || performanceScore === undefined) {
-      throw new Error('Could not get performance score');
-    }
-    
-    // Close Chrome
-    await chrome.kill();
-    
-    // Performance score is considered passing if >= 0.7 (70%)
-    const passThreshold = 0.7;
-    const passes = performanceScore >= passThreshold;
-    
+  }
+
+  const cruxUrl = `https://chromeuxreport.googleapis.com/v1/records:queryRecord?key=${googleApiKey}`;
+  const body = { url: business.websiteUrl };
+
+  try {
+    const cruxRes = await $fetch(cruxUrl, {
+      method: 'POST',
+      body,
+    }) as any;
+
+    // Check LCP p75 value (in ms)
+    const lcp = cruxRes.record?.metrics?.largest_contentful_paint?.percentiles?.p75;
+    const passes = lcp && lcp < 2500; // <2.5s is considered 'good'
+
     return {
       type: 'check' as const,
       value: passes,
-      label: `Performance score: ${Math.round(performanceScore * 100)}%${passes ? '' : ' (below 70% threshold)'}`,
+      label: lcp
+        ? `LCP p75: ${lcp}ms (${passes ? 'good' : 'needs improvement'})`
+        : 'No LCP data available',
     };
   } catch (error) {
-    console.error('Error running Lighthouse check:', error);
-    
-    return { 
-      type: 'check' as const, 
-      value: null, 
-      label: `Error running performance test: ${error instanceof Error ? error.message : 'Unknown error'}`
+    return {
+      type: 'check' as const,
+      value: null,
+      label: `Error fetching CrUX data: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }); 
