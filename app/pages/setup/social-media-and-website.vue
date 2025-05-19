@@ -68,7 +68,7 @@ type MetaData = {
 const createSocialSchema = () => {
   const socialMediaSchema = {
     instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').nullable()),
-    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/(?!p$)(?:p\/)?[\w\-.]+(?:\/[\w\-.]+)*\/?$/, 'Please enter a valid Facebook username or URL').nullable()),
+    facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/(?!p$)(?:p\/)?[\w\-.]+(?:\/[\w\-.]+)*\/?$|^https?:\/\/(?:www\.)?facebook\.com\/profile\.php\?id=\d+$/, 'Please enter a valid Facebook username or URL').nullable()),
     x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').nullable()),
     tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').nullable()),
     youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w\-.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w\-.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
@@ -156,6 +156,12 @@ const extractUsername = (url: string, platform: PlatformId): string => {
 
       switch (platform) {
         case 'facebook':
+          // Handle Facebook profile.php URLs
+          if (urlObj.pathname === '/profile.php') {
+            const id = urlObj.searchParams.get('id');
+            if (id) return id;
+            return '';
+          }
           // Handle Facebook /p/ URLs by extracting the page name or ID
           if (pathParts[0] === 'p' && pathParts.length > 1) {
             // Extract the numeric ID if it exists
@@ -500,7 +506,12 @@ const getPlatformProfileUrl = (platform: PlatformId, username: string): string =
   
   switch (platform) {
     case 'instagram': return `https://www.instagram.com/${cleanUsername}/`;
-    case 'facebook': return `https://www.facebook.com/${cleanUsername}/`;
+    case 'facebook': 
+      // If it's a numeric ID, use profile.php format
+      if (/^\d+$/.test(cleanUsername)) {
+        return `https://www.facebook.com/profile.php?id=${cleanUsername}`;
+      }
+      return `https://www.facebook.com/${cleanUsername}/`;
     case 'x': return `https://x.com/${cleanUsername}/`;
     case 'tiktok': return `https://www.tiktok.com/@${cleanUsername}/`;
     case 'youtube': 
