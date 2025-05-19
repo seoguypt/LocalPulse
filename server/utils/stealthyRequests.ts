@@ -25,7 +25,12 @@ export const stealthGetHtml = defineCachedFunction(async (url: string): Promise<
   console.log(`Fetching ${url} with stealth techniques`);
   
   const browser = await getBrowser();
+
   const page = await browser.newPage();
+
+  // Avoid caching
+  await page.route('**/*', route => route.continue());
+
   await page.goto(url);
   const html = await page.content();
   await page.close();
@@ -39,6 +44,10 @@ export const stealthGetHtml = defineCachedFunction(async (url: string): Promise<
 export const stealthFetch = defineCachedFunction(async (url: string): Promise<ReturnType<typeof serializeResponse>> => {
   const browser = await getBrowser();
   const page = await browser.newPage();
+
+  // Avoid caching
+  await page.route('**/*', route => route.continue());
+
   await page.goto(url);
   const response = await page.goto(url, { waitUntil: 'load' });
   if (!response) throw new Error(`Failed to stealth fetch ${url}`);
