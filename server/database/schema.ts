@@ -11,6 +11,10 @@ export const businesses = sqliteTable('businesses', {
   xUsername: text('x_username'),
   tiktokUsername: text('tiktok_username'),
   youtubeUsername: text('youtube_username'),
+  uberEatsUrl: text('uber_eats_url'),
+  doorDashUrl: text('door_dash_url'),
+  deliverooUrl: text('deliveroo_url'),
+  menulogUrl: text('menulog_url'),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

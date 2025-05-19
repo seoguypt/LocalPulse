@@ -12,8 +12,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Check if the business has an Uber Eats URL
-  const hasUberEatsListing = !!business.uberEatsUrl;
+  // Check if the business has a DoorDash URL
+  const hasDoorDashListing = !!business.doorDashUrl;
 
-  return { type: 'check' as const, value: hasUberEatsListing };
+  return { type: 'check' as const, value: hasDoorDashListing };
 }); 
