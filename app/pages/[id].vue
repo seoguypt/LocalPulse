@@ -240,7 +240,8 @@ addCheck('≥ 3 photos on GBP (food or venue)', 'google-listing-photos')
 
 // Core site hygiene & UX
 addCheck('Site enforces HTTPS', 'website')
-addCheck('CSS viewport test passes mobile-responsive check', 'website-200-299')
+addCheck('Site returns 200-299 status codes', 'website-200-299')
+addCheck('Site is mobile-responsive', 'website-mobile-responsive')
 addCheck('Median First Contentful Paint ≤ 3s', 'website-performance')
 addCheck('Dedicated /menu page exists', 'website-menu-page')
 addCheck('Menu page is linked in main navigation', 'website-menu-navigation')
@@ -261,11 +262,6 @@ addCheck('Click-to-call tel: link on site', 'website-tel-link')
 addCheck('og:image (Open-Graph preview) present', 'website-og-image')
 addCheck('Has an Instagram profile', 'instagram-profile')
 addCheck('Has a Facebook page', 'facebook-page')
-
-// Compliance & analytics
-addCheck('Cookie-consent banner detected', 'website-cookie-consent')
-addCheck('Google Analytics or GA4 tag present', 'website-google-analytics')
-addCheck('Google Search Console verification', 'website-search-console')
 
 // Website ↔ GBP parity
 addCheck('Website name, address & phone exactly match GBP', 'website-gbp-name-address-phone')
