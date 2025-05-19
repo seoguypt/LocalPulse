@@ -32,7 +32,8 @@ const modeCheckWeights = {
     
     // Core site hygiene & UX (25 points total)
     'website': 6, // Site exists (treating as HTTPS check)
-    'website-200-299': 6, // Treating as mobile-responsive check for now
+    'website-200-299': 6,
+    'website-mobile-responsive': 6,
     'website-performance': 6, // First Contentful Paint
     'website-menu-page': 4, // Menu page exists
     'website-menu-navigation': 3, // Menu in navigation
@@ -45,7 +46,6 @@ const modeCheckWeights = {
     'website-canonical': 1,
     'website-robots': 1,
     'website-sitemap': 1,
-    'website-apple-maps': 1,
     
     // Social proof & conversion cues (18 points total)
     'google-listing-reviews': 5, // Rating and # of reviews
@@ -53,12 +53,6 @@ const modeCheckWeights = {
     'website-og-image': 1,
     'instagram-profile': 3,
     'facebook-page': 3,
-    'social-recent-posts': 5,
-    
-    // Compliance & analytics (8 points total)
-    'website-cookie-consent': 1,
-    'website-google-analytics': 4,
-    'website-search-console': 3,
     
     // Website ↔ GBP parity (10 points total)
     'website-gbp-name-address-phone': 6,
@@ -66,109 +60,12 @@ const modeCheckWeights = {
     'website-opening-hours': 2
   },
   'tradie': {
-    // Google checks (50 points total)
-    'google-listing': 10,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-website': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-photos': 3,
-    'google-listing-replies-to-reviews': 5,
-    'google-listing-number-of-reviews': 6,
-    'google-listing-name-matches-signage': 1.5,
-    'google-listing-name-cleanliness': 1.5,
-    
-    // Website checks (35 points total)
-    'website': 20,
-    'website-200-299': 15,
-    
-    // Service platforms (10 points total)
-    'hipages-listing': 6,
-    'oneflare-listing': 4,
-    
-    // Social (5 points total)
-    'facebook-page': 5
   },
   'retail': {
-    // Google checks (40 points total)
-    'google-listing': 6,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-website': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-photos': 3,
-    'google-listing-replies-to-reviews': 5,
-    'google-listing-number-of-reviews': 5,
-    'google-listing-name-matches-signage': 2,
-    'google-listing-name-cleanliness': 2,
-    
-    // Website checks (30 points total)
-    'website': 20,
-    'website-200-299': 10,
-    
-    // Social media (20 points total)
-    'instagram-profile': 8,
-    'facebook-page': 6,
-    'tiktok-profile': 6,
-    
-    // Marketplace presence (10 points total)
-    'amazon-store': 3,
-    'ebay-store': 3,
-    'etsy-store': 4
   },
   'health-wellness': {
-    // Google checks (45 points total)
-    'google-listing': 8,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-website': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-photos': 3,
-    'google-listing-replies-to-reviews': 5,
-    'google-listing-number-of-reviews': 5,
-    'google-listing-name-matches-signage': 1,
-    'google-listing-name-cleanliness': 1,
-    
-    // Website checks (40 points total)
-    'website': 25,
-    'website-200-299': 15,
-    
-    // Booking platforms (10 points total)
-    'healthengine-listing': 5,
-    'hotdoc-listing': 5,
-    
-    // Social (5 points total)
-    'facebook-page': 5
   },
   'pet': {
-    // Google checks (45 points total)
-    'google-listing': 8,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-website': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-photos': 3,
-    'google-listing-replies-to-reviews': 5,
-    'google-listing-number-of-reviews': 5,
-    'google-listing-name-matches-signage': 1.5,
-    'google-listing-name-cleanliness': 1.5,
-    
-    // Website checks (30 points total)
-    'website': 20,
-    'website-200-299': 10,
-    
-    // Pet platforms (15 points total)
-    'pawshake-profile': 5,
-    'madpaws-profile': 5,
-    'petbarn-listing': 5,
-    
-    // Social (10 points total)
-    'instagram-profile': 5,
-    'facebook-page': 5
   }
 };
 
@@ -255,7 +152,6 @@ addCheck('<meta description> present (≤ 160 chars)', 'website-meta-description
 addCheck('<link rel="canonical"> present on every page', 'website-canonical')
 addCheck('robots.txt does not block the homepage', 'website-robots')
 addCheck('Sitemap file discoverable', 'website-sitemap')
-addCheck('Apple Maps link found on site', 'website-apple-maps')
 
 // Social proof & conversion cues
 addCheck('Google rating ≥ 4.0 and ≥ 20 reviews', 'google-listing-reviews')
