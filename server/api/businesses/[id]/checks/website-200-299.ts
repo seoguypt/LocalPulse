@@ -17,6 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const response = await stealthFetch(business.websiteUrl);
+  
+  if (!response) throw new Error('Failed to fetch website');
 
-  return { type: 'check' as const, value: response.ok, label: response.status };
+  return { type: 'check' as const, value: response.ok, label: String(response.status) };
 });

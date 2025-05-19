@@ -218,6 +218,7 @@ const addCheck = async (name: string, checkId: string) => {
     check.value.result = resultSchema.parse(result)
     check.value.status = 'success'
   } catch (error) {
+    console.error('Error adding check:', error)
     check.value.status = 'error'
   }
 }

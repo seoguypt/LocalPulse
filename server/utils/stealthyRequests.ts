@@ -32,7 +32,7 @@ export const stealthGetHtml = defineCachedFunction(async (url: string): Promise<
 
   return html;
 }, {
-  name: 'stealthFetch',
+  name: 'stealthGetHtml',
   maxAge: 1000 * 60 * 60, // 1 hour
 });
 
