@@ -1,12 +1,15 @@
 # VisiMate.au: Your AI-Powered Guide to Restaurants Being Found Online
 
 ## Problem Statement
+
 You're invisible online—and losing customers.
 
 ## Value Proposition
+
 Instantly find what's costing you customers—then fix it in minutes.
 
 ## Core Use Cases
+
 - See exactly where you're listed—or missing
 - Spot the top 3 visibility blockers
 - Get step-by-step fixes you can do right now
@@ -14,6 +17,7 @@ Instantly find what's costing you customers—then fix it in minutes.
 ## MVP (Minimum Viable Product)
 
 ### Channels Included
+
 - Google Business Profile
 - Website
 - Facebook Page
@@ -22,6 +26,7 @@ Instantly find what's costing you customers—then fix it in minutes.
 - TripAdvisor
 
 ### User Flow
+
 1. Enter business name
 2. Confirm matching listing(s)
 3. Get simple report showing:
@@ -30,6 +35,7 @@ Instantly find what's costing you customers—then fix it in minutes.
    - Clear fixes
 
 ### Core Features
+
 - Business search + confirmation
 - Basic online presence check (Google, website, social, reviews)
 - PDF/email download of the report
@@ -37,14 +43,17 @@ Instantly find what's costing you customers—then fix it in minutes.
 - Option to email report or request help via a lead-capture form
 
 ### Outcomes
+
 - Get your report in under 30 seconds
 - Quickly understand where you stand online
 - Immediately actionable next steps
 
 ### In Scope (Internal Tools)
+
 - PostHog for user behavior analytics and MVP iteration insights
 
 ### Accessibility & UI Stack
+
 - Accessible design (WCAG basics: contrast, font size)
 - Built with Nuxt UI + TailwindCSS
 
@@ -59,76 +68,44 @@ Instantly find what's costing you customers—then fix it in minutes.
 6. **Defer for Later**
    - Skip Open Graph & deep scraping until Tier 2
 
-## High-Impact, Low-Barrier Checks
+# Checks
 
-### Tier 1 (Must-Have for MVP)
-- **Google Business Profile**: presence, claimed status, star rating, review count, menu listing, business hours, reservation link, photos
-- **Website**: meta title, meta description, HTTPS secure, mobile viewport tag, clear CTA, mobile PageSpeed ≥ 50, menu page and online ordering link
-- **Facebook Page**: page existence, profile & cover images, website link in About, menu tab or linked menu
-- **Instagram**: account existence, bio link to menu/website, recent post date, food photos highlights
-- **Yelp**: listing existence, star rating, review count, photos, website link
-- **TripAdvisor**: listing existence, star rating, review count, photos, website link
-- **NAP Consistency**: compare name, address, phone across Google, Yelp, TripAdvisor, website
-
-### Tier 2 (Possible Later / Quick Wins)
-- **Apple Business Connect**: listing existence, claim status, opening hours
-- **Bing Places**: listing existence, claim status, opening hours
-- **Search**: own site ranks top 3 for restaurant name
-- **Contact & Trust**: visible email (mailto:), reservation link, privacy policy page
-- **Quick Wins**: implement FAQ schema for restaurant menu, Open Graph menu markup
-
-*Tier 2 items are marked "possible" and can be phased in after MVP validation.*
-
-## Core Flow Sketch
-
-### 1. Entry Screen
-- Header: "VisiMate.au"
-- Input: "Enter your restaurant name"
-- Button: [Search]
-
-### 2. Confirmation Screen
-- Header: "Is this your business?"
-- Easy listing-picker: show top 3–5 matches sorted by confidence
-- Each: Logo / Name — Address snippet
-- [Confirm] per item & [None match? Enter URL] fallback
-
-### 3. Report Screen
-- Header: "Your Digital Presence Report"
-- Channel Summary: Icons (Google, Website, Facebook, Instagram, Apple, Bing) with indicators
-- Top 3 Issues: issue title + brief description
-- Recommendations: action step + [Learn More]
-- Footer CTAs: [Email this report], [Download PDF], [Need help fixing?]→ Opens a lead-capture form (name, email, brief note) for follow-up or scheduling assistance
-
-## MVP Report Structure
-
-### 1. Header  
-- **Title**: _[Business Name]_  
-- Show connected channels + the ability to edit or add more channels
-
-### 2. Snapshot (Example)
-- **Overall Summary**: e.g. "Listed on 4/6 channels"  
-- **Top 3 Issues** (one-line each)
-
-### 3. Scorecard (Example)
-| Channel                      | Status |
-|------------------------------|:------:|
-| Google Business Profile      | ✔      |
-| Website                      | ✔      |
-| Facebook Page                | ⚠      |
-| Instagram                    | ✔      |
-| Yelp                         | ✗      |
-| TripAdvisor                  | ✗      |
-
-### 4. Top 3 Fixes (Example)
-1. Claim Yelp & TripAdvisor listings  
-2. Add menu to Google Restaurant Profile + compress images  
-3. Update restaurant website for mobile speed
-
-### 5. Quick To-Dos (Example)
-1. Claim missing restaurant listings (Yelp & TripAdvisor)  
-2. Add and optimize menu on website  
-3. Encourage customers to leave reviews on Google & Yelp
-
-### 6. Resources  
-- Full how-to guide (link)  
-- Free consult (link)
+| # | Atomic check (True / False) | Weight % |
+|:--|:----------------------------|:--------:|
+| **Google Business Profile — instant via Places API** |||
+| 1 | Google Business Profile (GBP) **exists** for the domain | **8** |
+| 2 | GBP **primary category** is set | 4 |
+| 3 | GBP **opening hours** are present | 3 |
+| 4 | GBP **website URL** matches the scanned site | 3 |
+| 5 | GBP **phone number** matches the site | 2 |
+| 6 | ≥ 3 **photos** on GBP (food or venue) | 3 |
+| **Core site hygiene & UX** |||
+| 7 | Site enforces **HTTPS** (200 over HTTPS, 301 from HTTP) | 6 |
+| 8 | CSS viewport test passes **mobile-responsive** check | 6 |
+| 9 | Median **First Contentful Paint ≤ 3 s** (Lighthouse) | 6 |
+| 10 | Dedicated **/menu** (or similar) page exists | 4 |
+| 11 | Menu page is linked in the **main navigation** | 3 |
+| **Structured data & on-page SEO** |||
+| 12 | **LocalBusiness** JSON-LD detected | 3 |
+| 13 | **Menu** JSON-LD detected | 2 |
+| 14 | `<title>` contains **business name + suburb/city** | 5 |
+| 15 | `<meta description>` present (≤ 160 chars) | 2 |
+| 16 | `<link rel="canonical">` present on every page | 1 |
+| 17 | `robots.txt` does **not** block the homepage | 1 |
+| 18 | **Sitemap** file discoverable (`/sitemap*.xml`) | 1 |
+| 19 | **Apple Maps** link (maps.apple.com) found on site | 1 |
+| **Social proof & conversion cues** |||
+| 20 | Google rating **≥ 4.0** and **≥ 20 reviews** | 5 |
+| 21 | Click-to-call **`tel:`** link on site | 1 |
+| 22 | **`og:image`** (Open-Graph preview) present | 1 |
+| 23 | Site links to an **Instagram** profile | 3 |
+| 24 | Site links to a **Facebook** page | 3 |
+| 25 | Latest Instagram or Facebook post **≤ 7 days old** (timestamp via public JSON) | 5 |
+| **Compliance & analytics** |||
+| 26 | Cookie-consent banner detected | 1 |
+| 27 | **Google Analytics** or GA4 tag present | 4 |
+| 28 | **Google Search Console** verification (meta-tag or DNS) | 3 |
+| **Website ↔ GBP parity** |||
+| 29 | Website **name, address & phone** exactly match GBP | 6 |
+| 30 | **Physical address** printed in header/footer | 2 |
+| 31 | **Opening hours** printed on the website | 2 |

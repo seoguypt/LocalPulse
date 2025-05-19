@@ -551,36 +551,6 @@ const getProgressColor = (percent: number) => {
           </div>
         </section>
 
-        <!-- 2. CHANNEL SCORECARD -->
-        <section class="mb-10">
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div v-for="channel in channelStatus" :key="channel.name"
-                 class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 flex flex-col">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-medium text-slate-800 dark:text-slate-200">{{ channel.name }}</h3>
-                <UBadge :color="getStatusColor(channel.status)" variant="subtle">
-                  {{ channel.status === 'active' ? 'Active' : channel.status === 'warning' ? 'Partial' : 'Missing' }}
-                </UBadge>
-              </div>
-              
-              <div class="mt-auto">
-                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mb-2">
-                  <div class="h-1.5 rounded-full"
-                       :class="channel.status === 'active' ? 'bg-success-500 dark:bg-success-400' : 
-                              channel.status === 'warning' ? 'bg-warning-500 dark:bg-warning-400' : 
-                              'bg-error-500 dark:bg-error-400'"
-                       :style="`width: ${channel.total ? (channel.score / channel.total) * 100 : 0}%`"></div>
-                </div>
-                
-                <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>Completeness</span>
-                  <span>{{ channel.score.toFixed(1) }}/{{ channel.total }} pts</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- 5. RESOURCES SECTION -->
         <section class="mb-10">
           <div class="grid grid-cols-2 gap-3">
