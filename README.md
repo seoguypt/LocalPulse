@@ -100,7 +100,6 @@ Instantly find what's costing you customers—then fix it in minutes.
 | 22 | **`og:image`** (Open-Graph preview) present | 1 |
 | 23 | Site links to an **Instagram** profile | 3 |
 | 24 | Site links to a **Facebook** page | 3 |
-| 25 | Latest Instagram or Facebook post **≤ 7 days old** (timestamp via public JSON) | 5 |
 | **Compliance & analytics** |||
 | 26 | Cookie-consent banner detected | 1 |
 | 27 | **Google Analytics** or GA4 tag present | 4 |

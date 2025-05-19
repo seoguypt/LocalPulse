@@ -259,9 +259,8 @@ addCheck('Apple Maps link found on site', 'website-apple-maps')
 addCheck('Google rating ≥ 4.0 and ≥ 20 reviews', 'google-listing-reviews')
 addCheck('Click-to-call tel: link on site', 'website-tel-link')
 addCheck('og:image (Open-Graph preview) present', 'website-og-image')
-addCheck('Site links to an Instagram profile', 'instagram-profile')
-addCheck('Site links to a Facebook page', 'facebook-page')
-addCheck('Latest social post ≤ 7 days old', 'social-recent-posts')
+addCheck('Has an Instagram profile', 'instagram-profile')
+addCheck('Has a Facebook page', 'facebook-page')
 
 // Compliance & analytics
 addCheck('Cookie-consent banner detected', 'website-cookie-consent')

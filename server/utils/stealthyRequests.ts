@@ -16,7 +16,6 @@ async function getBrowser() {
 
 /**
  * Fetches HTML content from a single URL using stealth techniques to avoid blocking.
- * Uses CheerioCrawler first, then falls back to PuppeteerCrawler for JavaScript-heavy pages.
  * 
  * @param url - The URL to fetch
  * @returns A Promise that resolves to the HTML content as a string
