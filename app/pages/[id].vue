@@ -94,6 +94,9 @@ const checkSchema = z.object({
   status: z.enum(['idle', 'pending', 'success', 'error']),
   result: resultSchema.nullable().default(null),
   weight: z.number().default(1), // Weight for this check in the scoring system
+  startTime: z.number().optional(), // Timestamp when check started
+  endTime: z.number().optional(), // Timestamp when check completed
+  duration: z.number().optional() // Duration in milliseconds
 })
 
 type Check = z.infer<typeof checkSchema>
@@ -116,8 +119,6 @@ const allCheckDefinitions = [
   { id: 'website-200-299', name: 'Site returns 200-299 status codes', channel: 'Website' },
   { id: 'website-mobile-responsive', name: 'Site is mobile-responsive', channel: 'Website' },
   { id: 'website-performance', name: 'Median First Contentful Paint ≤ 3s', channel: 'Website' },
-  { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food-beverage'] },
-  { id: 'website-menu-navigation', name: 'Menu in navigation', channel: 'Website', modes: ['food-beverage'] },
   
   // Structured data & on-page SEO
   { id: 'website-localbusiness-jsonld', name: 'LocalBusiness JSON-LD detected', channel: 'Website' },
@@ -176,21 +177,29 @@ const addCheck = async (name: string, checkId: string, channel: string) => {
   // Get the weight for this check, or default to 1
   const weight = checkWeights.value?.[checkId] || 1
   
+  const startTime = Date.now()
   const check: Ref<Check> = ref(checkSchema.parse({ 
     id: checkId, 
     name,
     channel, 
     status: 'pending',
-    weight 
+    weight,
+    startTime
   }))
   checks.value.push(unref(check))
   try {
     const result = await $fetch(`/api/businesses/${id}/checks/${checkId}`)
+    const endTime = Date.now()
+    check.value.endTime = endTime
+    check.value.duration = endTime - startTime
     check.value.result = resultSchema.parse(result)
     check.value.status = 'success'
   } catch (error) {
     console.error('Error adding check:', error)
     check.value.status = 'error'
+    const endTime = Date.now()
+    check.value.endTime = endTime
+    check.value.duration = endTime - startTime
   }
 }
 
@@ -206,7 +215,7 @@ watchEffect(() => {
 })
 
 // Organize checks by channel
-const channelChecks = computed(() => {
+const channelChecks = computed<Record<string, Check[]>>(() => {
   const channels: Record<string, Check[]> = {}
   
   // Group checks by channel
@@ -285,6 +294,25 @@ const totalImplementationScore = computed(() => {
   }
 })
 
+// Track total time taken for all checks
+const totalCheckTime = computed(() => {
+  const completedChecks = checks.value.filter(check => check.duration !== undefined)
+  if (completedChecks.length === 0) return 0
+  
+  return completedChecks.reduce((total, check) => total + (check.duration || 0), 0)
+})
+
+// Active category for tabs
+const activeCategory = ref<string>('All')
+
+// Filtered checks based on active category
+const filteredChecks = computed(() => {
+  if (!activeCategory.value || activeCategory.value === 'All') {
+    return checks.value
+  }
+  return checks.value.filter(check => check.channel === activeCategory.value)
+})
+
 const columns: TableColumn<Check>[] = [
   {
     accessorKey: 'name',
@@ -299,7 +327,7 @@ const columns: TableColumn<Check>[] = [
         'Google Business Profile': 'primary',
         'Website': 'success',
         'Social Media': 'info',
-        'Food Delivery': 'orange',
+        'Food Delivery': 'warning',
         'Service Platforms': 'purple', 
         'Marketplaces': 'teal',
         'Booking Platforms': 'rose',
@@ -336,6 +364,26 @@ const columns: TableColumn<Check>[] = [
     }
   },
   {
+    accessorKey: 'duration',
+    header: 'Time',
+    cell: ({ row }) => {
+      const duration = row.getValue('duration') as number | undefined
+      if (duration === undefined) {
+        return h('div', { class: 'text-sm text-slate-400' }, '-')
+      }
+      
+      // Format duration for display
+      let formattedTime = ''
+      if (duration < 1000) {
+        formattedTime = `${duration}ms`
+      } else {
+        formattedTime = `${(duration / 1000).toFixed(1)}s`
+      }
+      
+      return h('div', { class: 'text-sm font-mono' }, formattedTime)
+    }
+  },
+  {
     accessorKey: 'result',
     header: 'Result',
     cell: ({ row }) => {
@@ -354,7 +402,7 @@ const columns: TableColumn<Check>[] = [
       }
 
       if (result.label) {
-        return h('div', { class: 'flex flex-col gap-2' }, [result.label, component])
+        return h('div', { class: 'flex flex-col gap-2 items-start' }, [result.label, component])
       } else if (component) {
         return component
       }
@@ -401,31 +449,28 @@ const getProgressColor = (percent: number) => {
 <template>
   <main v-if="business" class="bg-slate-50 dark:bg-slate-900 min-h-screen pb-16">
     <!-- Back Button -->
-    <div class="max-w-[210mm] mx-auto px-4 pt-6 pb-3">
+    <div class="container mx-auto px-4 pt-6 pb-3">
       <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" to="/" 
         class="text-slate-600 dark:text-slate-400" aria-label="Go back">
         Back
       </UButton>
     </div>
 
-    <!-- A4 Report Container -->
-    <div class="max-w-[210mm] mx-auto bg-white dark:bg-slate-800 shadow-sm rounded-md overflow-hidden print:shadow-none">
+    <!-- Report Container -->
+    <div class="container mx-auto bg-white dark:bg-slate-800 shadow-sm rounded-md overflow-hidden print:shadow-none">
       <!-- Header -->
-      <div class="bg-slate-900 dark:bg-slate-800 py-7 px-10 border-b border-slate-200 dark:border-slate-700 text-white relative overflow-hidden">
-        <div class="flex items-center justify-between relative z-10">
+      <div class="bg-slate-900 dark:bg-slate-800 py-8 px-10 border-b border-slate-200 dark:border-slate-700 text-white relative overflow-hidden">
+        <div class="flex items-center justify-between relative z-10 mb-4">
           <h1 class="text-2xl sm:text-3xl font-bold">VisiMate Score</h1>
           <USelect v-model="mode" :items="modes" class="w-48" />
-          <UBadge color="neutral" variant="soft" size="sm" class="text-white">
-            {{ todayDate }}
-          </UBadge>
         </div>
-        <h2 class="text-xl sm:text-2xl mt-1 text-slate-300 relative z-10">{{ business.name }}</h2>
+        <h2 class="text-xl sm:text-2xl text-slate-300 relative z-10 mb-5">{{ business.name }}</h2>
         
         <!-- Gradient accent -->
         <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-400 to-primary-600"></div>
         
         <!-- Channel tags -->
-        <div class="mt-5 flex flex-wrap items-center gap-3 relative z-10">
+        <div class="flex flex-wrap items-center gap-3 relative z-10">
           <NuxtLink v-if="business.websiteUrl" :to="business.websiteUrl" target="_blank">
             <UBadge icon="i-lucide-globe" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700">
               {{ business.websiteUrl.split('//')[1]?.split('/')[0] || business.websiteUrl }}
@@ -469,38 +514,65 @@ const getProgressColor = (percent: number) => {
       </div>
 
       <!-- Report Content -->
-      <div class="px-10 py-8">
+      <div class="p-8 md:p-10">
         <!-- 1. SUMMARY SNAPSHOT -->
-        <section class="mb-10">
+        <section class="mb-14">
           <!-- Overall visibility score card -->
-          <div class="bg-slate-900 dark:bg-slate-800 text-white rounded-lg overflow-hidden shadow-sm mb-6">
-            <div class="p-6 pb-5">
-              <div class="flex items-center justify-center mb-4">
-                <div class="inline-flex items-baseline">
-                  <span class="text-5xl font-bold" :class="getScoreColor(totalImplementationScore.percentage)">
-                    {{ totalImplementationScore.percentage }}
-                  </span>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-slate-900 dark:bg-slate-800 text-white rounded-lg overflow-hidden shadow-sm col-span-2">
+              <div class="p-8 pb-6">
+                <div class="flex items-center justify-center mb-6">
+                  <div class="inline-flex items-baseline">
+                    <span class="text-6xl font-bold" :class="getScoreColor(totalImplementationScore.percentage)">
+                      {{ totalImplementationScore.percentage }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="w-full bg-slate-700 dark:bg-slate-700 rounded-full h-3 mb-2">
+                  <div class="h-3 rounded-full" :class="getProgressColor(totalImplementationScore.percentage)" 
+                       :style="`width: ${totalImplementationScore.percentage}%`"></div>
+                </div>
+                
+                <div class="flex justify-between text-sm text-slate-300 mt-2">
+                  <span>Online visibility score</span>
+                  <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points</span>
                 </div>
               </div>
-              
-              <div class="w-full bg-slate-700 dark:bg-slate-700 rounded-full h-2.5 mb-1">
-                <div class="h-2.5 rounded-full" :class="getProgressColor(totalImplementationScore.percentage)" 
-                     :style="`width: ${totalImplementationScore.percentage}%`"></div>
-              </div>
-              
-              <div class="flex justify-between text-xs text-slate-300">
-                <span>Online visibility score</span>
-                <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points</span>
+            </div>
+            
+            <!-- Analysis summary card -->
+            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm">
+              <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4 text-slate-700 dark:text-slate-300">Analysis Summary</h3>
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600 dark:text-slate-400">Channels Checked</span>
+                    <span class="font-semibold">{{ Object.keys(channelChecks).length }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600 dark:text-slate-400">Total Checks</span>
+                    <span class="font-semibold">{{ checks.length }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600 dark:text-slate-400">Analysis Time</span>
+                    <span class="font-semibold">{{ (totalCheckTime / 1000).toFixed(1) }}s</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-600 dark:text-slate-400">Last Updated</span>
+                    <span class="font-semibold">{{ todayDate }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
         
         <!-- 6. DETAILED CHECKS SECTION -->
-        <section class="mb-10">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Technical Implementation Details</h2>
-            <UButton color="neutral" variant="ghost" size="xs" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
+        <section class="mb-14">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Technical Implementation Details</h2>
+            <UButton color="neutral" variant="ghost" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
               @click="showChecks = !showChecks" class="text-slate-600 dark:text-slate-400">
               {{ showChecks ? 'Hide details' : 'Show details' }}
             </UButton>
@@ -508,45 +580,80 @@ const getProgressColor = (percent: number) => {
           
           <Transition name="fade">
             <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+              <!-- Channel Tabs -->
+              <div class="border-b border-slate-200 dark:border-slate-700">
+                <div class="flex overflow-x-auto px-6 pt-6 pb-4">
+                  <UButton
+                    v-for="category in ['All', ...Object.keys(channelChecks)]"
+                    :key="category"
+                    color="primary"
+                    :variant="activeCategory === category ? 'solid' : 'ghost'"
+                    class="mr-3 whitespace-nowrap"
+                    @click="activeCategory = category"
+                  >
+                    {{ category }}
+                    <UBadge
+                      v-if="category !== 'All'"
+                      size="xs"
+                      :color="getStatusColor(channelStatus.find(s => s.name === category)?.status || 'missing')"
+                      class="ml-2"
+                    >
+                      {{ channelStatus.find(s => s.name === category)?.score || 0 }}/{{ channelStatus.find(s => s.name === category)?.total || 0 }}
+                    </UBadge>
+                  </UButton>
+                </div>
+              </div>
+              
               <!-- Check Summary Stats -->
-              <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-3">
-                <UBadge v-for="(channel, idx) in Object.keys(channelChecks)" :key="idx"
-                       :color="getStatusColor(channelStatus.find(s => s.name === channel)?.status || 'missing')">
-                  {{ channel }}: {{ channelStatus.find(s => s.name === channel)?.score || 0 }}/{{ channelStatus.find(s => s.name === channel)?.total || 0 }}
-                </UBadge>
+              <div class="p-6 flex flex-wrap gap-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
+                <div class="flex items-center">
+                  <span class="text-sm font-medium mr-2">Total time:</span>
+                  <UBadge color="primary" variant="subtle" class="font-mono">
+                    {{ (totalCheckTime / 1000).toFixed(1) }} seconds
+                  </UBadge>
+                </div>
+                <div class="flex items-center">
+                  <span class="text-sm font-medium mr-2">Showing:</span>
+                  <UBadge color="neutral" variant="subtle">
+                    {{ filteredChecks.length }} checks
+                  </UBadge>
+                </div>
+                <div class="flex items-center" v-if="activeCategory !== 'All'">
+                  <span class="text-sm font-medium mr-2">Category:</span>
+                  <UBadge :color="getStatusColor(channelStatus.find(s => s.name === activeCategory)?.status || 'missing')" variant="subtle">
+                    {{ channelStatus.find(s => s.name === activeCategory)?.score || 0 }}/{{ channelStatus.find(s => s.name === activeCategory)?.total || 0 }} points
+                  </UBadge>
+                </div>
               </div>
             
-              <UTable :data="checks" :columns="columns" class="mb-0" :ui="{ 
-                wrapper: 'w-full relative overflow-x-auto', 
-                table: 'w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400',
-                th: {
-                  base: 'bg-slate-50 dark:bg-slate-700',
-                  padding: 'px-4 py-3'
-                },
-                td: {
-                  padding: 'px-4 py-3'
-                },
-                tr: {
-                  base: 'border-t border-slate-200 dark:border-slate-700'
-                }
-              }" />
+              <UTable 
+                :data="filteredChecks" 
+                :columns="columns" 
+                class="mb-0"
+                hover
+              />
             </div>
           </Transition>
         </section>
 
         <!-- 5. RESOURCES SECTION -->
         <section class="mb-10">
-          <div class="grid grid-cols-2 gap-3">
-            <UButton block color="primary" variant="solid" icon="i-lucide-book-open" to="/guides" target="_blank">
+          <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Resources</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <UButton block color="primary" variant="solid" icon="i-lucide-book-open" to="/guides" target="_blank"
+              class="py-3 text-base">
               How-To Guide
             </UButton>
-            <UButton block color="primary" variant="outline" icon="i-lucide-headphones" to="/consult" target="_blank">
+            <UButton block color="primary" variant="outline" icon="i-lucide-headphones" to="/consult" target="_blank"
+              class="py-3 text-base">
               Free Consultation
             </UButton>
-            <UButton block color="neutral" variant="ghost" icon="i-lucide-mail" to="/email-report" target="_blank" class="hover:bg-slate-100 dark:hover:bg-slate-700">
+            <UButton block color="neutral" variant="ghost" icon="i-lucide-mail" to="/email-report" target="_blank" 
+              class="py-3 text-base hover:bg-slate-100 dark:hover:bg-slate-700">
               Email Report
             </UButton>
-            <UButton block color="neutral" variant="ghost" icon="i-lucide-file" to="/download-pdf" target="_blank" class="hover:bg-slate-100 dark:hover:bg-slate-700">
+            <UButton block color="neutral" variant="ghost" icon="i-lucide-file" to="/download-pdf" target="_blank" 
+              class="py-3 text-base hover:bg-slate-100 dark:hover:bg-slate-700">
               Download PDF
             </UButton>
           </div>
@@ -564,7 +671,7 @@ const getProgressColor = (percent: number) => {
 <style>
 /* Print styles */
 @media print {
-  .max-w-\[210mm\] {
+  .container {
     max-width: none;
     margin: 0;
     padding: 0;
@@ -587,5 +694,11 @@ const getProgressColor = (percent: number) => {
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
   max-height: 0;
+}
+
+/* Table cell spacing */
+:deep(.table-auto th), 
+:deep(.table-auto td) {
+  padding: 1rem 1.5rem !important;
 }
 </style>
