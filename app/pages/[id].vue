@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import { h, resolveComponent, computed } from 'vue'
+import { h, resolveComponent, computed, watch } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
 const UBadge = resolveComponent('UBadge')
@@ -9,6 +9,152 @@ const USkeleton = resolveComponent('USkeleton')
 
 const route = useRoute();
 const id = route.params.id as string;
+
+const mode = ref('food-beverage')
+const modes = [
+  { label: 'Food & Beverage', value: 'food-beverage' },
+  { label: 'Trades', value: 'tradie' },
+  { label: 'Health', value: 'health-wellness' },
+  { label: 'Retail', value: 'retail' },
+  { label: 'Pet Services', value: 'pet' },
+]
+
+// Definition of check weights by business mode (out of 100 total points)
+const modeCheckWeights = {
+  'food-beverage': {
+    // Google checks (45 points total)
+    'google-listing': 9,
+    'google-listing-opening-times': 6,
+    'google-listing-phone-number': 5,
+    'google-listing-website': 4,
+    'google-listing-website-matches': 3,
+    'google-listing-replies-to-reviews': 6,
+    'google-listing-number-of-reviews': 7,
+    'google-listing-name-matches-signage': 2.5,
+    'google-listing-name-cleanliness': 2.5,
+    
+    // Website checks (25 points total)
+    'website': 15,
+    'website-200-299': 10,
+    
+    // Food delivery platforms (20 points total)
+    'uber-eats-listing': 6,
+    'menulog-listing': 5,
+    'doordash-listing': 5,
+    'deliveroo-listing': 4,
+    
+    // Social media (10 points total)
+    'instagram-profile': 5,
+    'facebook-page': 5
+  },
+  'tradie': {
+    // Google checks (50 points total)
+    'google-listing': 12,
+    'google-listing-opening-times': 4,
+    'google-listing-phone-number': 10,
+    'google-listing-website': 6,
+    'google-listing-website-matches': 4,
+    'google-listing-replies-to-reviews': 5,
+    'google-listing-number-of-reviews': 6,
+    'google-listing-name-matches-signage': 1.5,
+    'google-listing-name-cleanliness': 1.5,
+    
+    // Website checks (35 points total)
+    'website': 20,
+    'website-200-299': 15,
+    
+    // Service platforms (10 points total)
+    'hipages-listing': 6,
+    'oneflare-listing': 4,
+    
+    // Social (5 points total)
+    'facebook-page': 5
+  },
+  'retail': {
+    // Google checks (40 points total)
+    'google-listing': 8,
+    'google-listing-opening-times': 6,
+    'google-listing-phone-number': 4,
+    'google-listing-website': 5,
+    'google-listing-website-matches': 3,
+    'google-listing-replies-to-reviews': 5,
+    'google-listing-number-of-reviews': 5,
+    'google-listing-name-matches-signage': 2,
+    'google-listing-name-cleanliness': 2,
+    
+    // Website checks (30 points total)
+    'website': 20,
+    'website-200-299': 10,
+    
+    // Social media (20 points total)
+    'instagram-profile': 8,
+    'facebook-page': 6,
+    'tiktok-profile': 6,
+    
+    // Marketplace presence (10 points total)
+    'amazon-store': 3,
+    'ebay-store': 3,
+    'etsy-store': 4
+  },
+  'health-wellness': {
+    // Google checks (45 points total)
+    'google-listing': 10,
+    'google-listing-opening-times': 8,
+    'google-listing-phone-number': 7,
+    'google-listing-website': 5,
+    'google-listing-website-matches': 3,
+    'google-listing-replies-to-reviews': 5,
+    'google-listing-number-of-reviews': 5,
+    'google-listing-name-matches-signage': 1,
+    'google-listing-name-cleanliness': 1,
+    
+    // Website checks (40 points total)
+    'website': 25,
+    'website-200-299': 15,
+    
+    // Booking platforms (10 points total)
+    'healthengine-listing': 5,
+    'hotdoc-listing': 5,
+    
+    // Social (5 points total)
+    'facebook-page': 5
+  },
+  'pet': {
+    // Google checks (45 points total)
+    'google-listing': 10,
+    'google-listing-opening-times': 6,
+    'google-listing-phone-number': 7,
+    'google-listing-website': 5,
+    'google-listing-website-matches': 4,
+    'google-listing-replies-to-reviews': 5,
+    'google-listing-number-of-reviews': 5,
+    'google-listing-name-matches-signage': 1.5,
+    'google-listing-name-cleanliness': 1.5,
+    
+    // Website checks (30 points total)
+    'website': 20,
+    'website-200-299': 10,
+    
+    // Pet platforms (15 points total)
+    'pawshake-profile': 5,
+    'madpaws-profile': 5,
+    'petbarn-listing': 5,
+    
+    // Social (10 points total)
+    'instagram-profile': 5,
+    'facebook-page': 5
+  }
+};
+
+// Default to food-beverage if no mode is selected
+const checkWeights = computed(() => {
+  return modeCheckWeights[mode.value] || modeCheckWeights['food-beverage'];
+});
+
+// Toggle for the detailed checks
+const showChecks = ref(false);
+const editingWeights = ref(false);
+const customWeights = ref({ ...checkWeights.value });
 
 const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
@@ -32,6 +178,7 @@ const checkSchema = z.object({
   name: z.string(),
   status: z.enum(['idle', 'pending', 'success', 'error']),
   result: resultSchema.nullable().default(null),
+  weight: z.number().default(1), // Weight for this check in the scoring system
 })
 
 type Check = z.infer<typeof checkSchema>
@@ -39,7 +186,15 @@ type Check = z.infer<typeof checkSchema>
 const checks = ref<Check[]>([])
 
 const addCheck = async (name: string, checkId: string) => {
-  const check: Ref<Check> = ref(checkSchema.parse({ id: checkId, name, status: 'pending' }))
+  // Get the weight for this check, or default to 1
+  const weight = checkWeights.value[checkId] || 1
+  
+  const check: Ref<Check> = ref(checkSchema.parse({ 
+    id: checkId, 
+    name, 
+    status: 'pending',
+    weight 
+  }))
   checks.value.push(unref(check))
   try {
     const result = await $fetch(`/api/businesses/${id}/checks/${checkId}`)
@@ -49,6 +204,17 @@ const addCheck = async (name: string, checkId: string) => {
     check.value.status = 'error'
   }
 }
+
+// Watch for mode changes to update check weights
+watch(mode, () => {
+  // Update weights for all checks based on the new mode
+  checks.value.forEach(check => {
+    check.weight = checkWeights.value[check.id] || 1;
+  });
+  
+  // Update the custom weights reference
+  customWeights.value = { ...checkWeights.value };
+}, { immediate: true });
 
 // Google Business Profile checks
 addCheck('Google Map Listing', 'google-listing')
@@ -65,15 +231,74 @@ addCheck('Google Map Listing Name Cleanliness', 'google-listing-name-cleanliness
 addCheck('Website', 'website')
 addCheck('Website status code is in 200-299 range', 'website-200-299')
 
+// Social Media checks
+addCheck('Facebook Page', 'facebook-page')
+addCheck('Instagram Profile', 'instagram-profile')
+addCheck('TikTok Profile', 'tiktok-profile')
+
+// Food delivery platform checks
+if (mode.value === 'food-beverage') {
+  addCheck('Uber Eats Listing', 'uber-eats-listing')
+  addCheck('Menulog Listing', 'menulog-listing')
+  addCheck('DoorDash Listing', 'doordash-listing')
+  addCheck('Deliveroo Listing', 'deliveroo-listing')
+}
+
+// Service platform checks for Tradies
+if (mode.value === 'tradie') {
+  addCheck('hipages Listing', 'hipages-listing')
+  addCheck('Oneflare Listing', 'oneflare-listing')
+}
+
+// Marketplace checks for Retail
+if (mode.value === 'retail') {
+  addCheck('Amazon Store', 'amazon-store')
+  addCheck('eBay Store', 'ebay-store')
+  addCheck('Etsy Store', 'etsy-store')
+}
+
+// Booking platform checks for Health
+if (mode.value === 'health-wellness') {
+  addCheck('HealthEngine Listing', 'healthengine-listing')
+  addCheck('HotDoc Listing', 'hotdoc-listing')
+}
+
+// Pet platform checks
+if (mode.value === 'pet') {
+  addCheck('Pawshake Profile', 'pawshake-profile')
+  addCheck('Mad Paws Profile', 'madpaws-profile')
+  addCheck('Petbarn Listing', 'petbarn-listing')
+}
+
 // Organize checks by channel
 const channelChecks = computed(() => {
   const channels = {
     'Google Business Profile': checks.value.filter(i => i.id.startsWith('google-')),
     'Website': checks.value.filter(i => i.id.startsWith('website')),
-    'Facebook Page': [], // To be implemented
-    'Instagram': [], // To be implemented
-    'Apple Business Connect': [], // To be implemented
-    'Bing Places': [] // To be implemented
+    'Social Media': checks.value.filter(i => ['facebook-page', 'instagram-profile', 'tiktok-profile'].includes(i.id)),
+  }
+  
+  // Add mode-specific channels
+  if (mode.value === 'food-beverage') {
+    channels['Food Delivery'] = checks.value.filter(i => 
+      ['uber-eats-listing', 'menulog-listing', 'doordash-listing', 'deliveroo-listing'].includes(i.id)
+    )
+  } else if (mode.value === 'tradie') {
+    channels['Service Platforms'] = checks.value.filter(i => 
+      ['hipages-listing', 'oneflare-listing'].includes(i.id)
+    )
+  } else if (mode.value === 'retail') {
+    channels['Marketplaces'] = checks.value.filter(i => 
+      ['amazon-store', 'ebay-store', 'etsy-store'].includes(i.id)
+    )
+  } else if (mode.value === 'health-wellness') {
+    channels['Booking Platforms'] = checks.value.filter(i => 
+      ['healthengine-listing', 'hotdoc-listing'].includes(i.id)
+    )
+  } else if (mode.value === 'pet') {
+    channels['Pet Platforms'] = checks.value.filter(i => 
+      ['pawshake-profile', 'madpaws-profile', 'petbarn-listing'].includes(i.id)
+    )
   }
   
   return channels
@@ -91,15 +316,24 @@ const channelStatus = computed<ChannelStatus[]>(() => {
   return Object.entries(channelChecks.value).map(([name, items]) => {
     let status: 'active' | 'warning' | 'missing' = 'missing'
     let score = 0
-    const total = items.length
+    let totalWeight = 0
     
     if (items.length) {
-      // Count successful checks
-      score = items.filter(i => 
-        i.status === 'success' && 
-        i.result?.type === 'check' && 
-        i.result.value === true
-      ).length
+      // Count successful checks, factoring in their weights
+      items.forEach(item => {
+        totalWeight += item.weight
+        if (item.status === 'success' && 
+            item.result?.type === 'check' && 
+            item.result.value === true) {
+          score += item.weight
+        } else if (item.status === 'success' && 
+            item.result?.type === 'progress') {
+          // For progress-type checks, calculate proportional score based on value/max ratio
+          const progressValue = item.result.value || 0
+          const progressMax = item.result.max || 1
+          score += item.weight * (progressValue / progressMax)
+        }
+      })
       
       const active = items.some(i => i.status === 'success' && i.result?.type === 'check' && i.result.value === true)
       const warning = items.some(i => i.status === 'success')
@@ -108,7 +342,7 @@ const channelStatus = computed<ChannelStatus[]>(() => {
       else if (warning) status = 'warning'
     }
     
-    return { name, status, score, total }
+    return { name, status, score, total: totalWeight }
   })
 })
 
@@ -120,12 +354,12 @@ const activeChannelsCount = computed(() =>
 // Total implementation score
 const totalImplementationScore = computed(() => {
   const scored = channelStatus.value.reduce((acc, channel) => acc + channel.score, 0)
-  const possible = channelStatus.value.reduce((acc, channel) => acc + channel.total, 0)
+  const totalPossible = 100 // We're using a fixed 100-point scale
   
   return {
-    score: scored,
-    total: possible,
-    percentage: possible > 0 ? Math.round((scored / possible) * 100) : 0
+    score: Math.round(scored),
+    total: totalPossible,
+    percentage: Math.round(scored)
   }
 })
 
@@ -273,6 +507,14 @@ const columns: TableColumn<Check>[] = [
     header: 'Name',
   },
   {
+    accessorKey: 'weight',
+    header: 'Weight',
+    cell: ({ row }) => {
+      const weight = row.getValue('weight') as number
+      return h('div', { class: 'text-sm text-right' }, `${weight} pts`)
+    }
+  },
+  {
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
@@ -327,8 +569,32 @@ const todayDate = new Date().toLocaleDateString('en-US', {
   day: '2-digit'
 });
 
-// Toggle for the detailed checks
-const showChecks = ref(false);
+// Function to update a check weight
+const updateCheckWeight = (checkId: string, newWeight: number) => {
+  customWeights.value[checkId] = newWeight;
+  
+  // Update the weights in the checks array
+  checks.value.forEach(check => {
+    if (check.id === checkId) {
+      check.weight = newWeight;
+    }
+  });
+}
+
+// Reset weights to defaults
+const resetWeights = () => {
+  customWeights.value = { ...checkWeights.value };
+  checks.value.forEach(check => {
+    check.weight = checkWeights.value[check.id] || 1;
+  });
+}
+
+// Save current weights as default
+const saveWeights = () => {
+  // Update the current mode's weights
+  Object.assign(modeCheckWeights[mode.value], customWeights.value);
+  editingWeights.value = false;
+}
 
 // Get status colors for semantic UI
 const getStatusColor = (status: string) => {
@@ -355,15 +621,6 @@ const getProgressColor = (percent: number) => {
   if (percent >= 40) return 'bg-warning-500 dark:bg-warning-400'
   return 'bg-error-500 dark:bg-error-400'
 }
-
-const mode = ref('food-beverage')
-const modes = [
-  { label: 'Food & Beverage', value: 'food-beverage' },
-  { label: 'Trades (coming soon)', value: 'tradie', disabled: true },
-  { label: 'Health (coming soon)', value: 'health-wellness', disabled: true },
-  { label: 'Retail (coming soon)', value: 'retail', disabled: true },
-  { label: 'Pet Services (coming soon)', value: 'pet', disabled: true },
-]
 </script>
 
 <template>
@@ -458,7 +715,7 @@ const modes = [
               
               <div class="flex justify-between text-xs text-slate-300">
                 <span>Online visibility score</span>
-                <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} checks passing</span>
+                <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points</span>
               </div>
             </div>
           </div>
@@ -487,7 +744,7 @@ const modes = [
                 
                 <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                   <span>Completeness</span>
-                  <span>{{ channel.score }}/{{ channel.total }}</span>
+                  <span>{{ channel.score.toFixed(1) }}/{{ channel.total }} pts</span>
                 </div>
               </div>
             </div>
@@ -566,6 +823,293 @@ const modes = [
           
           <Transition name="fade">
             <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded overflow-hidden transition-all">
+              <!-- Weight Editor -->
+              <div class="border-b border-slate-200 dark:border-slate-700 p-4">
+                <div class="flex justify-between items-center mb-3">
+                  <h3 class="font-medium text-slate-800 dark:text-slate-200">
+                    Scoring System for {{ modes.find(m => m.value === mode)?.label || 'Food & Beverage' }}
+                  </h3>
+                  <div class="flex gap-2">
+                    <UButton v-if="!editingWeights" size="xs" color="primary" variant="ghost" 
+                      @click="editingWeights = true" icon="i-lucide-sliders">
+                      Edit Weights
+                    </UButton>
+                    <template v-else>
+                      <UButton size="xs" color="success" variant="ghost" 
+                        @click="saveWeights()" icon="i-lucide-check">
+                        Save
+                      </UButton>
+                      <UButton size="xs" color="neutral" variant="ghost" 
+                        @click="resetWeights(); editingWeights = false" icon="i-lucide-x">
+                        Cancel
+                      </UButton>
+                      <UButton size="xs" color="warning" variant="ghost" 
+                        @click="resetWeights()" icon="i-lucide-refresh-cw">
+                        Reset
+                      </UButton>
+                    </template>
+                  </div>
+                </div>
+                
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                  Total score is calculated out of 100 points, distributed across different checks based on the {{ modes.find(m => m.value === mode)?.label || 'Food & Beverage' }} profile.
+                </p>
+                
+                <div v-if="editingWeights" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Google Business Profile ({{ 
+                      Object.entries(customWeights).filter(([key]) => key.startsWith('google-'))
+                        .reduce((acc, [, value]) => acc + value, 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div v-for="check in checks.filter(c => c.id.startsWith('google-'))" :key="check.id" 
+                           class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">{{ check.name.replace('Google Map Listing ', '') }}</span>
+                        <UInput v-model.number="customWeights[check.id]" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Website ({{ 
+                      Object.entries(customWeights).filter(([key]) => key.startsWith('website'))
+                        .reduce((acc, [, value]) => acc + value, 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div v-for="check in checks.filter(c => c.id.startsWith('website'))" :key="check.id" 
+                           class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">{{ check.name }}</span>
+                        <UInput v-model.number="customWeights[check.id]" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Food delivery platforms for Food & Beverage -->
+                  <div v-if="mode === 'food-beverage'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Food Delivery ({{ 
+                      ['uber-eats-listing', 'menulog-listing', 'doordash-listing', 'deliveroo-listing']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Uber Eats Listing</span>
+                        <UInput v-model.number="customWeights['uber-eats-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Menulog Listing</span>
+                        <UInput v-model.number="customWeights['menulog-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">DoorDash Listing</span>
+                        <UInput v-model.number="customWeights['doordash-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Deliveroo Listing</span>
+                        <UInput v-model.number="customWeights['deliveroo-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Service platforms for Tradies -->
+                  <div v-if="mode === 'tradie'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Service Platforms ({{ 
+                      ['hipages-listing', 'oneflare-listing']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">hipages Listing</span>
+                        <UInput v-model.number="customWeights['hipages-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Oneflare Listing</span>
+                        <UInput v-model.number="customWeights['oneflare-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Retail platforms for Retail -->
+                  <div v-if="mode === 'retail'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Marketplaces ({{ 
+                      ['amazon-store', 'ebay-store', 'etsy-store']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Amazon Store</span>
+                        <UInput v-model.number="customWeights['amazon-store']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">eBay Store</span>
+                        <UInput v-model.number="customWeights['ebay-store']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Etsy Store</span>
+                        <UInput v-model.number="customWeights['etsy-store']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Health platforms for Health category -->
+                  <div v-if="mode === 'health-wellness'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Booking Platforms ({{ 
+                      ['healthengine-listing', 'hotdoc-listing']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">HealthEngine Listing</span>
+                        <UInput v-model.number="customWeights['healthengine-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">HotDoc Listing</span>
+                        <UInput v-model.number="customWeights['hotdoc-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Pet platforms for Pet Services -->
+                  <div v-if="mode === 'pet'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Pet Platforms ({{ 
+                      ['pawshake-profile', 'madpaws-profile', 'petbarn-listing']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Pawshake Profile</span>
+                        <UInput v-model.number="customWeights['pawshake-profile']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Mad Paws Profile</span>
+                        <UInput v-model.number="customWeights['madpaws-profile']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Petbarn Listing</span>
+                        <UInput v-model.number="customWeights['petbarn-listing']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Social Media for all modes -->
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Social Media ({{ 
+                      ['instagram-profile', 'facebook-page', 'tiktok-profile']
+                        .reduce((acc, key) => acc + (customWeights[key] || 0), 0) 
+                    }} points)</h4>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Facebook Page</span>
+                        <UInput v-model.number="customWeights['facebook-page']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">Instagram Profile</span>
+                        <UInput v-model.number="customWeights['instagram-profile']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                      <div v-if="['retail', 'food-beverage'].includes(mode)" class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">TikTok Profile</span>
+                        <UInput v-model.number="customWeights['tiktok-profile']" type="number" min="0" max="100" step="0.5" 
+                                class="w-16 text-right" size="sm" />
+                      </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                      <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Total Score: {{ 
+                        Object.values(customWeights).reduce((acc, value) => acc + value, 0) 
+                      }}/100</h4>
+                      <div v-if="Object.values(customWeights).reduce((acc, value) => acc + value, 0) !== 100" 
+                           class="text-xs text-error-500 dark:text-error-400">
+                        Warning: Total weights should equal 100.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Google Business Profile</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ Object.entries(checkWeights.value).filter(([key]) => key.startsWith('google-'))
+                        .reduce((acc, [, value]) => acc + value, 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Website</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ Object.entries(checkWeights.value).filter(([key]) => key.startsWith('website'))
+                        .reduce((acc, [, value]) => acc + value, 0) }} points
+                    </div>
+                  </div>
+                  
+                  <!-- Conditionally show mode-specific platform summary -->
+                  <div v-if="mode === 'food-beverage'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Food Delivery</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['uber-eats-listing', 'menulog-listing', 'doordash-listing', 'deliveroo-listing']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="mode === 'tradie'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Service Platforms</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['hipages-listing', 'oneflare-listing']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="mode === 'retail'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Marketplaces</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['amazon-store', 'ebay-store', 'etsy-store']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="mode === 'health-wellness'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Booking Platforms</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['healthengine-listing', 'hotdoc-listing']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="mode === 'pet'">
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Pet Platforms</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['pawshake-profile', 'madpaws-profile', 'petbarn-listing']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800 dark:text-slate-200 mb-2">Social Media</h4>
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
+                      {{ ['instagram-profile', 'facebook-page', 'tiktok-profile']
+                        .reduce((acc, key) => acc + (checkWeights.value[key] || 0), 0) }} points
+                    </div>
+                  </div>
+                </div>
+              </div>
+            
               <UTable :data="checks" :columns="columns" class="mb-6 flex-1" />
             </div>
           </Transition>
