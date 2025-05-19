@@ -1,3 +1,6 @@
+import { load } from 'cheerio';
+import { stealthGetHtml } from '../../../../utils/stealthyRequests';
+
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
@@ -12,12 +15,81 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // For MVP, this is a placeholder as we'd need to actually analyze the site's
-  // HTML to find and validate JSON-LD schema
-  
-  return { 
-    type: 'check' as const, 
-    value: null, // null means not tested yet
-    label: 'LocalBusiness JSON-LD check not yet implemented (requires HTML analysis)'
-  };
+  // If there's no website URL, we can't check for JSON-LD
+  if (!business.websiteUrl) {
+    return { 
+      type: 'check' as const, 
+      value: false, 
+      label: 'No website URL provided'
+    };
+  }
+
+  try {
+    // Fetch the HTML content of the website
+    const html = await stealthGetHtml(business.websiteUrl);
+    
+    // Use cheerio to parse the HTML and extract JSON-LD scripts
+    const $ = load(html);
+    const jsonLdScripts = $('script[type="application/ld+json"]');
+    
+    if (jsonLdScripts.length === 0) {
+      return {
+        type: 'check' as const,
+        value: false,
+        label: 'No JSON-LD scripts found on website'
+      };
+    }
+    
+    // Check each JSON-LD script for LocalBusiness type
+    let hasLocalBusiness = false;
+    let details = '';
+    
+    jsonLdScripts.each((_, script) => {
+      try {
+        const jsonContent = JSON.parse($(script).html() || '{}');
+        
+        // Handle both direct LocalBusiness and @graph containing LocalBusiness
+        if (
+          (jsonContent['@type'] === 'LocalBusiness' || 
+           jsonContent['@type']?.includes?.('LocalBusiness')) ||
+          (jsonContent['@type'] === 'Organization' || 
+           jsonContent['@type']?.includes?.('Organization'))
+        ) {
+          hasLocalBusiness = true;
+          details = `Found ${jsonContent['@type']} schema`;
+        } else if (jsonContent['@graph']) {
+          // Check in graph array
+          const graphItems = Array.isArray(jsonContent['@graph']) ? jsonContent['@graph'] : [jsonContent['@graph']];
+          for (const item of graphItems) {
+            if (
+              (item['@type'] === 'LocalBusiness' || 
+               item['@type']?.includes?.('LocalBusiness')) ||
+              (item['@type'] === 'Organization' || 
+               item['@type']?.includes?.('Organization'))
+            ) {
+              hasLocalBusiness = true;
+              details = `Found ${item['@type']} schema in @graph`;
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing JSON-LD:', e);
+        // Continue checking other scripts
+      }
+    });
+    
+    return {
+      type: 'check' as const,
+      value: hasLocalBusiness,
+      label: hasLocalBusiness ? details : 'No LocalBusiness or Organization JSON-LD schema found'
+    };
+  } catch (error) {
+    console.error('Error checking LocalBusiness JSON-LD:', error);
+    return {
+      type: 'check' as const,
+      value: false,
+      label: `Error fetching website: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
 }); 
