@@ -161,7 +161,7 @@ addCheck('Has an Instagram profile', 'instagram-profile')
 addCheck('Has a Facebook page', 'facebook-page')
 
 // Website ↔ GBP parity
-addCheck('Website name, address & phone exactly match GBP', 'website-gbp-name-address-phone')
+addCheck('Website name, address & phone match GBP', 'website-gbp-name-address-phone')
 addCheck('Physical address printed in header/footer', 'website-physical-address')
 addCheck('Opening hours printed on the website', 'website-opening-hours')
 
