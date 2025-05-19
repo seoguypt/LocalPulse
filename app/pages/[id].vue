@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import { h, resolveComponent, computed, watch } from 'vue'
+import { h, resolveComponent, computed, watch, watchEffect } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
 const UBadge = resolveComponent('UBadge')
@@ -20,7 +20,7 @@ const modes = [
 ]
 
 // Definition of check weights by business mode (out of 100 total points)
-const modeCheckWeights = {
+const modeCheckWeights: Record<string, Record<string, number>> = {
   'food-beverage': {
     // Google Business Profile (31 points total)
     'google-listing': 8,
@@ -74,8 +74,8 @@ const checkWeights = computed(() => {
   return modeCheckWeights[mode.value] || modeCheckWeights['food-beverage'];
 });
 
-// Toggle for the detailed checks
-const showChecks = ref(false);
+// Toggle for the detailed checks - now set to true by default
+const showChecks = ref(true);
 
 const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
@@ -90,6 +90,7 @@ const resultSchema = z.discriminatedUnion('type', [
 const checkSchema = z.object({
   id: z.string(),
   name: z.string(),
+  channel: z.string(),
   status: z.enum(['idle', 'pending', 'success', 'error']),
   result: resultSchema.nullable().default(null),
   weight: z.number().default(1), // Weight for this check in the scoring system
@@ -99,13 +100,86 @@ type Check = z.infer<typeof checkSchema>
 
 const checks = ref<Check[]>([])
 
-const addCheck = async (name: string, checkId: string) => {
+// Centralized check definitions
+const allCheckDefinitions = [
+  // Google Business Profile checks
+  { id: 'google-listing', name: 'Google Business Profile (GBP) exists', channel: 'Google Business Profile' },
+  { id: 'google-listing-primary-category', name: 'GBP primary category is set', channel: 'Google Business Profile' },
+  { id: 'google-listing-opening-times', name: 'GBP opening hours are present', channel: 'Google Business Profile' },
+  { id: 'google-listing-website-matches', name: 'GBP website URL matches the scanned site', channel: 'Google Business Profile' },
+  { id: 'google-listing-phone-number', name: 'GBP phone number matches the site', channel: 'Google Business Profile' },
+  { id: 'google-listing-photos', name: '≥ 3 photos on GBP (food or venue)', channel: 'Google Business Profile' },
+  { id: 'google-listing-reviews', name: 'Google rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
+  
+  // Core site hygiene & UX
+  { id: 'website', name: 'Site enforces HTTPS', channel: 'Website' },
+  { id: 'website-200-299', name: 'Site returns 200-299 status codes', channel: 'Website' },
+  { id: 'website-mobile-responsive', name: 'Site is mobile-responsive', channel: 'Website' },
+  { id: 'website-performance', name: 'Median First Contentful Paint ≤ 3s', channel: 'Website' },
+  { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food-beverage'] },
+  { id: 'website-menu-navigation', name: 'Menu in navigation', channel: 'Website', modes: ['food-beverage'] },
+  
+  // Structured data & on-page SEO
+  { id: 'website-localbusiness-jsonld', name: 'LocalBusiness JSON-LD detected', channel: 'Website' },
+  { id: 'website-menu-jsonld', name: 'Menu JSON-LD detected', channel: 'Website', modes: ['food-beverage'] },
+  { id: 'website-title', name: '<title> contains business name + suburb/city', channel: 'Website' },
+  { id: 'website-meta-description', name: '<meta description> present (≤ 160 chars)', channel: 'Website' },
+  { id: 'website-canonical', name: '<link rel="canonical"> present on every page', channel: 'Website' },
+  { id: 'website-robots', name: 'robots.txt does not block the homepage', channel: 'Website' },
+  { id: 'website-sitemap', name: 'Sitemap file discoverable', channel: 'Website' },
+  
+  // Social proof & conversion cues
+  { id: 'website-tel-link', name: 'Click-to-call tel: link on site', channel: 'Website' },
+  { id: 'website-og-image', name: 'og:image (Open-Graph preview) present', channel: 'Website' },
+  { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
+  { id: 'facebook-page', name: 'Has a Facebook page', channel: 'Social Media' },
+  { id: 'tiktok-profile', name: 'Has a TikTok profile', channel: 'Social Media' },
+  
+  // Website ↔ GBP parity
+  { id: 'website-gbp-name-address-phone', name: 'Website name, address & phone match GBP', channel: 'Website' },
+  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
+  { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website' },
+  
+  // Food delivery platforms
+  { id: 'uber-eats-listing', name: 'Uber Eats Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
+  { id: 'menulog-listing', name: 'Menulog Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
+  { id: 'doordash-listing', name: 'DoorDash Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
+  { id: 'deliveroo-listing', name: 'Deliveroo Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
+  
+  // Service platform checks for Tradies
+  { id: 'hipages-listing', name: 'hipages Listing', channel: 'Service Platforms', modes: ['tradie'] },
+  { id: 'oneflare-listing', name: 'Oneflare Listing', channel: 'Service Platforms', modes: ['tradie'] },
+  
+  // Marketplace checks for Retail
+  { id: 'amazon-store', name: 'Amazon Store', channel: 'Marketplaces', modes: ['retail'] },
+  { id: 'ebay-store', name: 'eBay Store', channel: 'Marketplaces', modes: ['retail'] },
+  { id: 'etsy-store', name: 'Etsy Store', channel: 'Marketplaces', modes: ['retail'] },
+  
+  // Booking platform checks for Health
+  { id: 'healthengine-listing', name: 'HealthEngine Listing', channel: 'Booking Platforms', modes: ['health-wellness'] },
+  { id: 'hotdoc-listing', name: 'HotDoc Listing', channel: 'Booking Platforms', modes: ['health-wellness'] },
+  
+  // Pet platform checks
+  { id: 'pawshake-profile', name: 'Pawshake Profile', channel: 'Pet Platforms', modes: ['pet'] },
+  { id: 'madpaws-profile', name: 'Mad Paws Profile', channel: 'Pet Platforms', modes: ['pet'] },
+  { id: 'petbarn-listing', name: 'Petbarn Listing', channel: 'Pet Platforms', modes: ['pet'] },
+]
+
+// Filter checks based on the current mode
+const activeCheckDefinitions = computed(() => {
+  return allCheckDefinitions.filter(def => 
+    !def.modes || def.modes.includes(mode.value)
+  )
+})
+
+const addCheck = async (name: string, checkId: string, channel: string) => {
   // Get the weight for this check, or default to 1
-  const weight = checkWeights.value[checkId] || 1
+  const weight = checkWeights.value?.[checkId] || 1
   
   const check: Ref<Check> = ref(checkSchema.parse({ 
     id: checkId, 
-    name, 
+    name,
+    channel, 
     status: 'pending',
     weight 
   }))
@@ -120,105 +194,29 @@ const addCheck = async (name: string, checkId: string) => {
   }
 }
 
-// Watch for mode changes to update check weights
-watch(mode, () => {
-  // Update weights for all checks based on the new mode
-  checks.value.forEach(check => {
-    check.weight = checkWeights.value[check.id] || 1;
-  });
-}, { immediate: true });
-
-// Google Business Profile checks
-addCheck('Google Business Profile (GBP) exists', 'google-listing')
-addCheck('GBP primary category is set', 'google-listing-primary-category')
-addCheck('GBP opening hours are present', 'google-listing-opening-times')
-addCheck('GBP website URL matches the scanned site', 'google-listing-website-matches')
-addCheck('GBP phone number matches the site', 'google-listing-phone-number')
-addCheck('≥ 3 photos on GBP (food or venue)', 'google-listing-photos')
-
-// Core site hygiene & UX
-addCheck('Site enforces HTTPS', 'website')
-addCheck('Site returns 200-299 status codes', 'website-200-299')
-addCheck('Site is mobile-responsive', 'website-mobile-responsive')
-addCheck('Median First Contentful Paint ≤ 3s', 'website-performance')
-
-// Structured data & on-page SEO
-addCheck('LocalBusiness JSON-LD detected', 'website-localbusiness-jsonld')
-addCheck('Menu JSON-LD detected', 'website-menu-jsonld')
-addCheck('<title> contains business name + suburb/city', 'website-title')
-addCheck('<meta description> present (≤ 160 chars)', 'website-meta-description')
-addCheck('<link rel="canonical"> present on every page', 'website-canonical')
-addCheck('robots.txt does not block the homepage', 'website-robots')
-addCheck('Sitemap file discoverable', 'website-sitemap')
-
-// Social proof & conversion cues
-addCheck('Google rating ≥ 4.0 and ≥ 20 reviews', 'google-listing-reviews')
-addCheck('Click-to-call tel: link on site', 'website-tel-link')
-addCheck('og:image (Open-Graph preview) present', 'website-og-image')
-addCheck('Has an Instagram profile', 'instagram-profile')
-addCheck('Has a Facebook page', 'facebook-page')
-
-// Website ↔ GBP parity
-addCheck('Website name, address & phone match GBP', 'website-gbp-name-address-phone')
-addCheck('Physical address printed in header/footer', 'website-physical-address')
-addCheck('Opening hours printed on the website', 'website-opening-hours')
-
-// Service platform checks for Tradies
-if (mode.value === 'tradie') {
-  addCheck('hipages Listing', 'hipages-listing')
-  addCheck('Oneflare Listing', 'oneflare-listing')
-}
-
-// Marketplace checks for Retail
-if (mode.value === 'retail') {
-  addCheck('Amazon Store', 'amazon-store')
-  addCheck('eBay Store', 'ebay-store')
-  addCheck('Etsy Store', 'etsy-store')
-}
-
-// Booking platform checks for Health
-if (mode.value === 'health-wellness') {
-  addCheck('HealthEngine Listing', 'healthengine-listing')
-  addCheck('HotDoc Listing', 'hotdoc-listing')
-}
-
-// Pet platform checks
-if (mode.value === 'pet') {
-  addCheck('Pawshake Profile', 'pawshake-profile')
-  addCheck('Mad Paws Profile', 'madpaws-profile')
-  addCheck('Petbarn Listing', 'petbarn-listing')
-}
+// Dynamically load checks based on mode
+watchEffect(() => {
+  // Clear existing checks
+  checks.value = []
+  
+  // Add all active checks for the current mode
+  activeCheckDefinitions.value.forEach(def => {
+    addCheck(def.name, def.id, def.channel)
+  })
+})
 
 // Organize checks by channel
 const channelChecks = computed(() => {
-  const channels = {
-    'Google Business Profile': checks.value.filter(i => i.id.startsWith('google-')),
-    'Website': checks.value.filter(i => i.id.startsWith('website')),
-    'Social Media': checks.value.filter(i => ['facebook-page', 'instagram-profile', 'tiktok-profile'].includes(i.id)),
-  }
+  const channels: Record<string, Check[]> = {}
   
-  // Add mode-specific channels
-  if (mode.value === 'food-beverage') {
-    channels['Food Delivery'] = checks.value.filter(i => 
-      ['uber-eats-listing', 'menulog-listing', 'doordash-listing', 'deliveroo-listing'].includes(i.id)
-    )
-  } else if (mode.value === 'tradie') {
-    channels['Service Platforms'] = checks.value.filter(i => 
-      ['hipages-listing', 'oneflare-listing'].includes(i.id)
-    )
-  } else if (mode.value === 'retail') {
-    channels['Marketplaces'] = checks.value.filter(i => 
-      ['amazon-store', 'ebay-store', 'etsy-store'].includes(i.id)
-    )
-  } else if (mode.value === 'health-wellness') {
-    channels['Booking Platforms'] = checks.value.filter(i => 
-      ['healthengine-listing', 'hotdoc-listing'].includes(i.id)
-    )
-  } else if (mode.value === 'pet') {
-    channels['Pet Platforms'] = checks.value.filter(i => 
-      ['pawshake-profile', 'madpaws-profile', 'petbarn-listing'].includes(i.id)
-    )
-  }
+  // Group checks by channel
+  checks.value.forEach(check => {
+    const channelName = check.channel || 'Uncategorized'
+    if (!channels[channelName]) {
+      channels[channelName] = []
+    }
+    channels[channelName].push(check)
+  })
   
   return channels
 })
@@ -291,6 +289,26 @@ const columns: TableColumn<Check>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
+  },
+  {
+    accessorKey: 'channel',
+    header: 'Channel',
+    cell: ({ row }) => {
+      const channel = row.getValue('channel') as string
+      const colorMap: Record<string, string> = {
+        'Google Business Profile': 'primary',
+        'Website': 'success',
+        'Social Media': 'info',
+        'Food Delivery': 'orange',
+        'Service Platforms': 'purple', 
+        'Marketplaces': 'teal',
+        'Booking Platforms': 'rose',
+        'Pet Platforms': 'indigo'
+      }
+      const color = colorMap[channel] || 'neutral'
+      
+      return h(UBadge, { variant: 'subtle', color, class: 'text-xs' }, () => channel)
+    }
   },
   {
     accessorKey: 'weight',
@@ -477,6 +495,44 @@ const getProgressColor = (percent: number) => {
             </div>
           </div>
         </section>
+        
+        <!-- 6. DETAILED CHECKS SECTION -->
+        <section class="mb-10">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Technical Implementation Details</h2>
+            <UButton color="neutral" variant="ghost" size="xs" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
+              @click="showChecks = !showChecks" class="text-slate-600 dark:text-slate-400">
+              {{ showChecks ? 'Hide details' : 'Show details' }}
+            </UButton>
+          </div>
+          
+          <Transition name="fade">
+            <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
+              <!-- Check Summary Stats -->
+              <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-3">
+                <UBadge v-for="(channel, idx) in Object.keys(channelChecks)" :key="idx"
+                       :color="getStatusColor(channelStatus.find(s => s.name === channel)?.status || 'missing')">
+                  {{ channel }}: {{ channelStatus.find(s => s.name === channel)?.score || 0 }}/{{ channelStatus.find(s => s.name === channel)?.total || 0 }}
+                </UBadge>
+              </div>
+            
+              <UTable :data="checks" :columns="columns" class="mb-0" :ui="{ 
+                wrapper: 'w-full relative overflow-x-auto', 
+                table: 'w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400',
+                th: {
+                  base: 'bg-slate-50 dark:bg-slate-700',
+                  padding: 'px-4 py-3'
+                },
+                td: {
+                  padding: 'px-4 py-3'
+                },
+                tr: {
+                  base: 'border-t border-slate-200 dark:border-slate-700'
+                }
+              }" />
+            </div>
+          </Transition>
+        </section>
 
         <!-- 5. RESOURCES SECTION -->
         <section class="mb-10">
@@ -494,23 +550,6 @@ const getProgressColor = (percent: number) => {
               Download PDF
             </UButton>
           </div>
-        </section>
-
-        <!-- 6. DETAILED CHECKS SECTION -->
-        <section>
-          <div class="flex justify-between items-center mb-4">
-            <UButton color="neutral" variant="ghost" size="xs" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
-              @click="showChecks = !showChecks" class="text-slate-600 dark:text-slate-400 ml-auto">
-              {{ showChecks ? 'Hide technical details' : 'Show technical details' }}
-            </UButton>
-          </div>
-          
-          <Transition name="fade">
-            <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded overflow-hidden transition-all">
-            
-              <UTable :data="checks" :columns="columns" class="mb-6 flex-1" />
-            </div>
-          </Transition>
         </section>
 
         <!-- Footer -->
