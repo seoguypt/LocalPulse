@@ -188,13 +188,6 @@ const resultSchema = z.discriminatedUnion('type', [
     label: z.string().optional(),
     value: z.boolean().nullable().default(null),
   }),
-  z.object({
-    type: z.literal('progress'),
-    label: z.string().optional(),
-    value: z.number().nullable().default(null),
-    max: z.number().nullable().default(null),
-    color: z.string().nullable().default(null),
-  }),
 ])
 
 const checkSchema = z.object({
@@ -362,12 +355,6 @@ const channelStatus = computed<ChannelStatus[]>(() => {
             item.result?.type === 'check' && 
             item.result.value === true) {
           score += item.weight
-        } else if (item.status === 'success' && 
-            item.result?.type === 'progress') {
-          // For progress-type checks, calculate proportional score based on value/max ratio
-          const progressValue = item.result.value || 0
-          const progressMax = item.result.max || 1
-          score += item.weight * (progressValue / progressMax)
         }
       })
       
@@ -396,10 +383,6 @@ const totalImplementationScore = computed(() => {
     if (check.status === 'success' && check.result) {
       if (check.result.type === 'check') {
         return acc + (check.result.value === true ? check.weight : 0)
-      } else if (check.result.type === 'progress') {
-        const value = check.result.value ?? 0
-        const max = check.result.max ?? 1
-        return acc + check.weight * (value / max)
       }
     }
     return acc
@@ -457,9 +440,7 @@ const columns: TableColumn<Check>[] = [
       const value = result.value
 
       let component = null
-      if (type === 'progress') {
-        component = h(UProgress, { color: result.color, modelValue: result.value, max: result.max })
-      } else if (type === 'check') {
+      if (type === 'check') {
         const color = value === true ? 'success' : value === false ? 'error' : 'neutral'
         component = h(UBadge, { variant: 'subtle', color, icon: value === true ? 'i-lucide-check' : value === false ? 'i-lucide-x' : 'i-lucide-clock' })
       }
