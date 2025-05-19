@@ -141,8 +141,6 @@ addCheck('Site enforces HTTPS', 'website')
 addCheck('Site returns 200-299 status codes', 'website-200-299')
 addCheck('Site is mobile-responsive', 'website-mobile-responsive')
 addCheck('Median First Contentful Paint ≤ 3s', 'website-performance')
-addCheck('Dedicated /menu page exists', 'website-menu-page')
-addCheck('Menu page is linked in main navigation', 'website-menu-navigation')
 
 // Structured data & on-page SEO
 addCheck('LocalBusiness JSON-LD detected', 'website-localbusiness-jsonld')
