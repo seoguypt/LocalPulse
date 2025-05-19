@@ -109,3 +109,21 @@ Instantly find what's costing you customers—then fix it in minutes.
 | 29 | Website **name, address & phone** exactly match GBP | 6 |
 | 30 | **Physical address** printed in header/footer | 2 |
 | 31 | **Opening hours** printed on the website | 2 |
+
+## VisiMate Critical Score
+
+A flexible, out-of-100 scoring system for your F&B small business’s core online-presence checks.
+
+### How it works
+
+1. **Define your atomic checks**  
+   – Each check (`i`) gets an **importance weight** `wᵢ` (e.g. 1–10).  
+   – You can add or remove checks anytime without rebalancing existing weights.
+
+2. **Run your checks**  
+   – For each check, set `xᵢ = 1` if it **passes**, or `0` if it **fails**.
+
+3. **Compute your score**  
+   ```text
+   VisiMate Score = ( Σᵢ wᵢ × xᵢ  /  Σᵢ wᵢ ) × 100
+   ```

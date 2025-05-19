@@ -22,38 +22,58 @@ const modes = [
 // Definition of check weights by business mode (out of 100 total points)
 const modeCheckWeights = {
   'food-beverage': {
-    // Google checks (45 points total)
-    'google-listing': 9,
-    'google-listing-opening-times': 6,
-    'google-listing-phone-number': 5,
-    'google-listing-website': 4,
+    // Google Business Profile (31 points total)
+    'google-listing': 8,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
     'google-listing-website-matches': 3,
-    'google-listing-replies-to-reviews': 6,
-    'google-listing-number-of-reviews': 7,
-    'google-listing-name-matches-signage': 2.5,
-    'google-listing-name-cleanliness': 2.5,
+    'google-listing-phone-number': 2,
+    'google-listing-photos': 3,
     
-    // Website checks (25 points total)
-    'website': 15,
-    'website-200-299': 10,
+    // Core site hygiene & UX (25 points total)
+    'website': 6, // Site exists (treating as HTTPS check)
+    'website-200-299': 6, // Treating as mobile-responsive check for now
+    'website-performance': 6, // First Contentful Paint
+    'website-menu-page': 4, // Menu page exists
+    'website-menu-navigation': 3, // Menu in navigation
     
-    // Food delivery platforms (20 points total)
-    'uber-eats-listing': 6,
-    'menulog-listing': 5,
-    'doordash-listing': 5,
-    'deliveroo-listing': 4,
+    // Structured data & on-page SEO (17 points total)
+    'website-localbusiness-jsonld': 3,
+    'website-menu-jsonld': 2,
+    'website-title': 5,
+    'website-meta-description': 2,
+    'website-canonical': 1,
+    'website-robots': 1,
+    'website-sitemap': 1,
+    'website-apple-maps': 1,
     
-    // Social media (10 points total)
-    'instagram-profile': 5,
-    'facebook-page': 5
+    // Social proof & conversion cues (18 points total)
+    'google-listing-reviews': 5, // Rating and # of reviews
+    'website-tel-link': 1,
+    'website-og-image': 1,
+    'instagram-profile': 3,
+    'facebook-page': 3,
+    'social-recent-posts': 5,
+    
+    // Compliance & analytics (8 points total)
+    'website-cookie-consent': 1,
+    'website-google-analytics': 4,
+    'website-search-console': 3,
+    
+    // Website ↔ GBP parity (10 points total)
+    'website-gbp-name-address-phone': 6,
+    'website-physical-address': 2,
+    'website-opening-hours': 2
   },
   'tradie': {
     // Google checks (50 points total)
-    'google-listing': 12,
-    'google-listing-opening-times': 4,
-    'google-listing-phone-number': 10,
-    'google-listing-website': 6,
-    'google-listing-website-matches': 4,
+    'google-listing': 10,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-phone-number': 2,
+    'google-listing-website': 3,
+    'google-listing-website-matches': 3,
+    'google-listing-photos': 3,
     'google-listing-replies-to-reviews': 5,
     'google-listing-number-of-reviews': 6,
     'google-listing-name-matches-signage': 1.5,
@@ -72,11 +92,13 @@ const modeCheckWeights = {
   },
   'retail': {
     // Google checks (40 points total)
-    'google-listing': 8,
-    'google-listing-opening-times': 6,
-    'google-listing-phone-number': 4,
-    'google-listing-website': 5,
+    'google-listing': 6,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-phone-number': 2,
+    'google-listing-website': 3,
     'google-listing-website-matches': 3,
+    'google-listing-photos': 3,
     'google-listing-replies-to-reviews': 5,
     'google-listing-number-of-reviews': 5,
     'google-listing-name-matches-signage': 2,
@@ -98,11 +120,13 @@ const modeCheckWeights = {
   },
   'health-wellness': {
     // Google checks (45 points total)
-    'google-listing': 10,
-    'google-listing-opening-times': 8,
-    'google-listing-phone-number': 7,
-    'google-listing-website': 5,
+    'google-listing': 8,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-phone-number': 2,
+    'google-listing-website': 3,
     'google-listing-website-matches': 3,
+    'google-listing-photos': 3,
     'google-listing-replies-to-reviews': 5,
     'google-listing-number-of-reviews': 5,
     'google-listing-name-matches-signage': 1,
@@ -121,11 +145,13 @@ const modeCheckWeights = {
   },
   'pet': {
     // Google checks (45 points total)
-    'google-listing': 10,
-    'google-listing-opening-times': 6,
-    'google-listing-phone-number': 7,
-    'google-listing-website': 5,
-    'google-listing-website-matches': 4,
+    'google-listing': 8,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-phone-number': 2,
+    'google-listing-website': 3,
+    'google-listing-website-matches': 3,
+    'google-listing-photos': 3,
     'google-listing-replies-to-reviews': 5,
     'google-listing-number-of-reviews': 5,
     'google-listing-name-matches-signage': 1.5,
@@ -212,32 +238,47 @@ watch(mode, () => {
 }, { immediate: true });
 
 // Google Business Profile checks
-addCheck('Google Map Listing', 'google-listing')
-addCheck('Google Map Listing Opening Times', 'google-listing-opening-times')
-addCheck('Google Map Listing Phone Number', 'google-listing-phone-number')
-addCheck('Google Map Listing Website', 'google-listing-website')
-addCheck('Google Map Listing Website Matches', 'google-listing-website-matches')
-addCheck('Google Map Listing Replies to Reviews', 'google-listing-replies-to-reviews')
-addCheck('Google Map Listing Number of Reviews', 'google-listing-number-of-reviews')
-addCheck('Google Map Listing Name Matches Signage', 'google-listing-name-matches-signage')
-addCheck('Google Map Listing Name Cleanliness', 'google-listing-name-cleanliness')
+addCheck('Google Business Profile (GBP) exists', 'google-listing')
+addCheck('GBP primary category is set', 'google-listing-primary-category')
+addCheck('GBP opening hours are present', 'google-listing-opening-times')
+addCheck('GBP website URL matches the scanned site', 'google-listing-website-matches')
+addCheck('GBP phone number matches the site', 'google-listing-phone-number')
+addCheck('≥ 3 photos on GBP (food or venue)', 'google-listing-photos')
 
-// Website checks
-addCheck('Website', 'website')
-addCheck('Website status code is in 200-299 range', 'website-200-299')
+// Core site hygiene & UX
+addCheck('Site enforces HTTPS', 'website')
+addCheck('CSS viewport test passes mobile-responsive check', 'website-200-299')
+addCheck('Median First Contentful Paint ≤ 3s', 'website-performance')
+addCheck('Dedicated /menu page exists', 'website-menu-page')
+addCheck('Menu page is linked in main navigation', 'website-menu-navigation')
 
-// Social Media checks
-addCheck('Facebook Page', 'facebook-page')
-addCheck('Instagram Profile', 'instagram-profile')
-addCheck('TikTok Profile', 'tiktok-profile')
+// Structured data & on-page SEO
+addCheck('LocalBusiness JSON-LD detected', 'website-localbusiness-jsonld')
+addCheck('Menu JSON-LD detected', 'website-menu-jsonld')
+addCheck('<title> contains business name + suburb/city', 'website-title')
+addCheck('<meta description> present (≤ 160 chars)', 'website-meta-description')
+addCheck('<link rel="canonical"> present on every page', 'website-canonical')
+addCheck('robots.txt does not block the homepage', 'website-robots')
+addCheck('Sitemap file discoverable', 'website-sitemap')
+addCheck('Apple Maps link found on site', 'website-apple-maps')
 
-// Food delivery platform checks
-if (mode.value === 'food-beverage') {
-  addCheck('Uber Eats Listing', 'uber-eats-listing')
-  addCheck('Menulog Listing', 'menulog-listing')
-  addCheck('DoorDash Listing', 'doordash-listing')
-  addCheck('Deliveroo Listing', 'deliveroo-listing')
-}
+// Social proof & conversion cues
+addCheck('Google rating ≥ 4.0 and ≥ 20 reviews', 'google-listing-reviews')
+addCheck('Click-to-call tel: link on site', 'website-tel-link')
+addCheck('og:image (Open-Graph preview) present', 'website-og-image')
+addCheck('Site links to an Instagram profile', 'instagram-profile')
+addCheck('Site links to a Facebook page', 'facebook-page')
+addCheck('Latest social post ≤ 7 days old', 'social-recent-posts')
+
+// Compliance & analytics
+addCheck('Cookie-consent banner detected', 'website-cookie-consent')
+addCheck('Google Analytics or GA4 tag present', 'website-google-analytics')
+addCheck('Google Search Console verification', 'website-search-console')
+
+// Website ↔ GBP parity
+addCheck('Website name, address & phone exactly match GBP', 'website-gbp-name-address-phone')
+addCheck('Physical address printed in header/footer', 'website-physical-address')
+addCheck('Opening hours printed on the website', 'website-opening-hours')
 
 // Service platform checks for Tradies
 if (mode.value === 'tradie') {
@@ -348,13 +389,28 @@ const activeChannelsCount = computed(() =>
 
 // Total implementation score
 const totalImplementationScore = computed(() => {
-  const scored = channelStatus.value.reduce((acc, channel) => acc + channel.score, 0)
-  const totalPossible = 100 // We're using a fixed 100-point scale
-  
+  // Calculate total weight of all checks
+  const totalWeight = checks.value.reduce((acc, check) => acc + check.weight, 0)
+  // Calculate scored weight based on check results
+  const scoredWeight = checks.value.reduce((acc, check) => {
+    if (check.status === 'success' && check.result) {
+      if (check.result.type === 'check') {
+        return acc + (check.result.value === true ? check.weight : 0)
+      } else if (check.result.type === 'progress') {
+        const value = check.result.value ?? 0
+        const max = check.result.max ?? 1
+        return acc + check.weight * (value / max)
+      }
+    }
+    return acc
+  }, 0)
+  // Compute percentage using the critical score algorithm
+  const percentage = totalWeight > 0 ? (scoredWeight / totalWeight) * 100 : 0
+
   return {
-    score: Math.round(scored),
-    total: totalPossible,
-    percentage: Math.round(scored)
+    score: Math.round(percentage),
+    total: 100,
+    percentage: Math.round(percentage)
   }
 })
 
