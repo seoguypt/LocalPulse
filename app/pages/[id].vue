@@ -440,6 +440,144 @@ const sorting = ref([
 ])
 
 const table = useTemplateRef('table')
+
+// Define interface for check details
+interface CheckDetail {
+  what: string;
+  issues: string;
+  fix: string;
+  impact: string;
+}
+
+const checkDetails = ref<Record<string, CheckDetail>>({
+  'google-listing': {
+    what: `<p>This verifies that your business has an active <strong>Google Business Profile</strong> (formerly "Google My Business") listing. It confirms that Google has a record of your business name, address and basic details, and that it shows up on Google Maps and in local Search.</p>`,
+    issues: `<ul>
+      <li>Your business won't appear in Google Maps or the local "paid and free" Pack, cutting you off from high-intent local searches.</li>
+      <li>Customers searching for directions, hours or basic info will see nothing, driving them to competitors.</li>
+      <li>You miss out on clicks, calls and directions that convert at even higher rates than organic links.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with a Google account you'll use to manage the listing.</li>
+      <li>Click "Add your business" and follow the prompts to enter your official name, category, address, phone, website, hours and photos.</li>
+      <li>Complete Google's verification process (postcard, phone or email).</li>
+      <li>Wait for confirmation and then optimize all fields (description, attributes, services, etc.).</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Immediate visibility in Maps and local search results, capturing nearby mobile users.</li>
+      <li>Increased click-throughs to your website, phone calls and direction requests.</li>
+      <li>Better control of how your brand appears (reviews, photos, posts) and higher trust signals for potential customers.</li>
+    </ul>`
+  },
+  'google-listing-primary-category': {
+    what: `<p>This ensures you've chosen the most accurate <strong>primary category</strong> (e.g. "Café", "Plumber", etc.) for your listing. The primary category drives the types of searches Google will surface your business for.</p>`,
+    issues: `<ul>
+      <li>Your listing may not trigger for relevant searches ("coffee shop near me") or may appear for irrelevant ones.</li>
+      <li>Google's algorithm will guess your category, potentially mis-classifying your business.</li>
+      <li>You'll lose visibility against competitors who picked the right category.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>In your GBP dashboard, go to "Info" then "Business category".</li>
+      <li>Remove any vague category and select the one that best matches your core service.</li>
+      <li>Only use one primary category; any extras should be secondary if they truly apply.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Precision targeting: you'll show up exactly for searches that matter.</li>
+      <li>Better ranking in the local Pack for your main service line.</li>
+      <li>Improved click relevance - users see you offer exactly what they want.</li>
+    </ul>`
+  },
+  'google-listing-opening-times': {
+    what: `<p>This confirms you've entered your regular <strong>opening and closing times</strong> (and any special hours) into GBP so customers know when you're available.</p>`,
+    issues: `<ul>
+      <li>Potential customers see "Hours not provided" and may skip calling or visiting.</li>
+      <li>Risk of negative reviews or "no-show" visits outside hours.</li>
+      <li>Google may demote listings that repeatedly get "closed" or "temporarily closed" signals.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>In GBP "Info", find "Opening hours".</li>
+      <li>Enter accurate daily hours, and add "Special hours" for holidays or events.</li>
+      <li>Keep this updated whenever your hours change.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Builds trust - customers know exactly when to visit or call.</li>
+      <li>Reduces wasted calls and foot traffic during closed hours.</li>
+      <li>Signals to Google that your listing is well-maintained, boosting local ranking.</li>
+    </ul>`
+  },
+  'google-listing-website-matches': {
+    what: `<p>This check compares the <strong>website URL</strong> on your GBP listing to the URL you've scanned or audited to make sure they're identical (same domain, HTTPS, no typos).</p>`,
+    issues: `<ul>
+      <li>Customers clicking "Website" from Google may land on the wrong site, a parked domain or a development stub.</li>
+      <li>Google flags inconsistency between your online properties, hurting trust and ranking.</li>
+      <li>Lost traffic, poor user experience and fewer conversions.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>In your GBP "Info", edit the "Website" field to exactly match your primary domain (including "https://").</li>
+      <li>Ensure there's no redirect mismatch (e.g. example.com vs. www.example.com).</li>
+      <li>Re-scan the updated URL to confirm consistency.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Seamless user journey from search to site, boosting engagement and conversions.</li>
+      <li>Stronger credibility signals for Google, improving local SEO.</li>
+      <li>More accurate analytics attribution from GBP referrals.</li>
+    </ul>`
+  },
+  'google-listing-phone-number': {
+    what: `<p>This ensures the <strong>phone number</strong> on your GBP listing is the same one prominently displayed on your website, including formatting (country code, area code).</p>`,
+    issues: `<ul>
+      <li>Customers may get confused or think the listing is fraudulent.</li>
+      <li>Calls routed to the wrong number or "no answer".</li>
+      <li>Google downgrades listings with inconsistent NAP (Name-Address-Phone) data.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>In GBP "Info", update the "Primary phone" field to match the website's visible phone.</li>
+      <li>Standardize formatting (e.g. +1-555-123-4567).</li>
+      <li>Verify on your site that the same number appears in header/footer.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Higher trust and fewer mis-dialed calls.</li>
+      <li>Better local ranking thanks to consistent NAP data.</li>
+      <li>Improved user experience and conversion rate.</li>
+    </ul>`
+  },
+  'google-listing-photos': {
+    what: `<p>This validates that you've uploaded at least <strong>three high-quality images</strong> to your GBP listing - interior, exterior, signature dishes or key offerings.</p>`,
+    issues: `<ul>
+      <li>Listings with no or few images get overlooked in favor of richer, photo-heavy competitors.</li>
+      <li>Reduced engagement: users won't click into your listing or trust it.</li>
+      <li>Perception of an unprofessional or inactive business.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Take or source at least three sharp, well-lit photos: front facade, interior/ambience, key products/dishes.</li>
+      <li>In GBP, go to "Photos" then "Upload" and add them under the appropriate categories.</li>
+      <li>Optimize filenames (e.g. "mycafe-interior.jpg") and add descriptive captions.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Increased listing clicks and "Photo Views" in GBP insights.</li>
+      <li>Builds trust and curiosity - customers know what to expect.</li>
+      <li>Signals activity to Google, which may boost your local ranking.</li>
+    </ul>`
+  },
+  'google-listing-reviews': {
+    what: `<p>This confirms your GBP listing has at least <strong>twenty reviews</strong> with an average rating of <strong>4.0 stars or higher</strong> - a strong social-proof threshold.</p>`,
+    issues: `<ul>
+      <li>Lower-rated businesses get fewer clicks and calls.</li>
+      <li>Google may deprioritize low-reviewed listings.</li>
+      <li>Potential customers assume poor service quality or an unestablished business.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Encourage satisfied customers to leave honest reviews (via email, receipts, signage).</li>
+      <li>Respond promptly and professionally to every review - thank positives, address negatives.</li>
+      <li>Never buy reviews; focus on genuine feedback and continuous improvement.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Higher click-through and call rates - listings with strong ratings convert better.</li>
+      <li>Builds credibility and trust at a glance.</li>
+      <li>Improves your placement in the local Pack and organic maps results.</li>
+    </ul>`
+  }
+});
 </script>
 
 <template>
@@ -602,8 +740,42 @@ const table = useTemplateRef('table')
           </template>
 
           <template #expanded="{ row }">
-            <div v-if="row.original.result?.label">
-              {{ row.original.result.label }}
+            <div class="p-6 rounded-lg whitespace-normal">
+              <div v-if="row.original.result?.label" class="mb-4 text-sm italic">
+                {{ row.original.result.label }}
+              </div>
+              
+              <div v-if="checkDetails[row.original.id]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div class="prose prose-sm prose-invert">
+                    <div>
+                      <h3>What is this check?</h3>
+                      <div v-html="checkDetails[row.original.id]?.what" />
+                    </div>
+                    
+                    <div>
+                      <h3>What issues may it cause?</h3>
+                      <div v-html="checkDetails[row.original.id]?.issues" />
+                    </div>
+                  </div>
+                  
+                  <div class="prose prose-sm prose-invert">
+                    <div>
+                      <h3>How do you fix it?</h3>
+                      <div v-html="checkDetails[row.original.id]?.fix" />
+                    </div>
+                    
+                    <div>
+                      <h3>What is the positive impact?</h3>
+                      <div v-html="checkDetails[row.original.id]?.impact" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-else class="text-sm text-gray-400 italic">
+                No additional information available for this check.
+              </div>
             </div>
           </template>
         </UTable>
