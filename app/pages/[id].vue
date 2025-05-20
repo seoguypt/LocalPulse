@@ -366,6 +366,17 @@ const channelFilterItems = computed(() => {
 
 const activeChannel = ref('all')
 
+// Add refresh method to reload all checks
+const refreshChecks = () => {
+  // Clear existing checks
+  checks.value = []
+  
+  // Add all active checks for the current mode
+  activeCheckDefinitions.value.forEach(def => {
+    addCheck(def.name, def.id, def.channel)
+  })
+}
+
 const columnFilters = computed(() => {
   if (activeChannel.value === 'all') {
     return []
@@ -397,7 +408,7 @@ const table = useTemplateRef('table')
           Email (link + PDF)
         </UButton>
 
-        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report">
+        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report" @click="refreshChecks">
           Refresh
         </UButton>
       </div>
