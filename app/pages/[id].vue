@@ -270,17 +270,6 @@ const totalCheckTime = computed(() => {
   return completedChecks.reduce((total, check) => total + (check.duration || 0), 0)
 })
 
-// Active category for tabs
-const activeCategory = ref<string>('All')
-
-// Filtered checks based on active category
-const filteredChecks = computed(() => {
-  if (!activeCategory.value || activeCategory.value === 'All') {
-    return checks.value
-  }
-  return checks.value.filter(check => check.channel === activeCategory.value)
-})
-
 const getChannelPrimaryColor = (channel: string) => {
   const colorMap: Record<string, string> = {
     'Google Business Profile': 'bg-green-500',
@@ -479,7 +468,7 @@ const table = useTemplateRef('table')
           </template>
         </UTabs>
 
-        <UTable :data="filteredChecks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table">
+        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table">
           <template #expand-cell="{ row }">
             <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
               :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
