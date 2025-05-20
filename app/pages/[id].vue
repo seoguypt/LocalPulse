@@ -260,12 +260,15 @@ const totalImplementationScore = computed(() => {
   }
 })
 
-// Track total time taken for all checks
+// Track total time taken for all checks (end of last check - start of first check)
 const totalCheckTime = computed(() => {
-  const completedChecks = checks.value.filter(check => check.duration !== undefined)
+  const completedChecks = checks.value.filter(check => check.startTime !== undefined && check.endTime !== undefined)
   if (completedChecks.length === 0) return 0
 
-  return completedChecks.reduce((total, check) => total + (check.duration || 0), 0)
+  const firstStartTime = Math.min(...completedChecks.map(check => check.startTime || Infinity))
+  const lastEndTime = Math.max(...completedChecks.map(check => check.endTime || 0))
+  
+  return lastEndTime - firstStartTime
 })
 
 const getChannelPrimaryColor = (channel: string) => {
