@@ -451,133 +451,403 @@ interface CheckDetail {
 
 const checkDetails = ref<Record<string, CheckDetail>>({
   'google-listing': {
-    what: `<p>This verifies that your business has an active <strong>Google Business Profile</strong> (formerly "Google My Business") listing. It confirms that Google has a record of your business name, address and basic details, and that it shows up on Google Maps and in local Search.</p>`,
+    what: `<p>Checks if your business is listed and visible on <strong>Google Business Profile</strong> (Google Maps & Search).</p>`,
     issues: `<ul>
-      <li>Your business won't appear in Google Maps or the local "paid and free" Pack, cutting you off from high-intent local searches.</li>
-      <li>Customers searching for directions, hours or basic info will see nothing, driving them to competitors.</li>
-      <li>You miss out on clicks, calls and directions that convert at even higher rates than organic links.</li>
+      <li>Customers can't find your business when searching locally.</li>
+      <li>Missing critical info (hours, directions) means lost sales.</li>
     </ul>`,
     fix: `<ol>
-      <li>Go to <a href="https://business.google.com" target="_blank">business.google.com</a> and sign in with a Google account you'll use to manage the listing.</li>
-      <li>Click "Add your business" and follow the prompts to enter your official name, category, address, phone, website, hours and photos.</li>
-      <li>Complete Google's verification process (postcard, phone or email).</li>
-      <li>Wait for confirmation and then optimize all fields (description, attributes, services, etc.).</li>
+      <li>Visit <a href="https://business.google.com">business.google.com</a> and add your business details.</li>
+      <li>Complete Google's simple verification.</li>
+      <li>Optimize your profile for better visibility.</li>
     </ol>`,
     impact: `<ul>
-      <li>Immediate visibility in Maps and local search results, capturing nearby mobile users.</li>
-      <li>Increased click-throughs to your website, phone calls and direction requests.</li>
-      <li>Better control of how your brand appears (reviews, photos, posts) and higher trust signals for potential customers.</li>
+      <li>Appear in local searches and gain immediate visibility.</li>
+      <li>Get more clicks, calls, and visits.</li>
     </ul>`
   },
+
   'google-listing-primary-category': {
-    what: `<p>This ensures you've chosen the most accurate <strong>primary category</strong> (e.g. "Café", "Plumber", etc.) for your listing. The primary category drives the types of searches Google will surface your business for.</p>`,
+    what: `<p>Ensures your business's <strong>primary category</strong> matches exactly what you offer.</p>`,
     issues: `<ul>
-      <li>Your listing may not trigger for relevant searches ("coffee shop near me") or may appear for irrelevant ones.</li>
-      <li>Google's algorithm will guess your category, potentially mis-classifying your business.</li>
-      <li>You'll lose visibility against competitors who picked the right category.</li>
+      <li>Less visibility or irrelevant search results.</li>
+      <li>Lost customers who can't find you for specific services.</li>
     </ul>`,
     fix: `<ol>
-      <li>In your GBP dashboard, go to "Info" then "Business category".</li>
-      <li>Remove any vague category and select the one that best matches your core service.</li>
-      <li>Only use one primary category; any extras should be secondary if they truly apply.</li>
+      <li>Select the most accurate category in your Google profile.</li>
     </ol>`,
     impact: `<ul>
-      <li>Precision targeting: you'll show up exactly for searches that matter.</li>
-      <li>Better ranking in the local Pack for your main service line.</li>
-      <li>Improved click relevance - users see you offer exactly what they want.</li>
+      <li>Show up clearly in relevant searches.</li>
+      <li>Increase customer engagement and visits.</li>
     </ul>`
   },
+
   'google-listing-opening-times': {
-    what: `<p>This confirms you've entered your regular <strong>opening and closing times</strong> (and any special hours) into GBP so customers know when you're available.</p>`,
+    what: `<p>Confirms your opening and closing times are clearly listed.</p>`,
     issues: `<ul>
-      <li>Potential customers see "Hours not provided" and may skip calling or visiting.</li>
-      <li>Risk of negative reviews or "no-show" visits outside hours.</li>
-      <li>Google may demote listings that repeatedly get "closed" or "temporarily closed" signals.</li>
+      <li>Confusion or negative reviews if customers can't find your hours.</li>
+      <li>Lost business from unclear availability.</li>
     </ul>`,
     fix: `<ol>
-      <li>In GBP "Info", find "Opening hours".</li>
-      <li>Enter accurate daily hours, and add "Special hours" for holidays or events.</li>
-      <li>Keep this updated whenever your hours change.</li>
+      <li>Update your opening hours regularly in your Google profile.</li>
     </ol>`,
     impact: `<ul>
-      <li>Builds trust - customers know exactly when to visit or call.</li>
-      <li>Reduces wasted calls and foot traffic during closed hours.</li>
-      <li>Signals to Google that your listing is well-maintained, boosting local ranking.</li>
+      <li>Customers trust and easily visit during correct hours.</li>
+      <li>Reduced confusion and better Google ranking.</li>
     </ul>`
   },
+
   'google-listing-website-matches': {
-    what: `<p>This check compares the <strong>website URL</strong> on your GBP listing to the URL you've scanned or audited to make sure they're identical (same domain, HTTPS, no typos).</p>`,
+    what: `<p>Checks that the website link on Google matches your official site exactly.</p>`,
     issues: `<ul>
-      <li>Customers clicking "Website" from Google may land on the wrong site, a parked domain or a development stub.</li>
-      <li>Google flags inconsistency between your online properties, hurting trust and ranking.</li>
-      <li>Lost traffic, poor user experience and fewer conversions.</li>
+      <li>Customers landing on incorrect or broken sites.</li>
+      <li>Loss of trust and fewer online conversions.</li>
     </ul>`,
     fix: `<ol>
-      <li>In your GBP "Info", edit the "Website" field to exactly match your primary domain (including "https://").</li>
-      <li>Ensure there's no redirect mismatch (e.g. example.com vs. www.example.com).</li>
-      <li>Re-scan the updated URL to confirm consistency.</li>
+      <li>Ensure your Google profile website matches your main website exactly.</li>
     </ol>`,
     impact: `<ul>
-      <li>Seamless user journey from search to site, boosting engagement and conversions.</li>
-      <li>Stronger credibility signals for Google, improving local SEO.</li>
-      <li>More accurate analytics attribution from GBP referrals.</li>
+      <li>Smooth customer journey from search to your website.</li>
+      <li>Higher trust and more conversions.</li>
     </ul>`
   },
+
   'google-listing-phone-number': {
-    what: `<p>This ensures the <strong>phone number</strong> on your GBP listing is the same one prominently displayed on your website, including formatting (country code, area code).</p>`,
+    what: `<p>Ensures your listed phone number matches your website.</p>`,
     issues: `<ul>
-      <li>Customers may get confused or think the listing is fraudulent.</li>
-      <li>Calls routed to the wrong number or "no answer".</li>
-      <li>Google downgrades listings with inconsistent NAP (Name-Address-Phone) data.</li>
+      <li>Missed or misdirected customer calls.</li>
+      <li>Lower Google ranking from mismatched info.</li>
     </ul>`,
     fix: `<ol>
-      <li>In GBP "Info", update the "Primary phone" field to match the website's visible phone.</li>
-      <li>Standardize formatting (e.g. +1-555-123-4567).</li>
-      <li>Verify on your site that the same number appears in header/footer.</li>
+      <li>Update your phone number in Google to match your website exactly.</li>
     </ol>`,
     impact: `<ul>
-      <li>Higher trust and fewer mis-dialed calls.</li>
-      <li>Better local ranking thanks to consistent NAP data.</li>
-      <li>Improved user experience and conversion rate.</li>
+      <li>Fewer missed calls, higher customer trust.</li>
+      <li>Better ranking and visibility on Google.</li>
     </ul>`
   },
+
   'google-listing-photos': {
-    what: `<p>This validates that you've uploaded at least <strong>three high-quality images</strong> to your GBP listing - interior, exterior, signature dishes or key offerings.</p>`,
+    what: `<p>Verifies at least three quality photos are uploaded.</p>`,
     issues: `<ul>
-      <li>Listings with no or few images get overlooked in favor of richer, photo-heavy competitors.</li>
-      <li>Reduced engagement: users won't click into your listing or trust it.</li>
-      <li>Perception of an unprofessional or inactive business.</li>
+      <li>Listings without photos get overlooked.</li>
+      <li>Customers less likely to engage.</li>
     </ul>`,
     fix: `<ol>
-      <li>Take or source at least three sharp, well-lit photos: front facade, interior/ambience, key products/dishes.</li>
-      <li>In GBP, go to "Photos" then "Upload" and add them under the appropriate categories.</li>
-      <li>Optimize filenames (e.g. "mycafe-interior.jpg") and add descriptive captions.</li>
+      <li>Upload clear, attractive photos of your business to your Google profile.</li>
     </ol>`,
     impact: `<ul>
-      <li>Increased listing clicks and "Photo Views" in GBP insights.</li>
-      <li>Builds trust and curiosity - customers know what to expect.</li>
-      <li>Signals activity to Google, which may boost your local ranking.</li>
+      <li>Attract more clicks and engagement.</li>
+      <li>Increased trust and visibility online.</li>
     </ul>`
   },
+
   'google-listing-reviews': {
-    what: `<p>This confirms your GBP listing has at least <strong>twenty reviews</strong> with an average rating of <strong>4.0 stars or higher</strong> - a strong social-proof threshold.</p>`,
+    what: `<p>Checks your listing has at least 20 reviews averaging 4 stars or higher.</p>`,
     issues: `<ul>
-      <li>Lower-rated businesses get fewer clicks and calls.</li>
-      <li>Google may deprioritize low-reviewed listings.</li>
-      <li>Potential customers assume poor service quality or an unestablished business.</li>
+      <li>Fewer clicks and lost customers due to low trust.</li>
+      <li>Poor ranking and visibility.</li>
     </ul>`,
     fix: `<ol>
-      <li>Encourage satisfied customers to leave honest reviews (via email, receipts, signage).</li>
-      <li>Respond promptly and professionally to every review - thank positives, address negatives.</li>
-      <li>Never buy reviews; focus on genuine feedback and continuous improvement.</li>
+      <li>Encourage happy customers to review your business.</li>
+      <li>Respond professionally to all reviews.</li>
     </ol>`,
     impact: `<ul>
-      <li>Higher click-through and call rates - listings with strong ratings convert better.</li>
-      <li>Builds credibility and trust at a glance.</li>
-      <li>Improves your placement in the local Pack and organic maps results.</li>
+      <li>Higher credibility and more customers.</li>
+      <li>Improved local search ranking.</li>
+    </ul>`
+  },
+
+  'website': {
+    what: `<p>Checks if your website uses secure <strong>HTTPS</strong> (padlock icon).</p>`,
+    issues: `<ul>
+      <li>Customers may avoid your site due to security warnings.</li>
+      <li>Your site's ranking and trust can be reduced.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Install an SSL certificate through your hosting provider.</li>
+      <li>Ensure all pages redirect to HTTPS securely.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Improved customer trust and higher rankings on Google.</li>
+      <li>Secure browsing experience for visitors.</li>
+    </ul>`
+  },
+
+  'website-200-299': {
+    what: `<p>Checks that your website consistently loads without errors (status codes 200-299).</p>`,
+    issues: `<ul>
+      <li>Customers face broken pages or errors.</li>
+      <li>Decreased trust and lost conversions.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Fix broken links or pages causing errors.</li>
+      <li>Regularly monitor your site for uptime and errors.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Smooth browsing experience and reliable access.</li>
+      <li>Higher customer satisfaction and conversions.</li>
+    </ul>`
+  },
+
+  'website-mobile-responsive': {
+    what: `<p>Ensures your website works well on smartphones and tablets.</p>`,
+    issues: `<ul>
+      <li>Customers have trouble navigating your site on mobile.</li>
+      <li>Lost sales from mobile visitors.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Use a responsive website design that adapts automatically.</li>
+      <li>Test your site on various mobile devices.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced user experience on all devices.</li>
+      <li>Improved conversions and Google rankings.</li>
+    </ul>`
+  },
+
+  'website-performance': {
+    what: `<p>Checks your website loads quickly, with content visible in under 3 seconds.</p>`,
+    issues: `<ul>
+      <li>Customers abandon slow-loading pages.</li>
+      <li>Lower search engine ranking and reduced visibility.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Optimize images, scripts, and website code for speed.</li>
+      <li>Use performance testing tools to monitor improvements.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Faster loading improves customer retention.</li>
+      <li>Better search rankings and higher engagement.</li>
+    </ul>`
+  },
+
+  'website-localbusiness-jsonld': {
+    what: `<p>Confirms structured data for <strong>LocalBusiness</strong> is included on your site.</p>`,
+    issues: `<ul>
+      <li>Your business may be less visible in local search results.</li>
+      <li>Lower trust from Google about your business details.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Add LocalBusiness JSON-LD structured data to your website.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced visibility in local search results.</li>
+      <li>Improved search engine trust and ranking.</li>
+    </ul>`
+  },
+
+  'website-menu-jsonld': {
+    what: `<p>Verifies your menu items are correctly structured using JSON-LD for food businesses.</p>`,
+    issues: `<ul>
+      <li>Your menu might not appear prominently in Google searches.</li>
+      <li>Lost opportunities from customers looking for specific dishes.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Implement Menu JSON-LD structured data on your menu pages.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Improved visibility of your menu items in search results.</li>
+      <li>Higher customer engagement and click-through rates.</li>
+    </ul>`
+  },
+
+  'website-title': {
+    what: `<p>Checks your website's page titles include your business name and suburb/city clearly.</p>`,
+    issues: `<ul>
+      <li>Lower visibility in local search results.</li>
+      <li>Missed opportunities to attract local customers.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Update your website titles to include your business name and location.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Better ranking and visibility in local search.</li>
+      <li>Increased clicks from targeted local searches.</li>
+    </ul>`
+  },
+
+  'website-meta-description': {
+    what: `<p>Ensures your site includes concise meta descriptions (under 160 characters).</p>`,
+    issues: `<ul>
+      <li>Lower click-through rate from search results.</li>
+      <li>Missed chance to clearly present your offerings.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Write clear, concise meta descriptions under 160 characters.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Improved click-through from Google.</li>
+      <li>Enhanced clarity and appeal of your search snippets.</li>
+    </ul>`
+  },
+
+  'website-canonical': {
+    what: `<p>Confirms every webpage specifies a canonical URL.</p>`,
+    issues: `<ul>
+      <li>Potential duplicate content issues harming SEO.</li>
+      <li>Reduced Google ranking due to confusion.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Add canonical tags to all pages pointing clearly to your preferred URL.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Better SEO performance and ranking clarity.</li>
+      <li>Avoids duplicate content penalties.</li>
+    </ul>`
+  },
+
+  'website-robots': {
+    what: `<p>Checks your robots.txt file isn't blocking your homepage from search engines.</p>`,
+    issues: `<ul>
+      <li>Your homepage won't appear in search results.</li>
+      <li>Significant loss of online visibility and traffic.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Ensure robots.txt allows search engines to access your homepage.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Ensures maximum visibility in search results.</li>
+      <li>Increases traffic and potential conversions.</li>
+    </ul>`
+  },
+
+  'website-sitemap': {
+    what: `<p>Ensures your sitemap file is accessible to search engines.</p>`,
+    issues: `<ul>
+      <li>Your website pages may not be fully discovered by search engines.</li>
+      <li>Lower search visibility and missed traffic.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create and submit a sitemap to Google Search Console.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Full website indexing by search engines.</li>
+      <li>Improved search rankings and visibility.</li>
+    </ul>`
+  },
+
+  'website-tel-link': {
+    what: `<p>Checks if your website includes clickable phone number links.</p>`,
+    issues: `<ul>
+      <li>Customers struggle to call directly from your site.</li>
+      <li>Reduced convenience and potential loss of calls.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Add click-to-call (tel:) links to your phone numbers on your website.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Easier customer contact and increased phone conversions.</li>
+      <li>Improved user experience.</li>
+    </ul>`
+  },
+
+  'website-og-image': {
+    what: `<p>Ensures your site has Open Graph images set for social sharing.</p>`,
+    issues: `<ul>
+      <li>Poor appearance when your site is shared on social media.</li>
+      <li>Reduced clicks and social engagement.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Add an appealing Open Graph (og:image) to your website pages.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Increased visibility and clicks from social media.</li>
+      <li>Enhanced professionalism and branding.</li>
+    </ul>`
+  },
+
+  'instagram-profile': {
+    what: `<p>Checks if your business has an active Instagram profile.</p>`,
+    issues: `<ul>
+      <li>Missed opportunity to engage customers visually.</li>
+      <li>Reduced brand visibility among younger demographics.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create and regularly update an Instagram profile for your business.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Greater brand exposure and customer interaction.</li>
+      <li>Increased customer loyalty and visibility.</li>
+    </ul>`
+  },
+
+  'facebook-page': {
+    what: `<p>Checks if your business has an active Facebook page.</p>`,
+    issues: `<ul>
+      <li>Missed engagement opportunities with a large audience.</li>
+      <li>Reduced credibility for customers checking social presence.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create and maintain an active Facebook page.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced customer engagement and brand credibility.</li>
+      <li>Improved online visibility and referrals.</li>
+    </ul>`
+  },
+
+  'tiktok-profile': {
+    what: `<p>Ensures your business maintains a TikTok profile.</p>`,
+    issues: `<ul>
+      <li>Missed opportunity to connect with younger audiences.</li>
+      <li>Reduced competitive presence.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create engaging content regularly on TikTok.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Increased reach and brand visibility among younger demographics.</li>
+      <li>Higher engagement and potential customer growth.</li>
+    </ul>`
+  },
+
+  'website-gbp-name-address-phone': {
+    what: `<p>Checks if your website and Google profile have matching business details.</p>`,
+    issues: `<ul>
+      <li>Confusion from inconsistent information.</li>
+      <li>Reduced trust from Google, affecting local rankings.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Ensure business details (name, address, phone) match exactly on your website and Google profile.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Increased trust and improved local search rankings.</li>
+      <li>Enhanced customer clarity and conversions.</li>
+    </ul>`
+  },
+
+  'website-physical-address': {
+    what: `<p>Verifies your physical address is prominently displayed on your site.</p>`,
+    issues: `<ul>
+      <li>Customers struggle to find your physical location.</li>
+      <li>Reduced Google local search ranking.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Add your business address clearly in the website header or footer.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Improved customer convenience and local SEO.</li>
+      <li>Higher credibility and trust.</li>
+    </ul>`
+  },
+
+  'website-opening-hours': {
+    what: `<p>Checks your website clearly displays opening hours.</p>`,
+    issues: `<ul>
+      <li>Customers unclear about when you're open.</li>
+      <li>Potential loss of visits or inquiries.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Display your opening hours clearly on your website.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced customer convenience and trust.</li>
+      <li>Increased foot traffic and customer satisfaction.</li>
     </ul>`
   }
 });
+
 </script>
 
 <template>
