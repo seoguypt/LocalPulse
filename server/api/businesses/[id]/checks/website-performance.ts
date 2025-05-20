@@ -21,61 +21,32 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  const { googleApiKey } = useRuntimeConfig(event);
-  if (!googleApiKey) {
+  try {
+    // First attempt with CrUX API
+    const cruxResult = await fetchCruxPerformance(business.websiteUrl);
+
+    // If we have a valid result from CrUX, return it
+    if (cruxResult.lcp !== undefined) {
+      return {
+        type: 'check' as const,
+        value: cruxResult.passes,
+        label: cruxResult.message,
+      };
+    }
+
+    // Fallback to PageSpeed Insights API if CrUX doesn't have data
+    const pageSpeedResult = await fetchPageSpeedPerformance(business.websiteUrl);
+    
+    return {
+      type: 'check' as const,
+      value: pageSpeedResult.lcp !== undefined ? pageSpeedResult.passes : null,
+      label: pageSpeedResult.message,
+    };
+  } catch (error) {
     return {
       type: 'check' as const,
       value: null,
-      label: 'No Google API key configured for CrUX API',
+      label: `Performance check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
-  }
-
-  const cruxUrl = `https://chromeuxreport.googleapis.com/v1/records:queryRecord?key=${googleApiKey}`;
-  const body = { url: business.websiteUrl };
-
-  try {
-    // First attempt with CrUX API
-    const cruxRes = await $fetch(cruxUrl, {
-      method: 'POST',
-      body,
-    }) as any;
-
-    // Check LCP p75 value (in ms)
-    const lcp = cruxRes.record?.metrics?.largest_contentful_paint?.percentiles?.p75;
-    const passes = lcp && lcp < 2500; // <2.5s is considered 'good'
-
-    return {
-      type: 'check' as const,
-      value: passes,
-      label: lcp
-        ? `LCP p75: ${lcp}ms (${passes ? 'good' : 'needs improvement'})`
-        : 'No LCP data available',
-    };
-  } catch (error) {
-    // Fallback to PageSpeed Insights API if CrUX fails
-    try {
-      const pageSpeedUrl = `https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(business.websiteUrl)}&key=${googleApiKey}`;
-      
-      const pageSpeedRes = await $fetch(pageSpeedUrl) as any;
-      
-      // Extract LCP from PageSpeed Insights
-      const lcpMetric = pageSpeedRes.lighthouseResult?.audits?.['largest-contentful-paint'];
-      const lcpValue = lcpMetric?.numericValue;
-      const passes = lcpValue && lcpValue < 2500; // <2.5s is considered 'good'
-      
-      return {
-        type: 'check' as const,
-        value: passes,
-        label: lcpValue 
-          ? `LCP: ${Math.round(lcpValue)}ms (${passes ? 'good' : 'needs improvement'})`
-          : 'No LCP data available from PageSpeed Insights',
-      };
-    } catch (pageSpeedError) {
-      return {
-        type: 'check' as const,
-        value: null,
-        label: `Performance check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
-    }
   }
 }); 
