@@ -281,104 +281,56 @@ const filteredChecks = computed(() => {
   return checks.value.filter(check => check.channel === activeCategory.value)
 })
 
+const getChannelPrimaryColor = (channel: string) => {
+  const colorMap: Record<string, string> = {
+    'Google Business Profile': 'bg-green-500',
+    'Website': 'bg-purple-500',
+    'Social Media': 'bg-blue-500',
+    'Food Delivery': 'bg-yellow-500',
+    'Service Platforms': 'bg-purple-500',
+    'Marketplaces': 'bg-teal-500',
+    'Booking Platforms': 'bg-rose-500',
+    'Pet Platforms': 'bg-indigo-500'
+  }
+  return colorMap[channel] || 'bg-gray-500'
+}
+
 const columns: TableColumn<Check>[] = [
+  {
+    id: 'expand',
+  },
+  {
+    accessorKey: 'channel',
+    header: 'Channel',
+  },
   {
     accessorKey: 'name',
     header: 'Name',
   },
   {
-    accessorKey: 'channel',
-    header: 'Channel',
-    cell: ({ row }) => {
-      const channel = row.getValue('channel') as string
-      const colorMap: Record<string, string> = {
-        'Google Business Profile': 'primary',
-        'Website': 'success',
-        'Social Media': 'info',
-        'Food Delivery': 'warning',
-        'Service Platforms': 'purple',
-        'Marketplaces': 'teal',
-        'Booking Platforms': 'rose',
-        'Pet Platforms': 'indigo'
-      }
-      const color = colorMap[channel] || 'neutral'
-
-      return h(UBadge, { variant: 'subtle', color, class: 'text-xs' }, () => channel)
-    }
-  },
-  {
     accessorKey: 'weight',
     header: 'Weight',
-    cell: ({ row }) => {
-      const weight = row.getValue('weight') as number
-      return h('div', { class: 'text-sm text-right' }, `${weight} pts`)
-    }
   },
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: ({ row }) => {
-      const status = row.getValue('status') as Check['status']
-      const color = {
-        success: 'success' as const,
-        error: 'error' as const,
-        pending: 'warning' as const,
-        idle: 'neutral' as const,
-      }[status]
-
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color, icon: status === 'pending' ? 'i-lucide-loader' : undefined, ui: { leadingIcon: 'animate-spin' } }, () =>
-        status
-      )
-    }
   },
   {
     accessorKey: 'duration',
     header: 'Time',
-    cell: ({ row }) => {
-      const duration = row.getValue('duration') as number | undefined
-      if (duration === undefined) {
-        return h('div', { class: 'text-sm text-slate-400' }, '-')
-      }
-
-      // Format duration for display
-      let formattedTime = ''
-      if (duration < 1000) {
-        formattedTime = `${duration}ms`
-      } else {
-        formattedTime = `${(duration / 1000).toFixed(1)}s`
-      }
-
-      return h('div', { class: 'text-sm font-mono' }, formattedTime)
-    }
   },
   {
     accessorKey: 'result',
     header: 'Result',
-    cell: ({ row }) => {
-      const result = row.getValue('result') as Check['result']
-      const status = row.getValue('status') as Check['status']
-      if (!result && status === 'pending') return h(USkeleton, { class: 'w-full h-4' });
-      if (!result) return null;
-
-      const type = result.type
-      const value = result.value
-
-      let component = null
-      if (type === 'check') {
-        const color = value === true ? 'success' : value === false ? 'error' : 'neutral'
-        component = h(UBadge, { variant: 'subtle', color, icon: value === true ? 'i-lucide-check' : value === false ? 'i-lucide-x' : 'i-lucide-clock' })
-      }
-
-      if (result.label) {
-        return h('div', { class: 'flex flex-col gap-2 items-start' }, [result.label, component])
-      } else if (component) {
-        return component
-      }
-
-      return value
-    }
   }
 ]
+
+const formatTime = (time: number) => {
+  if (time < 1000) {
+    return `${time}ms`
+  }
+  return `${(time / 1000).toFixed(1)}s`
+}
 
 // For A4 styling
 const todayDate = new Date().toLocaleDateString('en-US', {
@@ -390,14 +342,39 @@ const todayDate = new Date().toLocaleDateString('en-US', {
 // Get status colors for semantic UI
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'active': return 'success'
-    case 'warning': return 'warning'
-    case 'missing': return 'error'
+    case 'success': return 'success'
+    case 'pending': return 'warning'
+    case 'error': return 'error'
     default: return 'neutral'
   }
 }
 
+const channelFilterItems = computed(() => {
+  return [{
+    label: 'All',
+    value: 'all'
+  }, ...Object.keys(channelChecks.value).map(name => ({
+    label: name,
+    value: name
+  }))
+  ]
+})
 
+const activeChannel = ref('all')
+
+const columnFilters = computed(() => {
+  if (activeChannel.value === 'all') {
+    return []
+  }
+  return [
+    {
+      id: 'channel',
+      value: activeChannel.value
+    }
+  ]
+})
+
+const table = useTemplateRef('table')
 </script>
 
 <template>
@@ -492,53 +469,68 @@ const getStatusColor = (status: string) => {
       <UCard variant="subtle" class="col-span-3">
         <h2 class="sr-only">Checks</h2>
 
-        <!-- Channel Tabs -->
-        <div class="border-b border-slate-200 dark:border-slate-700">
-          <div class="flex overflow-x-auto px-6 pt-6 pb-4">
-            <UButton v-for="category in ['All', ...Object.keys(channelChecks)]" :key="category" color="primary"
-              :variant="activeCategory === category ? 'solid' : 'ghost'" class="mr-3 whitespace-nowrap"
-              @click="activeCategory = category">
-              {{ category }}
-              <UBadge v-if="category !== 'All'" size="xs"
-                :color="getStatusColor(channelStatus.find(s => s.name === category)?.status || 'missing')" class="ml-2">
-                {{channelStatus.find(s => s.name === category)?.score || 0}}/{{channelStatus.find(s => s.name
-                  === category)?.total || 0}}
-              </UBadge>
-            </UButton>
-          </div>
-        </div>
-
-        <!-- Check Summary Stats -->
-        <div class="p-6 flex flex-wrap gap-4 border-b border-slate-700 bg-slate-700/50">
-          <div class="flex items-center">
-            <span class="text-sm font-medium mr-2">Total time:</span>
-            <UBadge color="primary" variant="subtle" class="font-mono">
-              {{ (totalCheckTime / 1000).toFixed(1) }} seconds
-            </UBadge>
-          </div>
-          <div class="flex items-center">
-            <span class="text-sm font-medium mr-2">Showing:</span>
-            <UBadge color="neutral" variant="subtle">
-              {{ filteredChecks.length }} checks
-            </UBadge>
-          </div>
-          <div class="flex items-center" v-if="activeCategory !== 'All'">
-            <span class="text-sm font-medium mr-2">Category:</span>
-            <UBadge :color="getStatusColor(channelStatus.find(s => s.name === activeCategory)?.status || 'missing')"
+        <UTabs size="md" variant="link" :content="false" :items="channelFilterItems" v-model="activeChannel"
+          class="w-full">
+          <template #trailing="{ item }">
+            <UBadge v-if="item.value !== 'all'" :color="getStatusColor(channelStatus.find(s => s.name === item.value)?.status || 'missing')"
               variant="subtle">
-              {{channelStatus.find(s => s.name === activeCategory)?.score || 0}}/{{channelStatus.find(s =>
-                s.name === activeCategory)?.total || 0}} points
+              {{channelStatus.find(s => s.name === item.value)?.score || 0}}/{{channelStatus.find(s => s.name === item.value)?.total || 0}}
             </UBadge>
-          </div>
-        </div>
+          </template>
+        </UTabs>
 
-        <UTable :data="filteredChecks" :columns="columns" class="mb-0" hover />
+        <UTable :data="filteredChecks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table">
+          <template #expand-cell="{ row }">
+            <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
+              :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
+          </template>
+          <template #name-cell="{ row }">
+            {{ row.original.name }}
+          </template>
+          <template #channel-cell="{ row }">
+            <div class="flex items-center gap-1.5">
+              <span :class="getChannelPrimaryColor(row.original.channel)" class="size-1.5 rounded-full mt-px"></span>
+              {{ row.original.channel }}
+            </div>
+          </template>
+          <template #weight-cell="{ row }">
+            <div class="text-sm text-right">{{ row.original.weight }} pts</div>
+          </template>
+          <template #status-cell="{ row }">
+            <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
+              :icon="row.original.status === 'pending' ? 'i-lucide-loader' : undefined"
+              ui="{ leadingIcon: 'animate-spin' }">
+              {{ row.original.status }}
+            </UBadge>
+          </template>
+          <template #duration-cell="{ row }">
+            <div class="text-sm text-right" v-if="row.original.duration">{{ formatTime(row.original.duration) }}</div>
+            <div class="text-sm text-right" v-else>-</div>
+          </template>
+          <template #result-cell="{ row }">
+            <USkeleton v-if="row.original.status === 'pending'" class="w-full h-4" />
+            <UBadge v-else :color="row.original.result ? row.original.result.value ? 'success' : 'error' : 'neutral'"
+              variant="soft"
+              :icon="row.original.result ? row.original.result.value ? 'i-lucide-check' : 'i-lucide-x' : 'i-lucide-clock'" />
+          </template>
+
+          <template #expanded="{ row }">
+            <div v-if="row.original.result?.label">
+              {{ row.original.result.label }}
+            </div>
+          </template>
+        </UTable>
+
+        <div class="px-4 py-3.5 text-sm text-muted">
+          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
+          {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+        </div>
       </UCard>
     </div>
 
     <!-- Footer -->
     <footer class="mt-6 pt-4 text-center text-xs text-slate-500">
-      <p>© {{ new Date().getFullYear() }} VisiMate | Generated on {{ todayDate }}</p>
+      <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{ todayDate }}</p>
     </footer>
   </main>
 </template>

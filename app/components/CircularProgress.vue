@@ -38,7 +38,7 @@ const circumference = 2 * Math.PI * radius
     <div class="absolute inset-0 flex items-center justify-center">
       <span class="font-bold" :class="[
         getScoreColor(percentage),
-        'text-[45cqw]'
+        'text-[40cqw]'
       ]">
         {{ percentage }}
       </span>
