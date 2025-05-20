@@ -5,13 +5,37 @@ const props = withDefaults(defineProps<{
   percentage: 0
 })
 
-// Get percentage color based on score
-const getScoreColor = (percent: number) => {
-  if (percent >= 80) return 'text-success-500 dark:text-success-400'
-  if (percent >= 60) return 'text-primary-500 dark:text-primary-400'
-  if (percent >= 40) return 'text-warning-500 dark:text-warning-400'
-  return 'text-error-500 dark:text-error-400'
-}
+const colorClasses = computed(() => {
+  if (props.percentage >= 80) {
+    return {
+      text: 'text-success-400',
+      ring: 'text-success-700',
+      background: 'bg-success-950/50'
+    }
+  }
+  
+  if (props.percentage >= 60) {
+    return {
+      text: 'text-primary-400',
+      ring: 'text-primary-700',
+      background: 'bg-primary-950/50'
+    }
+  }
+  
+  if (props.percentage >= 40) {
+    return {
+      text: 'text-warning-400',
+      ring: 'text-warning-700',
+      background: 'bg-warning-950/50'
+    }
+  }
+  
+  return {
+    text: 'text-error-400',
+    ring: 'text-error-700',
+    background: 'bg-error-950/50'
+  }
+})
 
 // Calculate the circumference of the circle
 const radius = 47
@@ -21,7 +45,7 @@ const circumference = 2 * Math.PI * radius
 <template>
   <div class="relative aspect-square @container">
     <!-- Circular background -->
-    <div class="w-full h-full rounded-full bg-slate-700 absolute"></div>
+    <div class="w-full h-full rounded-full absolute" :class="colorClasses.background"></div>
     <!-- Progress circle -->
     <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
       <circle 
@@ -31,14 +55,14 @@ const circumference = 2 * Math.PI * radius
         :stroke-width="6" 
         :stroke-dasharray="`${(percentage / 100) * circumference}, ${circumference}`"
         stroke-linecap="round"
-        :class="getScoreColor(percentage)"
+        :class="colorClasses.ring"
       />
     </svg>
     <!-- Score in the middle -->
     <div class="absolute inset-0 flex items-center justify-center">
-      <span class="font-bold" :class="[
-        getScoreColor(percentage),
-        'text-[40cqw]'
+      <span class="font-semibold" :class="[
+        colorClasses.text,
+        'text-[37cqw]'
       ]">
         {{ percentage }}
       </span>
