@@ -851,7 +851,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
 </script>
 
 <template>
-  <main v-if="business" class="min-h-screen container mx-auto px-4 pb-6 pt-12">
+  <UContainer as="main" v-if="business">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl sm:text-3xl font-bold text-center tracking-tight">Online Visibility Report</h1>
 
@@ -1044,9 +1044,9 @@ const checkDetails = ref<Record<string, CheckDetail>>({
     </div>
 
     <!-- Footer -->
-    <footer class="mt-6 pt-4 text-center text-xs text-slate-500">
+    <footer class="mt-6 py-4 text-center text-xs text-slate-500">
       <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{
         todayDate }}</p>
     </footer>
-  </main>
+  </UContainer>
 </template>

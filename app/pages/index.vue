@@ -3,7 +3,7 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
 </script>
 
 <template>
-  <main class="container mx-auto py-8">
+  <UContainer as="main">
     <div class="my-8">
       <UCard v-if="businesses && businesses.length" class="mb-8">
         <template #header>
@@ -39,5 +39,5 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
         </form>
       </UCard>
     </div>
-  </main>
+  </UContainer>
 </template>
