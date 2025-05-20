@@ -8,32 +8,32 @@ const props = withDefaults(defineProps<{
 const colorClasses = computed(() => {
   if (props.percentage >= 80) {
     return {
-      text: 'text-success-400',
-      ring: 'text-success-700',
-      background: 'bg-success-950/50'
+      text: 'text-success-600 dark:text-success-400',
+      ring: 'text-success-500 dark:text-success-700',
+      background: 'bg-success-100/50 dark:bg-success-950/50'
     }
   }
   
   if (props.percentage >= 60) {
     return {
-      text: 'text-primary-400',
-      ring: 'text-primary-700',
-      background: 'bg-primary-950/50'
+      text: 'text-primary-600 dark:text-primary-400',
+      ring: 'text-primary-500 dark:text-primary-700',
+      background: 'bg-primary-100/50 dark:bg-primary-950/50'
     }
   }
   
   if (props.percentage >= 40) {
     return {
-      text: 'text-warning-400',
-      ring: 'text-warning-700',
-      background: 'bg-warning-950/50'
+      text: 'text-warning-600 dark:text-warning-400',
+      ring: 'text-warning-500 dark:text-warning-700',
+      background: 'bg-warning-100/50 dark:bg-warning-950/50'
     }
   }
   
   return {
-    text: 'text-error-400',
-    ring: 'text-error-700',
-    background: 'bg-error-950/50'
+    text: 'text-error-600 dark:text-error-400',
+    ring: 'text-error-500 dark:text-error-700',
+    background: 'bg-error-100/50 dark:bg-error-950/50'
   }
 })
 

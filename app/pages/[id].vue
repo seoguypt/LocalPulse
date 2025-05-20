@@ -886,10 +886,10 @@ const checkDetails = ref<Record<string, CheckDetail>>({
       </UCard>
 
       <div
-        class="col-span-1 row-start-2 rounded-lg bg-primary-950/50 ring ring-primary-900/50 p-6 flex flex-col items-start">
-        <div class="text-xl font-bold text-white">Need a hand?</div>
+        class="col-span-1 row-start-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/50 ring ring-primary-300/50 dark:ring-primary-900/50 p-6 flex flex-col items-start">
+        <div class="text-xl font-bold dark:white">Need a hand?</div>
 
-        <p class="text-gray-100 mt-2 text-sm">
+        <p class="dark:text-gray-100 text-gray-700 mt-2 text-sm">
           We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
           expert who can guide you.
         </p>
@@ -1003,7 +1003,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
               
               <div v-if="checkDetails[row.original.id]">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div class="prose prose-sm prose-invert">
+                  <div class="prose prose-sm dark:prose-invert max-w-none">
                     <div>
                       <h3>What is this check?</h3>
                       <div v-html="checkDetails[row.original.id]?.what" />
@@ -1015,7 +1015,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
                     </div>
                   </div>
                   
-                  <div class="prose prose-sm prose-invert">
+                  <div class="prose prose-sm dark:prose-invert max-w-none">
                     <div>
                       <h3>How do you fix it?</h3>
                       <div v-html="checkDetails[row.original.id]?.fix" />
@@ -1029,7 +1029,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
                 </div>
               </div>
               
-              <div v-else class="text-sm text-gray-400 italic">
+              <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
                 No additional information available for this check.
               </div>
             </div>

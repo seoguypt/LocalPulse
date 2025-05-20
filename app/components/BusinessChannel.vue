@@ -55,7 +55,7 @@ const channelIcon = computed(() => {
 const uiCustomizations = computed(() => {
   switch (props.channel) {
     case 'instagram': return { leadingIcon: 'text-pink-500' };
-    case 'x': return { leadingIcon: 'text-white' };
+    case 'x': return { leadingIcon: 'text-black dark:text-white' };
     default: return {};
   }
 });
@@ -67,8 +67,7 @@ const uiCustomizations = computed(() => {
       :icon="channelIcon" 
       size="lg" 
       color="neutral" 
-      variant="solid" 
-      class="bg-slate-700/70 text-white hover:bg-slate-700"
+      variant="subtle" 
       :ui="uiCustomizations"
     >
       {{ displayText }}
