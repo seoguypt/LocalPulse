@@ -487,7 +487,7 @@ const table = useTemplateRef('table')
         </p>
 
         <div class="mt-auto pt-4">
-          <UButton color="primary" variant="soft" size="lg" class="text-sm" to="/chat">
+          <UButton color="primary" variant="soft" size="lg" class="text-sm" to="/chat" icon="i-lucide-headset" trailing-icon="i-lucide-arrow-right">
             <span>Schedule a <strong><em>free</em></strong> chat</span>
           </UButton>
         </div>
