@@ -264,7 +264,7 @@ const totalCheckTime = computed(() => {
 
   const firstStartTime = Math.min(...completedChecks.map(check => check.startTime || Infinity))
   const lastEndTime = Math.max(...completedChecks.map(check => check.endTime || 0))
-  
+
   return lastEndTime - firstStartTime
 })
 
@@ -294,27 +294,27 @@ const statusSortingFn = (rowA: any, rowB: any, columnId: string): number => {
     'pass': 3,
     'idle': 4
   }
-  
+
   // Safely get status values with fallbacks
   let statusValueA: string = 'pending'
   let statusValueB: string = 'pending'
-  
+
   try {
     if (rowA && typeof rowA.getValue === 'function') {
       statusValueA = rowA.getValue(columnId) || 'pending'
     }
-    
+
     if (rowB && typeof rowB.getValue === 'function') {
       statusValueB = rowB.getValue(columnId) || 'pending'
     }
   } catch (error) {
     console.error('Error in status sorting function:', error)
   }
-  
+
   // Get numeric values with fallback to pending (2)
   const orderA = statusOrder[statusValueA] ?? 2
   const orderB = statusOrder[statusValueB] ?? 2
-  
+
   return orderA - orderB
 }
 
@@ -848,22 +848,61 @@ const checkDetails = ref<Record<string, CheckDetail>>({
   }
 });
 
+// Keep failed/error rows expanded when printing is triggered
+if (process.client) {
+  const beforePrintHandler = () => {
+    activeChannel.value = 'all';
+
+    if (table?.value?.tableApi) {
+      const rows = table.value.tableApi.getRowModel().rows;
+      rows.forEach(row => {
+        if (row.original.status === 'fail' || row.original.status === 'error') {
+          row.toggleExpanded(true);
+        }
+      });
+    }
+  };
+  
+  // Setup print media query for browser-initiated printing
+  const mediaQueryList = window.matchMedia('print');
+  mediaQueryList.addEventListener('change', (mql) => {
+    if (mql.matches) {
+      beforePrintHandler();
+    }
+  });
+  
+  // Also catch the beforeprint event for browsers that support it
+  window.addEventListener('beforeprint', beforePrintHandler);
+}
+
+const print = () => {
+  if (!process.client) return;
+  
+  // Before printing, expand all failed/error rows
+  if (table?.value?.tableApi) {
+    const rows = table.value.tableApi.getRowModel().rows;
+    rows.forEach(row => {
+      if (row.original.status === 'fail' || row.original.status === 'error') {
+        row.toggleExpanded(true);
+      }
+    });
+  }
+
+  nextTick(() => {
+    window.print();
+  });
+}
 </script>
 
 <template>
   <UContainer as="main" v-if="business">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl sm:text-3xl font-bold text-center tracking-tight">Online Visibility Report</h1>
+    <div class="flex items-center justify-between print:flex-col print:gap-2">
+      <h1 class="text-2xl sm:text-3xl font-bold text-center tracking-tight leading-none">Online Visibility Report</h1>
+      <div class="hidden print:block text-xs text-gray-500 leading-none">{{ todayDate }}</div>
 
-      <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-download" color="neutral" variant="ghost" to="/download-pdf" target="_blank"
-          aria-label="Download PDF">
-          Download (PDF)
-        </UButton>
-
-        <UButton icon="i-lucide-mail" color="neutral" variant="ghost" to="/email-report" target="_blank"
-          aria-label="Email Report">
-          Email (link + PDF)
+      <div class="flex items-center gap-2 print:hidden">
+        <UButton icon="i-lucide-download" color="neutral" variant="ghost" aria-label="Download PDF" @click="print()">
+          Download / Print
         </UButton>
 
         <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report"
@@ -894,10 +933,17 @@ const checkDetails = ref<Record<string, CheckDetail>>({
           expert who can guide you.
         </p>
 
-        <div class="mt-auto pt-4">
-          <UButton color="primary" variant="soft" size="lg" class="text-sm" to="/chat" icon="i-lucide-headset" trailing-icon="i-lucide-arrow-right">
+        <div class="mt-auto pt-4 flex items-center gap-3">  
+          <UButton color="primary" variant="soft" size="lg" class="print:hidden" to="/chat" icon="i-lucide-headset"
+            trailing-icon="i-lucide-arrow-right">
             <span>Schedule a <strong><em>free</em></strong> chat</span>
           </UButton>
+          <NuxtLink to="https://visimate.au/chat" external class="hidden print:block">
+            <QR to="https://visimate.au/chat" :size="56" />
+          </NuxtLink>
+          <ULink to="https://visimate.au/chat" external class="hidden print:block">
+            visimate.au/chat
+          </ULink>
         </div>
       </div>
 
@@ -906,7 +952,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
 
         <div class="flex flex-col items-center gap-8">
           <div class="flex flex-col items-center gap-4">
-            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
+            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40 print:size-24" />
 
             <div class="text-xl font-bold">Overall Score</div>
           </div>
@@ -944,7 +990,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
         <h2 class="sr-only">Checks</h2>
 
         <UTabs size="md" variant="link" :content="false" :items="channelFilterItems" v-model="activeChannel"
-          class="w-full">
+          class="w-full print:hidden">
           <template #trailing="{ item }">
             <UBadge v-if="item.value !== 'all'"
               :color="getStatusColor(channelStatus.find(s => s.name === item.value)?.status || 'missing')"
@@ -955,7 +1001,8 @@ const checkDetails = ref<Record<string, CheckDetail>>({
           </template>
         </UTabs>
 
-        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" v-model:sorting="sorting" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
+        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters"
+          v-model:sorting="sorting" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
           <template #expand-cell="{ row }">
             <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
               aria-label="Expand to view fix instructions and check information"
@@ -988,19 +1035,21 @@ const checkDetails = ref<Record<string, CheckDetail>>({
           </template>
 
           <template #actions-cell="{ row }">
-            <div class="justify-end flex items-center gap-2">
-              <UButton v-if="row.original.status === 'fail' || row.original.status === 'error'" icon="i-lucide-wrench" color="neutral" variant="link" @click="row.toggleExpanded()" aria-label="Expand to view fix instructions and check information">
+            <div class="justify-end flex items-center gap-2 print:hidden">
+              <UButton v-if="row.original.status === 'fail' || row.original.status === 'error'" icon="i-lucide-wrench"
+                color="neutral" variant="link" @click="row.toggleExpanded()"
+                aria-label="Expand to view fix instructions and check information">
                 Fix
               </UButton>
             </div>
           </template>
 
           <template #expanded="{ row }">
-            <div class="p-6 rounded-lg whitespace-normal">
+            <div class="p-6 rounded-lg whitespace-normal" :class="{'print:hidden': !(row.original.status === 'fail' || row.original.status === 'error')}">
               <div v-if="row.original.result?.label" class="mb-4 text-sm italic">
                 {{ row.original.result.label }}
               </div>
-              
+
               <div v-if="checkDetails[row.original.id]">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div class="prose prose-sm dark:prose-invert max-w-none">
@@ -1008,19 +1057,19 @@ const checkDetails = ref<Record<string, CheckDetail>>({
                       <h3>What is this check?</h3>
                       <div v-html="checkDetails[row.original.id]?.what" />
                     </div>
-                    
+
                     <div>
                       <h3>What issues may it cause?</h3>
                       <div v-html="checkDetails[row.original.id]?.issues" />
                     </div>
                   </div>
-                  
+
                   <div class="prose prose-sm dark:prose-invert max-w-none">
                     <div>
                       <h3>How do you fix it?</h3>
                       <div v-html="checkDetails[row.original.id]?.fix" />
                     </div>
-                    
+
                     <div>
                       <h3>What is the positive impact?</h3>
                       <div v-html="checkDetails[row.original.id]?.impact" />
@@ -1028,7 +1077,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
                   </div>
                 </div>
               </div>
-              
+
               <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
                 No additional information available for this check.
               </div>
@@ -1036,7 +1085,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
           </template>
         </UTable>
 
-        <div class="px-4 py-3.5 text-sm text-muted">
+        <div class="px-4 py-3.5 text-sm text-muted print:hidden">
           {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
           {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
         </div>
@@ -1050,3 +1099,7 @@ const checkDetails = ref<Record<string, CheckDetail>>({
     </footer>
   </UContainer>
 </template>
+
+<style>
+@page { margin: 0; }
+</style>
