@@ -79,7 +79,7 @@ const checkSchema = z.object({
   id: z.string(),
   name: z.string(),
   channel: z.string(),
-  status: z.enum(['idle', 'pending', 'success', 'error']),
+  status: z.enum(['idle', 'pending', 'pass', 'fail', 'error']),
   result: resultSchema.nullable().default(null),
   weight: z.number().default(1), // Weight for this check in the scoring system
   startTime: z.number().optional(), // Timestamp when check started
@@ -163,7 +163,12 @@ const addCheck = async (name: string, checkId: string, channel: string) => {
     check.value.endTime = endTime
     check.value.duration = endTime - startTime
     check.value.result = resultSchema.parse(result)
-    check.value.status = 'success'
+    // Set status based on result value
+    if (check.value.result?.type === 'check') {
+      check.value.status = check.value.result.value === true ? 'pass' : 'fail'
+    } else {
+      check.value.status = 'error'
+    }
   } catch (error) {
     console.error('Error adding check:', error)
     check.value.status = 'error'
@@ -219,15 +224,13 @@ const channelStatus = computed<ChannelStatus[]>(() => {
       // Count successful checks, factoring in their weights
       items.forEach(item => {
         totalWeight += item.weight
-        if (item.status === 'success' &&
-          item.result?.type === 'check' &&
-          item.result.value === true) {
+        if (item.status === 'pass') {
           score += item.weight
         }
       })
 
-      const active = items.some(i => i.status === 'success' && i.result?.type === 'check' && i.result.value === true)
-      const warning = items.some(i => i.status === 'success')
+      const active = items.some(i => i.status === 'pass')
+      const warning = items.some(i => i.status === 'fail' || i.status === 'error')
 
       if (active) status = 'active'
       else if (warning) status = 'warning'
@@ -245,12 +248,7 @@ const totalImplementationScore = computed(() => {
   const totalWeight = checks.value.reduce((acc, check) => acc + check.weight, 0)
   // Calculate scored weight based on check results
   const scoredWeight = checks.value.reduce((acc, check) => {
-    if (check.status === 'success' && check.result) {
-      if (check.result.type === 'check') {
-        return acc + (check.result.value === true ? check.weight : 0)
-      }
-    }
-    return acc
+    return acc + (check.status === 'pass' ? check.weight : 0)
   }, 0)
   // Compute percentage using the critical score algorithm
   const percentage = totalWeight > 0 ? (scoredWeight / totalWeight) * 100 : 0
@@ -301,17 +299,13 @@ const columns: TableColumn<Check>[] = [
     header: 'Weight',
   },
   {
-    accessorKey: 'status',
-    header: 'Status',
-  },
-  {
     accessorKey: 'duration',
     header: 'Time',
   },
   {
-    accessorKey: 'result',
-    header: 'Result',
-  }
+    accessorKey: 'status',
+    header: 'Status',
+  },
 ]
 
 const formatTime = (time: number) => {
@@ -331,10 +325,31 @@ const todayDate = new Date().toLocaleDateString('en-US', {
 // Get status colors for semantic UI
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'success': return 'success'
-    case 'pending': return 'warning'
-    case 'error': return 'error'
+    case 'pass': return 'success'
+    case 'fail': return 'error'
+    case 'error': return 'warning'
+    case 'pending': return 'neutral'
     default: return 'neutral'
+  }
+}
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'pass': return 'i-lucide-check'
+    case 'fail': return 'i-lucide-x'
+    case 'error': return 'i-lucide-bug'
+    case 'pending': return 'i-lucide-loader'
+    default: return 'i-lucide-help-circle'
+  }
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'pass': return 'Pass'
+    case 'fail': return 'Fail'
+    case 'error': return 'Error'
+    case 'pending': return 'Pending'
+    default: return 'Unknown'
   }
 }
 
@@ -405,7 +420,7 @@ const table = useTemplateRef('table')
         <div class="text-xl font-bold text-white">Need a hand?</div>
 
         <p class="text-gray-100 mt-2 text-sm">
-          We’ve helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
+          We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
           expert who can guide you.
         </p>
 
@@ -485,22 +500,16 @@ const table = useTemplateRef('table')
           <template #weight-cell="{ row }">
             <div class="text-sm text-right">{{ row.original.weight }} pts</div>
           </template>
-          <template #status-cell="{ row }">
-            <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
-              :icon="row.original.status === 'pending' ? 'i-lucide-loader' : undefined"
-              ui="{ leadingIcon: 'animate-spin' }">
-              {{ row.original.status }}
-            </UBadge>
-          </template>
           <template #duration-cell="{ row }">
             <div class="text-sm text-right" v-if="row.original.duration">{{ formatTime(row.original.duration) }}</div>
             <div class="text-sm text-right" v-else>-</div>
           </template>
-          <template #result-cell="{ row }">
-            <USkeleton v-if="row.original.status === 'pending'" class="w-full h-4" />
-            <UBadge v-else :color="row.original.result ? row.original.result.value ? 'success' : 'error' : 'neutral'"
-              variant="soft"
-              :icon="row.original.result ? row.original.result.value ? 'i-lucide-check' : 'i-lucide-x' : 'i-lucide-clock'" />
+          <template #status-cell="{ row }">
+            <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
+              :icon="getStatusIcon(row.original.status)"
+              :ui="{ leadingIcon: row.original.status === 'pending' ? 'animate-spin' : '' }">
+              {{ getStatusLabel(row.original.status) }}
+            </UBadge>
           </template>
 
           <template #expanded="{ row }">
