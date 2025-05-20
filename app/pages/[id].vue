@@ -553,6 +553,7 @@ const table = useTemplateRef('table')
         <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" v-model:sorting="sorting" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
           <template #expand-cell="{ row }">
             <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
+              aria-label="Expand to view fix instructions and check information"
               :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
           </template>
           <template #name-cell="{ row }">
@@ -582,7 +583,11 @@ const table = useTemplateRef('table')
           </template>
 
           <template #actions-cell="{ row }">
-            <div class="text-right">
+            <div class="justify-end flex items-center gap-2">
+              <UButton v-if="row.original.status === 'fail' || row.original.status === 'error'" icon="i-lucide-wrench" color="neutral" variant="link" @click="row.toggleExpanded()" aria-label="Expand to view fix instructions and check information">
+                Fix
+              </UButton>
+
               <UDropdownMenu :items="[
                 {
                   label: 'Refresh',
