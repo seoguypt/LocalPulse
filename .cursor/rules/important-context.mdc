@@ -16,6 +16,8 @@ alwaysApply: true
 - Rely on convention over configuration to keep code shorter and have less complexity
 - Prefer typescript inference
 - Run `pnpm run db:push` to push migrations to the databases (don't generate please)
+- Use conventional commits
+
 
 
 
