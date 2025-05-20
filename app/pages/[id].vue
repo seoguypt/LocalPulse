@@ -992,20 +992,6 @@ const checkDetails = ref<Record<string, CheckDetail>>({
               <UButton v-if="row.original.status === 'fail' || row.original.status === 'error'" icon="i-lucide-wrench" color="neutral" variant="link" @click="row.toggleExpanded()" aria-label="Expand to view fix instructions and check information">
                 Fix
               </UButton>
-
-              <UDropdownMenu :items="[
-                {
-                  label: 'Refresh',
-                  icon: 'i-lucide-refresh-ccw',
-                  action: () => { }
-                }
-              ]" :ui="{
-                content: 'w-48'
-              }" :content="{
-                align: 'end'
-              }" aria-label="Actions">
-                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" />
-              </UDropdownMenu>
             </div>
           </template>
 
