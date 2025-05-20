@@ -2,9 +2,6 @@
 import { z } from 'zod';
 import type { TableColumn } from '@nuxt/ui'
 
-const UBadge = resolveComponent('UBadge')
-const USkeleton = resolveComponent('USkeleton')
-
 const route = useRoute();
 const id = route.params.id as string;
 
