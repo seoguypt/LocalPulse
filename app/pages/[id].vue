@@ -285,6 +285,42 @@ const getChannelPrimaryColor = (channel: string) => {
   return colorMap[channel] || 'bg-gray-500'
 }
 
+const activeChannel = ref('all')
+
+// Custom sort function for status column to prioritize fails
+const statusSortingFn = (rowA: any, rowB: any, columnId: string): number => {
+  // Order: fail, error, pending, pass
+  const statusOrder: Record<string, number> = {
+    'fail': 0,
+    'error': 1,
+    'pending': 2,
+    'pass': 3,
+    'idle': 4
+  }
+  
+  // Safely get status values with fallbacks
+  let statusValueA: string = 'pending'
+  let statusValueB: string = 'pending'
+  
+  try {
+    if (rowA && typeof rowA.getValue === 'function') {
+      statusValueA = rowA.getValue(columnId) || 'pending'
+    }
+    
+    if (rowB && typeof rowB.getValue === 'function') {
+      statusValueB = rowB.getValue(columnId) || 'pending'
+    }
+  } catch (error) {
+    console.error('Error in status sorting function:', error)
+  }
+  
+  // Get numeric values with fallback to pending (2)
+  const orderA = statusOrder[statusValueA] ?? 2
+  const orderB = statusOrder[statusValueB] ?? 2
+  
+  return orderA - orderB
+}
+
 const columns: TableColumn<Check>[] = [
   {
     id: 'expand',
@@ -308,6 +344,7 @@ const columns: TableColumn<Check>[] = [
   {
     accessorKey: 'status',
     header: () => h('div', { class: 'text-right' }, 'Status'),
+    sortingFn: statusSortingFn,
   },
   {
     id: 'actions',
@@ -370,8 +407,6 @@ const channelFilterItems = computed(() => {
   ]
 })
 
-const activeChannel = ref('all')
-
 // Add refresh method to reload all checks
 const refreshChecks = () => {
   // Clear existing checks
@@ -394,6 +429,18 @@ const columnFilters = computed(() => {
     }
   ]
 })
+
+// Default sort order - sort by status first (fails first), then by weight
+const sorting = ref([
+  {
+    id: 'status',
+    desc: false
+  },
+  {
+    id: 'weight',
+    desc: true
+  }
+])
 
 const table = useTemplateRef('table')
 </script>
@@ -503,7 +550,7 @@ const table = useTemplateRef('table')
           </template>
         </UTabs>
 
-        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
+        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" v-model:sorting="sorting" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
           <template #expand-cell="{ row }">
             <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
               :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
