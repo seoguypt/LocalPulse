@@ -848,48 +848,51 @@ const checkDetails = ref<Record<string, CheckDetail>>({
   }
 });
 
-// Keep failed/error rows expanded when printing is triggered
-if (process.client) {
-  const beforePrintHandler = () => {
-    activeChannel.value = 'all';
-
-    if (table?.value?.tableApi) {
-      const rows = table.value.tableApi.getRowModel().rows;
-      rows.forEach(row => {
-        if (row.original.status === 'fail' || row.original.status === 'error') {
-          row.toggleExpanded(true);
-        }
-      });
-    }
-  };
-  
-  // Setup print media query for browser-initiated printing
-  const mediaQueryList = window.matchMedia('print');
-  mediaQueryList.addEventListener('change', (mql) => {
-    if (mql.matches) {
-      beforePrintHandler();
-    }
-  });
-  
-  // Also catch the beforeprint event for browsers that support it
-  window.addEventListener('beforeprint', beforePrintHandler);
-}
-
+const colorMode = useColorMode();
 const print = () => {
-  if (!process.client) return;
+  if (!import.meta.client) return;
   
-  // Before printing, expand all failed/error rows
+  // Before printing, minimise all rows and expand all failed/error rows
+  const originalExpanded: string[] = [];
   if (table?.value?.tableApi) {
     const rows = table.value.tableApi.getRowModel().rows;
     rows.forEach(row => {
+      if (row.getIsExpanded()) {
+        originalExpanded.push(row.id);
+      }
+
       if (row.original.status === 'fail' || row.original.status === 'error') {
         row.toggleExpanded(true);
+      } else {
+        row.toggleExpanded(false);
       }
     });
   }
 
+  const originalActiveChannel = activeChannel.value;
+  activeChannel.value = 'all';
+
+  const originalColorMode = colorMode.preference;
+  colorMode.preference = 'light';
+
   nextTick(() => {
     window.print();
+  });
+
+  window.addEventListener('afterprint', () => {
+    colorMode.preference = originalColorMode;
+    activeChannel.value = originalActiveChannel;
+
+    if (table?.value?.tableApi) {
+      const rows = table.value.tableApi.getRowModel().rows;
+      rows.forEach(row => {
+        if (originalExpanded.includes(row.id)) {
+          row.toggleExpanded(true);
+        } else {
+          row.toggleExpanded(false);
+        }
+      });
+    }
   });
 }
 </script>
