@@ -296,15 +296,18 @@ const columns: TableColumn<Check>[] = [
   },
   {
     accessorKey: 'weight',
-    header: 'Weight',
+    header: () => h('div', { class: 'text-right' }, 'Weight'),
   },
   {
     accessorKey: 'duration',
-    header: 'Time',
+    header: () => h('div', { class: 'text-right' }, 'Time'),
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: () => h('div', { class: 'text-right' }, 'Status'),
+  },
+  {
+    id: 'actions',
   },
 ]
 
@@ -370,7 +373,7 @@ const activeChannel = ref('all')
 const refreshChecks = () => {
   // Clear existing checks
   checks.value = []
-  
+
   // Add all active checks for the current mode
   activeCheckDefinitions.value.forEach(def => {
     addCheck(def.name, def.id, def.channel)
@@ -408,7 +411,8 @@ const table = useTemplateRef('table')
           Email (link + PDF)
         </UButton>
 
-        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report" @click="refreshChecks">
+        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report"
+          @click="refreshChecks">
           Refresh
         </UButton>
       </div>
@@ -487,14 +491,16 @@ const table = useTemplateRef('table')
         <UTabs size="md" variant="link" :content="false" :items="channelFilterItems" v-model="activeChannel"
           class="w-full">
           <template #trailing="{ item }">
-            <UBadge v-if="item.value !== 'all'" :color="getStatusColor(channelStatus.find(s => s.name === item.value)?.status || 'missing')"
+            <UBadge v-if="item.value !== 'all'"
+              :color="getStatusColor(channelStatus.find(s => s.name === item.value)?.status || 'missing')"
               variant="subtle">
-              {{channelStatus.find(s => s.name === item.value)?.score || 0}}/{{channelStatus.find(s => s.name === item.value)?.total || 0}}
+              {{channelStatus.find(s => s.name === item.value)?.score || 0}}/{{channelStatus.find(s => s.name ===
+                item.value)?.total || 0}}
             </UBadge>
           </template>
         </UTabs>
 
-        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table">
+        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
           <template #expand-cell="{ row }">
             <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
               :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
@@ -516,11 +522,31 @@ const table = useTemplateRef('table')
             <div class="text-sm text-right" v-else>-</div>
           </template>
           <template #status-cell="{ row }">
-            <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
-              :icon="getStatusIcon(row.original.status)"
-              :ui="{ leadingIcon: row.original.status === 'pending' ? 'animate-spin' : '' }">
-              {{ getStatusLabel(row.original.status) }}
-            </UBadge>
+            <div class="text-right">
+              <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
+                :icon="getStatusIcon(row.original.status)"
+                :ui="{ leadingIcon: row.original.status === 'pending' ? 'animate-spin' : '' }">
+                {{ getStatusLabel(row.original.status) }}
+              </UBadge>
+            </div>
+          </template>
+
+          <template #actions-cell="{ row }">
+            <div class="text-right">
+              <UDropdownMenu :items="[
+                {
+                  label: 'Refresh',
+                  icon: 'i-lucide-refresh-ccw',
+                  action: () => { }
+                }
+              ]" :ui="{
+                content: 'w-48'
+              }" :content="{
+                align: 'end'
+              }" aria-label="Actions">
+                <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" />
+              </UDropdownMenu>
+            </div>
           </template>
 
           <template #expanded="{ row }">
@@ -539,7 +565,8 @@ const table = useTemplateRef('table')
 
     <!-- Footer -->
     <footer class="mt-6 pt-4 text-center text-xs text-slate-500">
-      <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{ todayDate }}</p>
+      <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{
+        todayDate }}</p>
     </footer>
   </main>
 </template>
