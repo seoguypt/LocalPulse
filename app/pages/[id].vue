@@ -1,23 +1,14 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import { h, resolveComponent, computed, watch, watchEffect } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
 const UBadge = resolveComponent('UBadge')
-const UProgress = resolveComponent('UProgress')
 const USkeleton = resolveComponent('USkeleton')
 
 const route = useRoute();
 const id = route.params.id as string;
 
 const mode = ref('food-beverage')
-const modes = [
-  { label: 'Food & Beverage', value: 'food-beverage' },
-  { label: 'Trades (Coming Soon)', value: 'tradie', disabled: true },
-  { label: 'Health (Coming Soon)', value: 'health-wellness', disabled: true },
-  { label: 'Retail (Coming Soon)', value: 'retail', disabled: true },
-  { label: 'Pet Services (Coming Soon)', value: 'pet', disabled: true },
-]
 
 // Definition of check weights by business mode (out of 100 total points)
 const modeCheckWeights: Record<string, Record<string, number>> = {
@@ -29,7 +20,7 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
     'google-listing-website-matches': 3,
     'google-listing-phone-number': 2,
     'google-listing-photos': 3,
-    
+
     // Core site hygiene & UX (25 points total)
     'website': 6, // Site exists (treating as HTTPS check)
     'website-200-299': 6,
@@ -37,7 +28,7 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
     'website-performance': 6, // First Contentful Paint
     'website-menu-page': 4, // Menu page exists
     'website-menu-navigation': 3, // Menu in navigation
-    
+
     // Structured data & on-page SEO (17 points total)
     'website-localbusiness-jsonld': 3,
     'website-menu-jsonld': 2,
@@ -46,14 +37,14 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
     'website-canonical': 1,
     'website-robots': 1,
     'website-sitemap': 1,
-    
+
     // Social proof & conversion cues (18 points total)
     'google-listing-reviews': 5, // Rating and # of reviews
     'website-tel-link': 1,
     'website-og-image': 1,
     'instagram-profile': 3,
     'facebook-page': 3,
-    
+
     // Website ↔ GBP parity (10 points total)
     'website-gbp-name-address-phone': 6,
     'website-physical-address': 2,
@@ -73,9 +64,6 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
 const checkWeights = computed(() => {
   return modeCheckWeights[mode.value] || modeCheckWeights['food-beverage'];
 });
-
-// Toggle for the detailed checks - now set to true by default
-const showChecks = ref(true);
 
 const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
@@ -113,13 +101,13 @@ const allCheckDefinitions = [
   { id: 'google-listing-phone-number', name: 'GBP phone number matches the site', channel: 'Google Business Profile' },
   { id: 'google-listing-photos', name: '≥ 3 photos on GBP (food or venue)', channel: 'Google Business Profile' },
   { id: 'google-listing-reviews', name: 'Google rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
-  
+
   // Core site hygiene & UX
   { id: 'website', name: 'Site enforces HTTPS', channel: 'Website' },
   { id: 'website-200-299', name: 'Site returns 200-299 status codes', channel: 'Website' },
   { id: 'website-mobile-responsive', name: 'Site is mobile-responsive', channel: 'Website' },
   { id: 'website-performance', name: 'Median First Contentful Paint ≤ 3s', channel: 'Website' },
-  
+
   // Structured data & on-page SEO
   { id: 'website-localbusiness-jsonld', name: 'LocalBusiness JSON-LD detected', channel: 'Website' },
   { id: 'website-menu-jsonld', name: 'Menu JSON-LD detected', channel: 'Website', modes: ['food-beverage'] },
@@ -128,47 +116,29 @@ const allCheckDefinitions = [
   { id: 'website-canonical', name: '<link rel="canonical"> present on every page', channel: 'Website' },
   { id: 'website-robots', name: 'robots.txt does not block the homepage', channel: 'Website' },
   { id: 'website-sitemap', name: 'Sitemap file discoverable', channel: 'Website' },
-  
+
   // Social proof & conversion cues
   { id: 'website-tel-link', name: 'Click-to-call tel: link on site', channel: 'Website' },
   { id: 'website-og-image', name: 'og:image (Open-Graph preview) present', channel: 'Website' },
   { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
   { id: 'facebook-page', name: 'Has a Facebook page', channel: 'Social Media' },
   { id: 'tiktok-profile', name: 'Has a TikTok profile', channel: 'Social Media' },
-  
+
   // Website ↔ GBP parity
   { id: 'website-gbp-name-address-phone', name: 'Website name, address & phone match GBP', channel: 'Website' },
   { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
   { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website' },
-  
+
   // Food delivery platforms
   { id: 'uber-eats-listing', name: 'Uber Eats Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
   { id: 'menulog-listing', name: 'Menulog Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
   { id: 'doordash-listing', name: 'DoorDash Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
   { id: 'deliveroo-listing', name: 'Deliveroo Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
-  
-  // Service platform checks for Tradies
-  { id: 'hipages-listing', name: 'hipages Listing', channel: 'Service Platforms', modes: ['tradie'] },
-  { id: 'oneflare-listing', name: 'Oneflare Listing', channel: 'Service Platforms', modes: ['tradie'] },
-  
-  // Marketplace checks for Retail
-  { id: 'amazon-store', name: 'Amazon Store', channel: 'Marketplaces', modes: ['retail'] },
-  { id: 'ebay-store', name: 'eBay Store', channel: 'Marketplaces', modes: ['retail'] },
-  { id: 'etsy-store', name: 'Etsy Store', channel: 'Marketplaces', modes: ['retail'] },
-  
-  // Booking platform checks for Health
-  { id: 'healthengine-listing', name: 'HealthEngine Listing', channel: 'Booking Platforms', modes: ['health-wellness'] },
-  { id: 'hotdoc-listing', name: 'HotDoc Listing', channel: 'Booking Platforms', modes: ['health-wellness'] },
-  
-  // Pet platform checks
-  { id: 'pawshake-profile', name: 'Pawshake Profile', channel: 'Pet Platforms', modes: ['pet'] },
-  { id: 'madpaws-profile', name: 'Mad Paws Profile', channel: 'Pet Platforms', modes: ['pet'] },
-  { id: 'petbarn-listing', name: 'Petbarn Listing', channel: 'Pet Platforms', modes: ['pet'] },
 ]
 
 // Filter checks based on the current mode
 const activeCheckDefinitions = computed(() => {
-  return allCheckDefinitions.filter(def => 
+  return allCheckDefinitions.filter(def =>
     !def.modes || def.modes.includes(mode.value)
   )
 })
@@ -176,12 +146,12 @@ const activeCheckDefinitions = computed(() => {
 const addCheck = async (name: string, checkId: string, channel: string) => {
   // Get the weight for this check, or default to 1
   const weight = checkWeights.value?.[checkId] || 1
-  
+
   const startTime = Date.now()
-  const check: Ref<Check> = ref(checkSchema.parse({ 
-    id: checkId, 
+  const check: Ref<Check> = ref(checkSchema.parse({
+    id: checkId,
     name,
-    channel, 
+    channel,
     status: 'pending',
     weight,
     startTime
@@ -207,7 +177,7 @@ const addCheck = async (name: string, checkId: string, channel: string) => {
 watchEffect(() => {
   // Clear existing checks
   checks.value = []
-  
+
   // Add all active checks for the current mode
   activeCheckDefinitions.value.forEach(def => {
     addCheck(def.name, def.id, def.channel)
@@ -217,7 +187,7 @@ watchEffect(() => {
 // Organize checks by channel
 const channelChecks = computed<Record<string, Check[]>>(() => {
   const channels: Record<string, Check[]> = {}
-  
+
   // Group checks by channel
   checks.value.forEach(check => {
     const channelName = check.channel || 'Uncategorized'
@@ -226,7 +196,7 @@ const channelChecks = computed<Record<string, Check[]>>(() => {
     }
     channels[channelName].push(check)
   })
-  
+
   return channels
 })
 
@@ -235,6 +205,7 @@ type ChannelStatus = {
   status: 'active' | 'warning' | 'missing';
   score: number;
   total: number;
+  percentage: number;
 }
 
 // Calculate channel status for scorecard
@@ -243,33 +214,30 @@ const channelStatus = computed<ChannelStatus[]>(() => {
     let status: 'active' | 'warning' | 'missing' = 'missing'
     let score = 0
     let totalWeight = 0
-    
+
     if (items.length) {
       // Count successful checks, factoring in their weights
       items.forEach(item => {
         totalWeight += item.weight
-        if (item.status === 'success' && 
-            item.result?.type === 'check' && 
-            item.result.value === true) {
+        if (item.status === 'success' &&
+          item.result?.type === 'check' &&
+          item.result.value === true) {
           score += item.weight
         }
       })
-      
+
       const active = items.some(i => i.status === 'success' && i.result?.type === 'check' && i.result.value === true)
       const warning = items.some(i => i.status === 'success')
-      
+
       if (active) status = 'active'
       else if (warning) status = 'warning'
     }
-    
-    return { name, status, score, total: totalWeight }
+
+    const percentage = totalWeight > 0 ? Math.round((score / totalWeight) * 100) : 0
+
+    return { name, status, score, total: totalWeight, percentage }
   })
 })
-
-// Count active channels
-const activeChannelsCount = computed(() => 
-  channelStatus.value.filter(c => c.status === 'active').length
-)
 
 // Total implementation score
 const totalImplementationScore = computed(() => {
@@ -298,7 +266,7 @@ const totalImplementationScore = computed(() => {
 const totalCheckTime = computed(() => {
   const completedChecks = checks.value.filter(check => check.duration !== undefined)
   if (completedChecks.length === 0) return 0
-  
+
   return completedChecks.reduce((total, check) => total + (check.duration || 0), 0)
 })
 
@@ -328,13 +296,13 @@ const columns: TableColumn<Check>[] = [
         'Website': 'success',
         'Social Media': 'info',
         'Food Delivery': 'warning',
-        'Service Platforms': 'purple', 
+        'Service Platforms': 'purple',
         'Marketplaces': 'teal',
         'Booking Platforms': 'rose',
         'Pet Platforms': 'indigo'
       }
       const color = colorMap[channel] || 'neutral'
-      
+
       return h(UBadge, { variant: 'subtle', color, class: 'text-xs' }, () => channel)
     }
   },
@@ -371,7 +339,7 @@ const columns: TableColumn<Check>[] = [
       if (duration === undefined) {
         return h('div', { class: 'text-sm text-slate-400' }, '-')
       }
-      
+
       // Format duration for display
       let formattedTime = ''
       if (duration < 1000) {
@@ -379,7 +347,7 @@ const columns: TableColumn<Check>[] = [
       } else {
         formattedTime = `${(duration / 1000).toFixed(1)}s`
       }
-      
+
       return h('div', { class: 'text-sm font-mono' }, formattedTime)
     }
   },
@@ -429,276 +397,148 @@ const getStatusColor = (status: string) => {
   }
 }
 
-// Get percentage color based on score
-const getScoreColor = (percent: number) => {
-  if (percent >= 80) return 'text-success-500 dark:text-success-400'
-  if (percent >= 60) return 'text-primary-500 dark:text-primary-400'
-  if (percent >= 40) return 'text-warning-500 dark:text-warning-400'
-  return 'text-error-500 dark:text-error-400'
-}
 
-// Get progress bar color based on score
-const getProgressColor = (percent: number) => {
-  if (percent >= 80) return 'bg-success-500 dark:bg-success-400'
-  if (percent >= 60) return 'bg-primary-500 dark:bg-primary-400'
-  if (percent >= 40) return 'bg-warning-500 dark:bg-warning-400'
-  return 'bg-error-500 dark:bg-error-400'
-}
 </script>
 
 <template>
-  <main v-if="business" class="bg-slate-50 dark:bg-slate-900 min-h-screen pb-16">
-    <!-- Back Button -->
-    <div class="container mx-auto px-4 pt-6 pb-3">
-      <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" to="/" 
-        class="text-slate-600 dark:text-slate-400" aria-label="Go back">
-        Back
-      </UButton>
+  <main v-if="business" class="min-h-screen container mx-auto px-4 pb-6 pt-12">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl sm:text-3xl font-bold text-center tracking-tight">Online Visibility Report</h1>
+
+      <div class="flex items-center gap-2">
+        <UButton icon="i-lucide-download" color="neutral" variant="ghost" to="/download-pdf" target="_blank"
+          aria-label="Download PDF">
+          Download (PDF)
+        </UButton>
+
+        <UButton icon="i-lucide-mail" color="neutral" variant="ghost" to="/email-report" target="_blank"
+          aria-label="Email Report">
+          Email (link + PDF)
+        </UButton>
+
+        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report">
+          Refresh
+        </UButton>
+      </div>
     </div>
 
-    <!-- Report Container -->
-    <div class="container mx-auto bg-white dark:bg-slate-800 shadow-sm rounded-md overflow-hidden print:shadow-none">
-      <!-- Header -->
-      <div class="bg-slate-900 dark:bg-slate-800 py-8 px-10 border-b border-slate-200 dark:border-slate-700 text-white relative overflow-hidden">
-        <div class="flex items-center justify-between relative z-10 mb-4">
-          <h1 class="text-2xl sm:text-3xl font-bold">VisiMate Score</h1>
-          <USelect v-model="mode" :items="modes" class="w-48" />
+    <div class="grid grid-cols-3 gap-8 mt-8">
+      <UCard variant="subtle" class="col-span-1">
+        <h2 class="sr-only">Business Details</h2>
+
+        <div class="flex items-center gap-2">
+          <div class="text-2xl font-bold">{{ business.name }}</div>
+          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">Café</UBadge>
         </div>
-        <h2 class="text-xl sm:text-2xl text-slate-300 relative z-10 mb-5">{{ business.name }}</h2>
-        
-        <!-- Gradient accent -->
-        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-400 to-primary-600"></div>
-        
-        <!-- Channel tags -->
-        <div class="flex flex-wrap items-center gap-3 relative z-10">
-          <NuxtLink v-if="business.websiteUrl" :to="business.websiteUrl" target="_blank">
-            <UBadge icon="i-lucide-globe" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700">
-              {{ business.websiteUrl.split('//')[1]?.split('/')[0] || business.websiteUrl }}
-            </UBadge>
-          </NuxtLink>
-          
-          <NuxtLink v-if="business.facebookUsername" :to="getPlatformProfileUrl('facebook', business.facebookUsername)" target="_blank">
-            <UBadge icon="logos-facebook" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700">
-              {{ business.facebookUsername }}
-            </UBadge>
-          </NuxtLink>
-          
-          <NuxtLink v-if="business.instagramUsername" :to="getPlatformProfileUrl('instagram', business.instagramUsername)" target="_blank">
-            <UBadge icon="fa6-brands:instagram" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700" :ui="{ leadingIcon: 'text-pink-500' }">
-              {{ business.instagramUsername }}
-            </UBadge>
-          </NuxtLink>
-          
-          <NuxtLink v-if="business.xUsername" :to="getPlatformProfileUrl('x', business.xUsername)" target="_blank">
-            <UBadge icon="fa6-brands:x-twitter" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700" :ui="{ leadingIcon: 'text-white' }">
-              {{ business.xUsername }}
-            </UBadge>
-          </NuxtLink>
-          
-          <NuxtLink v-if="business.youtubeUsername" :to="getPlatformProfileUrl('youtube', business.youtubeUsername)" target="_blank">
-            <UBadge icon="logos-youtube-icon" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700">
-              {{ business.youtubeUsername }}
-            </UBadge>
-          </NuxtLink>
-          
-          <NuxtLink v-if="business.tiktokUsername" :to="getPlatformProfileUrl('tiktok', business.tiktokUsername)" target="_blank">
-            <UBadge icon="logos-tiktok-icon" size="lg" color="neutral" variant="solid" class="bg-slate-700/70 text-white hover:bg-slate-700">
-              {{ business.tiktokUsername }}
-            </UBadge>
-          </NuxtLink>
-          
-          <UButton icon="i-lucide-plus" color="neutral" variant="ghost" size="sm" class="text-white">
-            Add channels
+
+        <BusinessChannels :business="business" class="mt-4" />
+      </UCard>
+
+      <div
+        class="col-span-1 row-start-2 rounded-lg bg-primary-950/50 ring ring-primary-900/50 p-6 flex flex-col items-start">
+        <div class="text-xl font-bold text-white">Need a hand?</div>
+
+        <p class="text-gray-100 mt-2 text-sm">
+          We’ve helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
+          expert who can guide you.
+        </p>
+
+        <div class="mt-auto pt-4">
+          <UButton color="primary" variant="soft" size="lg" class="text-sm" to="/chat">
+            <span>Schedule a <strong><em>free</em></strong> chat</span>
           </UButton>
         </div>
       </div>
 
-      <!-- Report Content -->
-      <div class="p-8 md:p-10">
-        <!-- 1. SUMMARY SNAPSHOT -->
-        <section class="mb-14">
-          <!-- Overall visibility score card -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="bg-slate-900 dark:bg-slate-800 text-white rounded-lg overflow-hidden shadow-sm col-span-2">
-              <div class="p-8 pb-6">
-                <div class="flex items-center justify-center mb-6">
-                  <div class="inline-flex items-baseline">
-                    <span class="text-6xl font-bold" :class="getScoreColor(totalImplementationScore.percentage)">
-                      {{ totalImplementationScore.percentage }}
-                    </span>
-                  </div>
-                </div>
-                
-                <div class="w-full bg-slate-700 dark:bg-slate-700 rounded-full h-3 mb-2">
-                  <div class="h-3 rounded-full" :class="getProgressColor(totalImplementationScore.percentage)" 
-                       :style="`width: ${totalImplementationScore.percentage}%`"></div>
-                </div>
-                
-                <div class="flex justify-between text-sm text-slate-300 mt-2">
-                  <span>Online visibility score</span>
-                  <span>{{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Analysis summary card -->
-            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm">
-              <div class="p-6">
-                <h3 class="text-lg font-semibold mb-4 text-slate-700 dark:text-slate-300">Analysis Summary</h3>
-                <div class="space-y-4">
-                  <div class="flex justify-between items-center">
-                    <span class="text-slate-600 dark:text-slate-400">Channels Checked</span>
-                    <span class="font-semibold">{{ Object.keys(channelChecks).length }}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-slate-600 dark:text-slate-400">Total Checks</span>
-                    <span class="font-semibold">{{ checks.length }}</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-slate-600 dark:text-slate-400">Analysis Time</span>
-                    <span class="font-semibold">{{ (totalCheckTime / 1000).toFixed(1) }}s</span>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-slate-600 dark:text-slate-400">Last Updated</span>
-                    <span class="font-semibold">{{ todayDate }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        <!-- 6. DETAILED CHECKS SECTION -->
-        <section class="mb-14">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Technical Implementation Details</h2>
-            <UButton color="neutral" variant="ghost" :icon="showChecks ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" 
-              @click="showChecks = !showChecks" class="text-slate-600 dark:text-slate-400">
-              {{ showChecks ? 'Hide details' : 'Show details' }}
-            </UButton>
-          </div>
-          
-          <Transition name="fade">
-            <div v-if="showChecks" class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
-              <!-- Channel Tabs -->
-              <div class="border-b border-slate-200 dark:border-slate-700">
-                <div class="flex overflow-x-auto px-6 pt-6 pb-4">
-                  <UButton
-                    v-for="category in ['All', ...Object.keys(channelChecks)]"
-                    :key="category"
-                    color="primary"
-                    :variant="activeCategory === category ? 'solid' : 'ghost'"
-                    class="mr-3 whitespace-nowrap"
-                    @click="activeCategory = category"
-                  >
-                    {{ category }}
-                    <UBadge
-                      v-if="category !== 'All'"
-                      size="xs"
-                      :color="getStatusColor(channelStatus.find(s => s.name === category)?.status || 'missing')"
-                      class="ml-2"
-                    >
-                      {{ channelStatus.find(s => s.name === category)?.score || 0 }}/{{ channelStatus.find(s => s.name === category)?.total || 0 }}
-                    </UBadge>
-                  </UButton>
-                </div>
-              </div>
-              
-              <!-- Check Summary Stats -->
-              <div class="p-6 flex flex-wrap gap-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                <div class="flex items-center">
-                  <span class="text-sm font-medium mr-2">Total time:</span>
-                  <UBadge color="primary" variant="subtle" class="font-mono">
-                    {{ (totalCheckTime / 1000).toFixed(1) }} seconds
-                  </UBadge>
-                </div>
-                <div class="flex items-center">
-                  <span class="text-sm font-medium mr-2">Showing:</span>
-                  <UBadge color="neutral" variant="subtle">
-                    {{ filteredChecks.length }} checks
-                  </UBadge>
-                </div>
-                <div class="flex items-center" v-if="activeCategory !== 'All'">
-                  <span class="text-sm font-medium mr-2">Category:</span>
-                  <UBadge :color="getStatusColor(channelStatus.find(s => s.name === activeCategory)?.status || 'missing')" variant="subtle">
-                    {{ channelStatus.find(s => s.name === activeCategory)?.score || 0 }}/{{ channelStatus.find(s => s.name === activeCategory)?.total || 0 }} points
-                  </UBadge>
-                </div>
-              </div>
-            
-              <UTable 
-                :data="filteredChecks" 
-                :columns="columns" 
-                class="mb-0"
-                hover
-              />
-            </div>
-          </Transition>
-        </section>
+      <UCard variant="subtle" class="col-span-2 row-span-2">
+        <h2 class="sr-only">Summary</h2>
 
-        <!-- 5. RESOURCES SECTION -->
-        <section class="mb-10">
-          <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Resources</h2>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <UButton block color="primary" variant="solid" icon="i-lucide-book-open" to="/guides" target="_blank"
-              class="py-3 text-base">
-              How-To Guide
-            </UButton>
-            <UButton block color="primary" variant="outline" icon="i-lucide-headphones" to="/consult" target="_blank"
-              class="py-3 text-base">
-              Free Consultation
-            </UButton>
-            <UButton block color="neutral" variant="ghost" icon="i-lucide-mail" to="/email-report" target="_blank" 
-              class="py-3 text-base hover:bg-slate-100 dark:hover:bg-slate-700">
-              Email Report
-            </UButton>
-            <UButton block color="neutral" variant="ghost" icon="i-lucide-file" to="/download-pdf" target="_blank" 
-              class="py-3 text-base hover:bg-slate-100 dark:hover:bg-slate-700">
-              Download PDF
+        <div class="flex flex-col items-center gap-8">
+          <div class="flex flex-col items-center gap-4">
+            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
+
+            <div class="text-xl font-bold">Overall Score</div>
+          </div>
+
+          <div class="grid grid-cols-4 gap-4">
+            <div class="flex flex-col items-center gap-2">
+              <CircularProgress
+                :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
+                class="size-20" />
+              <div class="text-base font-bold">Google Business Profile</div>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Website')?.percentage || 0"
+                class="size-20" />
+              <div class="text-base font-bold">Website</div>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Social Media')?.percentage || 0"
+                class="size-20" />
+              <div class="text-base font-bold">Social Media</div>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Food Delivery')?.percentage || 0"
+                class="size-20" />
+              <div class="text-base font-bold">Food Delivery</div>
+            </div>
+          </div>
+        </div>
+      </UCard>
+
+      <UCard variant="subtle" class="col-span-3">
+        <h2 class="sr-only">Checks</h2>
+
+        <!-- Channel Tabs -->
+        <div class="border-b border-slate-200 dark:border-slate-700">
+          <div class="flex overflow-x-auto px-6 pt-6 pb-4">
+            <UButton v-for="category in ['All', ...Object.keys(channelChecks)]" :key="category" color="primary"
+              :variant="activeCategory === category ? 'solid' : 'ghost'" class="mr-3 whitespace-nowrap"
+              @click="activeCategory = category">
+              {{ category }}
+              <UBadge v-if="category !== 'All'" size="xs"
+                :color="getStatusColor(channelStatus.find(s => s.name === category)?.status || 'missing')" class="ml-2">
+                {{channelStatus.find(s => s.name === category)?.score || 0}}/{{channelStatus.find(s => s.name
+                  === category)?.total || 0}}
+              </UBadge>
             </UButton>
           </div>
-        </section>
+        </div>
 
-        <!-- Footer -->
-        <footer class="mt-16 pt-4 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400 dark:text-slate-500">
-          <p>© {{ new Date().getFullYear() }} VisiMate | Generated on {{ todayDate }}</p>
-        </footer>
-      </div>
+        <!-- Check Summary Stats -->
+        <div class="p-6 flex flex-wrap gap-4 border-b border-slate-700 bg-slate-700/50">
+          <div class="flex items-center">
+            <span class="text-sm font-medium mr-2">Total time:</span>
+            <UBadge color="primary" variant="subtle" class="font-mono">
+              {{ (totalCheckTime / 1000).toFixed(1) }} seconds
+            </UBadge>
+          </div>
+          <div class="flex items-center">
+            <span class="text-sm font-medium mr-2">Showing:</span>
+            <UBadge color="neutral" variant="subtle">
+              {{ filteredChecks.length }} checks
+            </UBadge>
+          </div>
+          <div class="flex items-center" v-if="activeCategory !== 'All'">
+            <span class="text-sm font-medium mr-2">Category:</span>
+            <UBadge :color="getStatusColor(channelStatus.find(s => s.name === activeCategory)?.status || 'missing')"
+              variant="subtle">
+              {{channelStatus.find(s => s.name === activeCategory)?.score || 0}}/{{channelStatus.find(s =>
+                s.name === activeCategory)?.total || 0}} points
+            </UBadge>
+          </div>
+        </div>
+
+        <UTable :data="filteredChecks" :columns="columns" class="mb-0" hover />
+      </UCard>
     </div>
+
+    <!-- Footer -->
+    <footer class="mt-6 pt-4 text-center text-xs text-slate-500">
+      <p>© {{ new Date().getFullYear() }} VisiMate | Generated on {{ todayDate }}</p>
+    </footer>
   </main>
 </template>
-
-<style>
-/* Print styles */
-@media print {
-  .container {
-    max-width: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  body {
-    background: white;
-  }
-  
-  .print\:hidden {
-    display: none !important;
-  }
-}
-
-/* Transition effect */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s, max-height 0.3s;
-  max-height: 1000px;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-
-/* Table cell spacing */
-:deep(.table-auto th), 
-:deep(.table-auto td) {
-  padding: 1rem 1.5rem !important;
-}
-</style>
