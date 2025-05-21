@@ -848,12 +848,14 @@ const checkDetails = ref<Record<string, CheckDetail>>({
   }
 });
 
-const colorMode = useColorMode();
-const print = () => {
+let originalExpanded: string[];
+let originalActiveChannel: string;
+let originalColorMode: string;
+const beforePrint = (...args: any[]) => {
   if (!import.meta.client) return;
-  
+
   // Before printing, minimise all rows and expand all failed/error rows
-  const originalExpanded: string[] = [];
+  originalExpanded = [];
   if (table?.value?.tableApi) {
     const rows = table.value.tableApi.getRowModel().rows;
     rows.forEach(row => {
@@ -869,33 +871,57 @@ const print = () => {
     });
   }
 
-  const originalActiveChannel = activeChannel.value;
+  originalActiveChannel = activeChannel.value;
   activeChannel.value = 'all';
 
-  const originalColorMode = colorMode.preference;
+  originalColorMode = colorMode.preference;
   colorMode.preference = 'light';
+}
 
+const afterPrint = () => {
+  if (!import.meta.client) return;
+
+  colorMode.preference = originalColorMode;
+  activeChannel.value = originalActiveChannel;
+
+  if (table?.value?.tableApi) {
+    const rows = table.value.tableApi.getRowModel().rows;
+    rows.forEach(row => {
+      if (originalExpanded.includes(row.id)) {
+        row.toggleExpanded(true);
+      } else {
+        row.toggleExpanded(false);
+      }
+    });
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeprint', beforePrint);
+  window.addEventListener('afterprint', afterPrint);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeprint', beforePrint);
+  window.removeEventListener('afterprint', afterPrint);
+})
+
+const colorMode = useColorMode();
+const print = () => {
+  if (!import.meta.client) return;
+
+  // Remove the event listener to prevent duplicate calls
+  window.removeEventListener('beforeprint', beforePrint);
+  beforePrint();
+
+  // Wait for the next tick to ensure DOM updates
   nextTick(() => {
     window.print();
-  });
-
-  window.addEventListener('afterprint', () => {
-    colorMode.preference = originalColorMode;
-    activeChannel.value = originalActiveChannel;
-
-    if (table?.value?.tableApi) {
-      const rows = table.value.tableApi.getRowModel().rows;
-      rows.forEach(row => {
-        if (originalExpanded.includes(row.id)) {
-          row.toggleExpanded(true);
-        } else {
-          row.toggleExpanded(false);
-        }
-      });
-    }
+    
+    window.addEventListener('beforeprint', beforePrint);
   });
 }
-</script>
+</script>c
 
 <template>
   <UContainer as="main" v-if="business">
@@ -936,7 +962,7 @@ const print = () => {
           expert who can guide you.
         </p>
 
-        <div class="mt-auto pt-4 flex items-center gap-3">  
+        <div class="mt-auto pt-4 flex items-center gap-3">
           <UButton color="primary" variant="soft" size="lg" class="print:hidden" to="/chat" icon="i-lucide-headset"
             trailing-icon="i-lucide-arrow-right">
             <span>Schedule a <strong><em>free</em></strong> chat</span>
@@ -1048,7 +1074,8 @@ const print = () => {
           </template>
 
           <template #expanded="{ row }">
-            <div class="p-6 rounded-lg whitespace-normal" :class="{'print:hidden': !(row.original.status === 'fail' || row.original.status === 'error')}">
+            <div class="p-6 rounded-lg whitespace-normal"
+              :class="{ 'print:hidden': !(row.original.status === 'fail' || row.original.status === 'error') }">
               <div v-if="row.original.result?.label" class="mb-4 text-sm italic">
                 {{ row.original.result.label }}
               </div>
@@ -1104,5 +1131,7 @@ const print = () => {
 </template>
 
 <style>
-@page { margin: 0; }
+@page {
+  margin: 0;
+}
 </style>
