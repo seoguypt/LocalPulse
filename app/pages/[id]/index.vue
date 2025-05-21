@@ -1,11 +1,27 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn } from '@nuxt/ui';
 
 const route = useRoute();
 const id = route.params.id as string;
 
-const mode = ref('food-beverage')
+const categoryToModeMap: Record<string, string> = {
+  'Cafe': 'food-beverage',
+  'Restaurant': 'food-beverage',
+  'Takeaway': 'food-beverage',
+  'Bar': 'food-beverage',
+  'Bakery': 'food-beverage',
+};
+
+const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
+
+const mode = computed(() => {
+  const bCategory = business.value?.category;
+  if (bCategory && categoryToModeMap[bCategory]) {
+    return categoryToModeMap[bCategory];
+  }
+  return 'food-beverage'; // Default mode
+});
 
 // Definition of check weights by business mode (out of 100 total points)
 const modeCheckWeights: Record<string, Record<string, number>> = {
@@ -59,10 +75,8 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
 
 // Default to food-beverage if no mode is selected
 const checkWeights = computed(() => {
-  return modeCheckWeights[mode.value] || modeCheckWeights['food-beverage'];
+  return modeCheckWeights[mode.value];
 });
-
-const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
 const resultSchema = z.discriminatedUnion('type', [
   z.object({
@@ -971,7 +985,9 @@ const print = () => {
         </div>
         
         <BusinessChannels :business="business" class="mt-4">
-          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">Café</UBadge>
+          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">
+            {{ business.category }}
+          </UBadge>
         </BusinessChannels>
       </UCard>
 

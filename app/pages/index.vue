@@ -1,5 +1,48 @@
 <script setup lang="ts">
+import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 const { data: businesses } = useFetch<Business[]>('/api/businesses');
+
+const schema = z.object({
+  placeId: z.string().min(1, 'Business Location is required'),
+  category: z.string(),
+});
+type Schema = z.output<typeof schema>
+
+const state = reactive<Partial<Schema>>({
+  placeId: undefined,
+  category: undefined,
+});
+
+const selectedPlaceDetails = ref<AutocompletePlace | null>(null);
+
+function handlePlaceDetailsUpdate(placeDetails: AutocompletePlace | null) {
+  selectedPlaceDetails.value = placeDetails;
+}
+
+// Auto-selection logic for category
+watch(selectedPlaceDetails, (newPlace) => {
+  if (newPlace && newPlace.types) {
+    const types = newPlace.types;
+    if (types.includes('cafe')) {
+      state.category = "Cafe";
+    } else if (types.includes('restaurant')) {
+      state.category = "Restaurant";
+    } else if (types.includes('meal_takeaway')) { // Google often uses 'meal_takeaway'
+      state.category = "Takeaway";
+    } else if (types.includes('bar')) {
+      state.category = "Bar";
+    } else if (types.includes('bakery')) {
+      state.category = "Bakery";
+    }
+  }
+});
+
+const router = useRouter();
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  router.push(`/setup/social-media-and-website?placeId=${event.data.placeId}&category=${event.data.category}`);
+}
 </script>
  
 <template>
@@ -14,15 +57,27 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
           Add your business to get a detailed visibility report and actionable insights for improvement.
         </p>
         
-        <form class="flex flex-col gap-4" action="/setup/social-media-and-website">
-          <GooglePlaceInput class="w-full" name="placeId" />
-          <UButton type="submit" color="primary" size="lg">
-            Start Analysis
+        <UForm :schema="schema" :state="state" class="flex flex-col gap-4" @submit="onSubmit">
+          <UFormField label="Business" name="placeId">
+            <GooglePlaceInput 
+              class="w-full"
+              v-model="state.placeId" 
+              @update:place-details="handlePlaceDetailsUpdate"
+              placeholder="Search for your business"
+            />
+          </UFormField>
+          
+          <UFormField label="Category" name="category">
+            <CategorySelect v-model="state.category" class="w-full" />
+          </UFormField>
+
+          <UButton type="submit" color="primary" size="xl" block :disabled="!state.placeId || !state.category">
+            Go
           </UButton>
-        </form>
+        </UForm>
       </UCard>
 
-      <UCard v-if="businesses && businesses.length" class="mb-8">
+      <UCard v-if="businesses && businesses.length" class="mt-8">
         <template #header>
           <h2 class="text-xl font-bold">Your Businesses</h2>
         </template>
