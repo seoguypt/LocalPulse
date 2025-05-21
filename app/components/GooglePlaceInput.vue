@@ -129,13 +129,17 @@ watch([googlePlaceSearchTermDebounced, googlePlaceSearchTerm], () => {
     clear();
   }
 })
+
+defineOptions({
+  inheritAttrs: false
+})
 </script>
 
 <template>
   <input v-if="name" type="hidden" :name="name" :value="modelValue" />
   <USelectMenu v-model="place" label-key="title" v-model:search-term="googlePlaceSearchTerm"
     :items="googlePlaceSearchResults" :loading="status === 'pending' || initialPlaceStatus === 'pending'"
-    ignore-filter>
+    ignore-filter v-bind="$attrs">
     <template #item="{ item }">
       <div class="flex flex-col gap-px">
         <span>{{ item.title }}</span>
