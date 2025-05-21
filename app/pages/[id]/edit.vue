@@ -21,37 +21,58 @@ const schema = z.object({
   placeId: z.string().min(1, 'Place ID is required').nullable(),
 });
 type Schema = z.infer<typeof schema>
-type AutocompletePlace = {
-  id: string
-  title: string
-  types: string[]
-  description: string
-}
+
+const autocompleteSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  types: z.array(z.string()),
+  description: z.string(),
+});
+type AutocompletePlace = z.infer<typeof autocompleteSchema>
 
 const state = reactive<Partial<Schema>>({
   name: business.value.name,
   placeId: business.value.placeId,
 })
 
-const { data: initialPlace } = useLazyFetch(() => `/api/google/places/getPlace?id=${state.placeId}`, { transform: (data) => ({
-  id: data[0].id,
-  title: data[0].displayName?.text,
-  types: data[0].types,
-  description: data[0].formattedAddress,
-} as AutocompletePlace) })
-
-const _place = ref<AutocompletePlace | null>(null)
-const place = computed<AutocompletePlace | null>({
-  get() {
-    if (_place.value) return _place.value
-    if (initialPlace.value) return initialPlace.value
-    return null
-  },
-  set(value) {
-    _place.value = value
+const place = ref<AutocompletePlace | null>(null)
+const { data: initialPlace } = useLazyFetch(() => `/api/google/places/getPlace?id=${state.placeId}`, { 
+  transform: (data: unknown) => {
+    try {           
+      const placeData = z.array(z.any()).parse(data);
+      
+      // Return null if no data
+      if (!placeData[0]) return null;
+      
+      // Get the first item and explicitly assert its type
+      const firstItem = z.object({
+        id: z.string(),
+        displayName: z.object({ text: z.string() }).nullable().optional(),
+        types: z.array(z.string()),
+        formattedAddress: z.string(),
+      }).parse(placeData[0]);
+      
+      return autocompleteSchema.parse({
+        id: firstItem.id,
+        title: firstItem.displayName?.text ?? '',
+        types: firstItem.types,
+        description: firstItem.formattedAddress,
+      });
+    } catch (error) {
+      console.error('Failed to parse place data:', error);
+      return null;
+    }
   }
 })
 
+// Set the place when the initial place data loads
+watch(initialPlace, (value) => {
+  if (value) {
+    place.value = value
+  }
+}, { immediate: true })
+
+// Keep the place in sync with the state
 watch(place, (value) => {
   if (value) {
     state.placeId = value.id
@@ -64,6 +85,23 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 const googlePlaceSearchTerm = ref('')
 const googlePlaceSearchTermDebounced = refDebounced(googlePlaceSearchTerm, 200)
+
+// Define schema for Google Places API response
+const placesResponseSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      placePrediction: z.object({
+        placeId: z.string(),
+        types: z.array(z.string()),
+        structuredFormat: z.object({
+          mainText: z.object({ text: z.string() }),
+          secondaryText: z.object({ text: z.string() }),
+        }),
+      }),
+    })
+  ),
+});
+
 const { data: googlePlaceSearchResults, status, execute, clear } = await useFetch(`https://places.googleapis.com/v1/places:autocomplete?key=${googleApiKey}`, {
   method: 'POST',
   body: {
@@ -82,17 +120,25 @@ const { data: googlePlaceSearchResults, status, execute, clear } = await useFetc
         }
       },
   },
-  transform: (data) => {
-    return data.suggestions.filter((suggestion) => suggestion['placePrediction']).map((suggestion) => ({
-      id: suggestion['placePrediction']['placeId'],
-      title: suggestion['placePrediction']['structuredFormat']['mainText']['text'],
-      types: suggestion['placePrediction']['types'],
-      description: suggestion['placePrediction']['structuredFormat']['secondaryText']['text'],
-    }))
+  transform: (data: unknown) => {
+    try {
+      const validatedData = placesResponseSchema.parse(data);
+      return validatedData.suggestions.map((suggestion) => 
+        autocompleteSchema.parse({
+          id: suggestion.placePrediction.placeId,
+          title: suggestion.placePrediction.structuredFormat.mainText.text,
+          types: suggestion.placePrediction.types,
+          description: suggestion.placePrediction.structuredFormat.secondaryText.text,
+        })
+      );
+    } catch (error) {
+      console.error('Failed to parse Google Places API response:', error);
+      return [];
+    }
   },
   lazy: true,
   immediate: false,
-    server: false,
+  server: false,
   watch: false,
 });
 
