@@ -17,6 +17,7 @@ alwaysApply: true
 - Prefer typescript inference
 - Run `pnpm run db:push` to push migrations to the databases (don't generate please)
 - Use conventional commits
+- Don't use `any` or `as`. Use zod to parse and throw an error if the result doesn't match
 
 
 
