@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { z } from 'zod'
 
-const modelValue = defineModel<string | null>()
+defineProps<{
+  name?: string
+}>()
+
+const modelValue = defineModel<string | null>({ default: null })
 
 const { googleApiKey } = useRuntimeConfig().public;
 
@@ -41,7 +45,8 @@ const { data: initialPlace, status: initialPlaceStatus } = await useLazyFetch(()
       return null;
     }
   },
-  server: false
+  // Only fetch the initial place if there is a value
+  immediate: !!modelValue.value
 })
 
 // Set the place when the initial place data loads
@@ -127,6 +132,7 @@ watch([googlePlaceSearchTermDebounced, googlePlaceSearchTerm], () => {
 </script>
 
 <template>
+  <input v-if="name" type="hidden" :name="name" :value="modelValue" />
   <USelectMenu v-model="place" label-key="title" v-model:search-term="googlePlaceSearchTerm"
     :items="googlePlaceSearchResults" :loading="status === 'pending' || initialPlaceStatus === 'pending'"
     ignore-filter>

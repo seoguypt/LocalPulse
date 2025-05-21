@@ -5,6 +5,23 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
 <template>
   <UContainer as="main">
     <div class="my-8">
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-bold">Add a New Business</h2>
+        </template>
+        
+        <p class="text-gray-500 dark:text-gray-400 mb-4">
+          Add your business to get a detailed visibility report and actionable insights for improvement.
+        </p>
+        
+        <form class="flex flex-col gap-4" action="/setup/social-media-and-website">
+          <GooglePlaceInput class="w-full" name="placeId" />
+          <UButton type="submit" color="primary" size="lg">
+            Start Analysis
+          </UButton>
+        </form>
+      </UCard>
+
       <UCard v-if="businesses && businesses.length" class="mb-8">
         <template #header>
           <h2 class="text-xl font-bold">Your Businesses</h2>
@@ -20,23 +37,6 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
             </NuxtLink>
           </li>
         </ul>
-      </UCard>
-      
-      <UCard>
-        <template #header>
-          <h2 class="text-xl font-bold">Add a New Business</h2>
-        </template>
-        
-        <p class="text-gray-500 dark:text-gray-400 mb-4">
-          Add your business to get a detailed visibility report and actionable insights for improvement.
-        </p>
-        
-        <form class="flex flex-col gap-4" action="/setup/google-places">
-          <UInput name="name" size="lg" placeholder="Enter your business name" />
-          <UButton type="submit" color="primary" size="lg">
-            Start Analysis
-          </UButton>
-        </form>
       </UCard>
     </div>
   </UContainer>

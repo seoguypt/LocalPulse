@@ -6,8 +6,16 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 // Get the business name from the query
 const router = useRouter();
 const route = useRoute();
-const name = computed(() => route.query.name as string);
 const placeId = computed(() => route.query.placeId as string | undefined);
+
+const { data: place } = await useFetch(`/api/google/places/getPlace?id=${placeId.value}`);
+if (!place.value || !place.value[0]) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Place not found'
+  })
+}
+const name = ref(place.value[0].displayName?.text);
 
 // Define platform types
 type Platform = {
