@@ -924,15 +924,33 @@ const print = () => {
 </script>c
 
 <template>
-  <UContainer as="main" v-if="business">
-    <div class="flex items-center justify-between print:flex-col print:gap-2">
-      <h1 class="text-2xl sm:text-3xl font-bold text-center tracking-tight leading-none">Online Visibility Report</h1>
+  <UContainer as="main" v-if="business" class="py-6">
+    <UBreadcrumb :items="[
+      {
+    label: 'Home',
+    icon: 'i-lucide-house',
+    to: '/'
+  },
+      {
+        label: business.name,
+        icon: 'i-lucide-building',
+        to: `/${business.id}/`
+      }
+    ]" />
+
+    <div class="flex items-center justify-between print:flex-col print:gap-2 mt-2">
+      <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
       <div class="hidden print:block text-xs text-gray-500 leading-none">{{ todayDate }}</div>
 
       <div class="flex items-center gap-2 print:hidden">
         <UButton icon="i-lucide-download" color="neutral" variant="ghost" aria-label="Download PDF" @click="print()">
           Download / Print
         </UButton>
+
+        <UButton icon="i-lucide-pencil" color="neutral" variant="soft" class="print:hidden" :to="`/${business.id}/edit/`"
+            >
+            Edit
+          </UButton>
 
         <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report"
           @click="refreshChecks">
@@ -943,12 +961,10 @@ const print = () => {
 
     <div class="grid grid-cols-3 gap-8 mt-8">
       <UCard variant="subtle" class="col-span-1">
-        <h2 class="sr-only">Business Details</h2>
-
         <div class="flex items-center justify-between gap-2">
-          <div class="text-2xl font-bold">{{ business.name }}</div>
+          <h2 class="text-xl font-bold">{{ business.name }}</h2>
 
-          <UButton icon="i-lucide-pencil" color="neutral" variant="outline" class="print:hidden"
+          <UButton icon="i-lucide-pencil" color="neutral" variant="link" class="print:hidden" :to="`/${business.id}/edit/`"
             >
             Edit
           </UButton>
@@ -961,7 +977,7 @@ const print = () => {
 
       <div
         class="col-span-1 row-start-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/50 ring ring-primary-300/50 dark:ring-primary-900/50 p-6 flex flex-col items-start">
-        <div class="text-xl font-bold dark:white">Need a hand?</div>
+        <div class="text-xl font-bold">Need a hand?</div>
 
         <p class="dark:text-gray-100 text-gray-700 mt-2 text-sm">
           We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an

@@ -14,7 +14,7 @@ export default defineCachedEventHandler(async (event) => {
   }, {
     otherArgs: {
       headers: {
-        'X-Goog-FieldMask': 'displayName,nationalPhoneNumber,currentOpeningHours,websiteUri,reviews,userRatingCount,formattedAddress,rating,photos,types',
+        'X-Goog-FieldMask': 'id,displayName,nationalPhoneNumber,currentOpeningHours,websiteUri,reviews,userRatingCount,formattedAddress,rating,photos,types',
       },
     },
   });

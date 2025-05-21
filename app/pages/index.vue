@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { data: businesses } = useFetch<Business[]>('/api/businesses');
 </script>
-
+ 
 <template>
   <UContainer as="main">
     <div class="my-8">
