@@ -16,6 +16,8 @@ const channels = [
 
 <template>
   <div class="flex flex-wrap items-center gap-3">
+    <slot />
+
     <BusinessChannel 
       v-for="channel in channels" 
       :key="channel" 

@@ -945,12 +945,18 @@ const print = () => {
       <UCard variant="subtle" class="col-span-1">
         <h2 class="sr-only">Business Details</h2>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2">
           <div class="text-2xl font-bold">{{ business.name }}</div>
-          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">Café</UBadge>
-        </div>
 
-        <BusinessChannels :business="business" class="mt-4" />
+          <UButton icon="i-lucide-pencil" color="neutral" variant="outline" class="print:hidden"
+            >
+            Edit
+          </UButton>
+        </div>
+        
+        <BusinessChannels :business="business" class="mt-4">
+          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">Café</UBadge>
+        </BusinessChannels>
       </UCard>
 
       <div
