@@ -63,14 +63,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     ]" />
     <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">Edit {{ business.name }}</h1>
 
-    <UCard class="mt-6">
-      <template #header>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Modify the details of your business.
-        </p>
-      </template>
-
-      <UForm :schema="schema" :state="state" @submit="onSubmit" class="space-y-8">
+    <UForm :schema="schema" :state="state" @submit="onSubmit">
+      <UCard class="mt-6" variant="subtle" :ui="{ body: 'space-y-8' }">
         <UFormField label="Business Name" name="name" size="xl">
           <UInput v-model="state.name" class="w-full" />
         </UFormField>
@@ -80,10 +74,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         </UFormField>
 
         <div>
-          <h2 class="text-lg font-bold">Visibility Channels</h2>
+          <h2 class="text-lg font-bold">Channels</h2>
 
           <div class="space-y-3 mt-3">
-            <h3 class="font-bold flex items-center gap-2 uppercase text-sm">
+            <h3 class="font-bold flex items-center gap-2 uppercase text-sm text-gray-500 dark:text-gray-400">
               <UIcon name="i-lucide-link" /> <span>Linked</span>
             </h3>
             <div class="grid grid-cols-2 gap-4">
@@ -98,94 +92,62 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </div>
 
           <div class="space-y-3 mt-8">
-            <h3 class="font-bold flex items-center gap-2 uppercase text-sm">
-              <UIcon name="i-lucide-sparkles" /> <span> {{ business.category }} Recommendations</span>
+            <h3 class="font-bold flex items-center gap-2 uppercase text-sm text-gray-500 dark:text-gray-400">
+              <UIcon name="i-lucide-unlink" /> <span> Unlinked</span>
             </h3>
             <div class="grid grid-cols-3 gap-4">
-              <div class="p-4 ring ring-neutral-500/50 rounded-lg flex flex-col">
-                <div class="flex items-center gap-2 font-medium">
-                  <UIcon name="i-lucide-instagram" class="text-[#ED0191]" /> <span>Instagram</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Instagram is a great way to reach younger audiences and share photos of products and
-                  services.
-                </p>
+              <ChannelCard name="Website" icon="i-lucide-globe"
+                description="Central hub for your online presence with detailed information about your business." />
 
-                <div class="mt-auto pt-3">
-                  <UButton icon="i-lucide-plus" color="neutral" variant="subtle" size="sm">
-                    Link
-                  </UButton>
-                </div>
-              </div>
+              <ChannelCard name="Google Business Profile" icon="logos-google-maps"
+                description="Manage your presence across Google Search and Maps to improve local visibility." />
 
-              <div class="p-4 ring ring-neutral-500/50 rounded-lg flex flex-col">
-                <div class="flex items-center gap-2 font-medium">
-                  <UIcon name="simple-icons-ubereats" class="text-[#03C167]" /> <span>Uber Eats</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Uber Eats is a food delivery service.
-                </p>
+              <ChannelCard name="Instagram" icon="simple-icons-instagram" color="text-[#ED0191]"
+                description="Visual platform for sharing product photos and connecting with younger audiences." />
 
-                <div class="mt-auto pt-3">
-                  <UButton icon="i-lucide-plus" color="neutral" variant="subtle" size="sm">
-                    Link
-                  </UButton>
-                </div>
-              </div>
+              <ChannelCard name="Facebook" icon="logos-facebook"
+                description="Connect with customers, share updates, and build a community around your brand." />
 
-              <div class="p-4 ring ring-neutral-500/50 rounded-lg flex flex-col">
-                <div class="flex items-center gap-2 font-medium">
-                  <UIcon name="simple-icons-deliveroo" class="text-[#00CCBC]" /> <span>Deliveroo</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Deliveroo description.
-                </p>
+              <ChannelCard name="TikTok" icon="logos-tiktok-icon" color="dark:text-white text-black"
+                description="Short-form video platform to reach younger demographics with creative content." />
 
-                <div class="mt-auto pt-3">
-                  <UButton icon="i-lucide-plus" color="neutral" variant="subtle" size="sm">
-                    Link
-                  </UButton>
-                </div>
-              </div>
+              <ChannelCard name="YouTube" icon="logos-youtube-icon"
+                description="Share videos like tutorials, demonstrations, and brand stories with your audience." />
 
-              <div class="p-4 ring ring-neutral-500/50 rounded-lg flex flex-col">
-                <div class="flex items-center gap-2 font-medium">
-                  <UIcon name="simple-icons-doordash" class="text-[#F44322]" /> <span>Doordash</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Doordash description.
-                </p>
+              <ChannelCard name="Twitter / X" icon="simple-icons-x" color="dark:text-white text-black"
+                description="Platform for quick updates, conversations, and real-time customer service." />
 
-                <div class="mt-auto pt-3">
-                  <UButton icon="i-lucide-plus" color="neutral" variant="subtle" size="sm">
-                    Link
-                  </UButton>
-                </div>
-              </div>
+              <ChannelCard name="LinkedIn" icon="logos-linkedin-icon"
+                description="B2B networking platform for sharing expertise and connecting with professionals." />
 
-              <div class="p-4 ring ring-neutral-500/50 rounded-lg flex flex-col">
-                <div class="flex items-center gap-2 font-medium">
-                  <UIcon name="i-lucide-hamburger" class="text-[#FF8001]" /> <span>Menulog</span>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Menulog description.
-                </p>
+              <ChannelCard name="Apple Maps" icon="simple-icons-apple" color="text-black dark:text-white"
+                description="Help iOS users find your business location with essential business information." />
 
-                <div class="mt-auto pt-3">
-                  <UButton icon="i-lucide-plus" color="neutral" variant="subtle" size="sm">
-                    Link
-                  </UButton>
-                </div>
-              </div>
+              <ChannelCard name="Bing Places for Business" icon="logos-bing" color="text-[#028272]"
+                description="Reach customers using Microsoft's search engine with business listings." />
+
+              <ChannelCard name="Uber Eats" icon="simple-icons-ubereats" color="text-[#03C167]"
+                description="Food delivery platform connecting restaurants with customers seeking delivery." />
+
+              <ChannelCard name="Deliveroo" icon="simple-icons-deliveroo" color="text-[#00CCBC]"
+                description="Food delivery service focused on quality dining experiences." />
+
+              <ChannelCard name="Doordash" icon="simple-icons-doordash" color="text-[#F44322]"
+                description="Delivery service with access to a large customer base across many locations." />
+
+              <ChannelCard name="Menulog" icon="i-lucide-hamburger" color="text-[#FF8001]"
+                description="Online food ordering and delivery service popular in Australia and New Zealand." />
             </div>
           </div>
         </div>
 
-        <div class="flex justify-end gap-3">
-          <UButton label="Cancel" color="neutral" variant="ghost" :to="`/${id}`" />
-          <UButton type="submit" label="Save Changes" color="primary" />
-        </div>
-      </UForm>
-    </UCard>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton label="Cancel" color="neutral" variant="ghost" :to="`/${id}`" />
+            <UButton type="submit" label="Save Changes" color="primary" />
+          </div>
+        </template>
+      </UCard>
+    </UForm>
   </UContainer>
 </template>
