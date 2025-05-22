@@ -19,14 +19,38 @@ const schema = z.object({
   placeId: z.string().min(1, 'Place ID is required').nullable(),
   category: z.string(),
   facebookUsername: z.string().min(1, 'Facebook Username is required').nullable(),
+  websiteUrl: z.string().min(1, 'Website URL is required').nullable(),
+  instagramUsername: z.string().min(1, 'Instagram Username is required').nullable(),
+  tiktokUsername: z.string().min(1, 'TikTok Username is required').nullable(),
+  youtubeUsername: z.string().min(1, 'YouTube Username is required').nullable(),
+  xUsername: z.string().min(1, 'Twitter Username is required').nullable(),
+  linkedinUsername: z.string().min(1, 'LinkedIn Username is required').nullable(),
+  appleMapsUsername: z.string().min(1, 'Apple Maps Username is required').nullable(),
+  uberEatsUrl: z.string().min(1, 'Uber Eats URL is required').nullable(),
+  deliverooUrl: z.string().min(1, 'Deliveroo URL is required').nullable(),
+  doorDashUrl: z.string().min(1, 'Doordash URL is required').nullable(),
+  menulogUrl: z.string().min(1, 'Menulog URL is required').nullable(),
+  bingPlaceId: z.string().min(1, 'Bing Place ID is required').nullable(),
 });
 type Schema = z.infer<typeof schema>
 
-const state = reactive<Partial<Schema>>({
+const state = reactive<Schema>({
   name: business.value.name,
   placeId: business.value.placeId,
   category: business.value.category,
   facebookUsername: business.value.facebookUsername,
+  instagramUsername: business.value.instagramUsername,
+  tiktokUsername: business.value.tiktokUsername,
+  websiteUrl: business.value.websiteUrl,
+  youtubeUsername: business.value.youtubeUsername,
+  xUsername: business.value.xUsername,
+  linkedinUsername: null, // business.value.linkedinUsername,
+  appleMapsUsername: null, // business.value.appleMapsUsername,
+  uberEatsUrl: business.value.uberEatsUrl,
+  deliverooUrl: business.value.deliverooUrl,
+  doorDashUrl: business.value.doorDashUrl,
+  menulogUrl: business.value.menulogUrl,
+  bingPlaceId: null, // business.value.bingPlaceId,
 });
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
@@ -73,71 +97,52 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           <CategorySelect v-model="state.category" class="w-full" />
         </UFormField>
 
-        <div>
+        <div class="space-y-4">
           <h2 class="text-lg font-bold">Channels</h2>
 
-          <div class="space-y-3 mt-3">
-            <h3 class="font-bold flex items-center gap-2 uppercase text-sm text-gray-500 dark:text-gray-400">
-              <UIcon name="i-lucide-link" /> <span>Linked</span>
-            </h3>
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField label="Google Business Profile" name="placeId" size="xl">
-                <GooglePlaceInput v-model="state.placeId" class="w-full" />
-              </UFormField>
+          <div class="grid grid-cols-3 gap-4">
+            <ChannelCard label="Website" name="websiteUrl" icon="i-lucide-globe"
+              description="Central hub for your online presence with detailed information about your business." v-model="state.websiteUrl" />
 
-              <UFormField label="Facebook Page" name="facebookUsername" size="xl">
-                <UInput v-model="state.facebookUsername" class="w-full" />
-              </UFormField>
-            </div>
-          </div>
+            <ChannelCard label="Google Business Profile" name="placeId" icon="logos-google-maps"
+              description="Manage your presence across Google Search and Maps to improve local visibility." v-model="state.placeId" />
 
-          <div class="space-y-3 mt-8">
-            <h3 class="font-bold flex items-center gap-2 uppercase text-sm text-gray-500 dark:text-gray-400">
-              <UIcon name="i-lucide-unlink" /> <span> Unlinked</span>
-            </h3>
-            <div class="grid grid-cols-3 gap-4">
-              <ChannelCard name="Website" icon="i-lucide-globe"
-                description="Central hub for your online presence with detailed information about your business." />
+            <ChannelCard label="Instagram" name="instagramUsername" icon="simple-icons-instagram" color="text-[#ED0191]"
+              description="Visual platform for sharing product photos and connecting with younger audiences." v-model="state.instagramUsername" />
 
-              <ChannelCard name="Google Business Profile" icon="logos-google-maps"
-                description="Manage your presence across Google Search and Maps to improve local visibility." />
+            <ChannelCard label="Facebook" name="facebookUsername" icon="logos-facebook"
+              description="Connect with customers, share updates, and build a community around your brand." v-model="state.facebookUsername" />
 
-              <ChannelCard name="Instagram" icon="simple-icons-instagram" color="text-[#ED0191]"
-                description="Visual platform for sharing product photos and connecting with younger audiences." />
+            <ChannelCard label="TikTok" name="tiktokUsername" icon="logos-tiktok-icon"
+              color="dark:text-white text-black"
+              description="Short-form video platform to reach younger demographics with creative content." v-model="state.tiktokUsername" />
 
-              <ChannelCard name="Facebook" icon="logos-facebook"
-                description="Connect with customers, share updates, and build a community around your brand." />
+            <ChannelCard label="YouTube" name="youtubeUsername" icon="logos-youtube-icon"
+              description="Share videos like tutorials, demonstrations, and brand stories with your audience." v-model="state.youtubeUsername" />
 
-              <ChannelCard name="TikTok" icon="logos-tiktok-icon" color="dark:text-white text-black"
-                description="Short-form video platform to reach younger demographics with creative content." />
+            <ChannelCard label="Twitter / X" name="xUsername" icon="simple-icons-x" color="dark:text-white text-black"
+              description="Platform for quick updates, conversations, and real-time customer service." v-model="state.xUsername" />
 
-              <ChannelCard name="YouTube" icon="logos-youtube-icon"
-                description="Share videos like tutorials, demonstrations, and brand stories with your audience." />
+            <ChannelCard label="LinkedIn" name="linkedinUsername" icon="logos-linkedin-icon"
+              description="B2B networking platform for sharing expertise and connecting with professionals." v-model="state.linkedinUsername" />
 
-              <ChannelCard name="Twitter / X" icon="simple-icons-x" color="dark:text-white text-black"
-                description="Platform for quick updates, conversations, and real-time customer service." />
+            <ChannelCard label="Apple Maps" name="appleMapsUsername" icon="simple-icons-apple" color="text-black dark:text-white"
+              description="Help iOS users find your business location with essential business information." v-model="state.appleMapsUsername" />
 
-              <ChannelCard name="LinkedIn" icon="logos-linkedin-icon"
-                description="B2B networking platform for sharing expertise and connecting with professionals." />
+            <ChannelCard label="Bing Places for Business" name="bingPlaceId" icon="logos-bing" color="text-[#028272]"
+              description="Reach customers using Microsoft's search engine with business listings." v-model="state.bingPlaceId" />
 
-              <ChannelCard name="Apple Maps" icon="simple-icons-apple" color="text-black dark:text-white"
-                description="Help iOS users find your business location with essential business information." />
+            <ChannelCard label="Uber Eats" name="uberEatsUrl" icon="simple-icons-ubereats" color="text-[#03C167]"
+              description="Food delivery platform connecting restaurants with customers seeking delivery." v-model="state.uberEatsUrl" />
 
-              <ChannelCard name="Bing Places for Business" icon="logos-bing" color="text-[#028272]"
-                description="Reach customers using Microsoft's search engine with business listings." />
+            <ChannelCard label="Deliveroo" name="deliverooUrl" icon="simple-icons-deliveroo" color="text-[#00CCBC]"
+              description="Food delivery service focused on quality dining experiences." v-model="state.deliverooUrl" />
 
-              <ChannelCard name="Uber Eats" icon="simple-icons-ubereats" color="text-[#03C167]"
-                description="Food delivery platform connecting restaurants with customers seeking delivery." />
+            <ChannelCard label="Doordash" name="doorDashUrl" icon="simple-icons-doordash" color="text-[#F44322]"
+              description="Delivery service with access to a large customer base across many locations." v-model="state.doorDashUrl" />
 
-              <ChannelCard name="Deliveroo" icon="simple-icons-deliveroo" color="text-[#00CCBC]"
-                description="Food delivery service focused on quality dining experiences." />
-
-              <ChannelCard name="Doordash" icon="simple-icons-doordash" color="text-[#F44322]"
-                description="Delivery service with access to a large customer base across many locations." />
-
-              <ChannelCard name="Menulog" icon="i-lucide-hamburger" color="text-[#FF8001]"
-                description="Online food ordering and delivery service popular in Australia and New Zealand." />
-            </div>
+            <ChannelCard label="Menulog" name="menulogUrl" icon="i-lucide-hamburger" color="text-[#FF8001]"
+              description="Online food ordering and delivery service popular in Australia and New Zealand." v-model="state.menulogUrl" />
           </div>
         </div>
 
