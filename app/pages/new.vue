@@ -6,6 +6,87 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 const route = useRoute();
 const router = useRouter();
 
+// Create a comprehensive mapping function for Google Places types to our categories
+function mapPlaceTypesToCategory(types: string[]): string | null {
+  if (!types || types.length === 0) return null;
+  
+  // Priority-based mapping - more specific types first
+  const typeMap: Record<string, string | null> = {
+    // Food & Drink categories from new Google Places API
+    'cafe': 'Cafe',
+    'coffee_shop': 'Cafe',
+    'restaurant': 'Restaurant',
+    'fast_food_restaurant': 'Restaurant',
+    'fine_dining_restaurant': 'Restaurant',
+    'american_restaurant': 'Restaurant',
+    'asian_restaurant': 'Restaurant',
+    'chinese_restaurant': 'Restaurant',
+    'french_restaurant': 'Restaurant',
+    'greek_restaurant': 'Restaurant',
+    'indian_restaurant': 'Restaurant',
+    'italian_restaurant': 'Restaurant',
+    'japanese_restaurant': 'Restaurant',
+    'korean_restaurant': 'Restaurant',
+    'mexican_restaurant': 'Restaurant',
+    'thai_restaurant': 'Restaurant',
+    'vietnamese_restaurant': 'Restaurant',
+    'seafood_restaurant': 'Restaurant',
+    'steak_house': 'Restaurant',
+    'sushi_restaurant': 'Restaurant',
+    'vegetarian_restaurant': 'Restaurant',
+    'vegan_restaurant': 'Restaurant',
+    'pizza_restaurant': 'Restaurant',
+    'hamburger_restaurant': 'Restaurant',
+    'barbecue_restaurant': 'Restaurant',
+    'brazilian_restaurant': 'Restaurant',
+    'breakfast_restaurant': 'Restaurant',
+    'brunch_restaurant': 'Restaurant',
+    'dessert_restaurant': 'Restaurant',
+    'diner': 'Restaurant',
+    'meal_takeaway': 'Takeaway',
+    'meal_delivery': 'Takeaway',
+    'bakery': 'Bakery',
+    'bagel_shop': 'Bakery',
+    'donut_shop': 'Bakery',
+    'bar': 'Bar',
+    'night_club': 'Bar',
+    'pub': 'Bar',
+    'wine_bar': 'Bar',
+    'cocktail_bar': 'Bar',
+    
+    // Legacy API types for backward compatibility
+    'food': 'Restaurant',
+    'establishment': null, // too generic, will be handled later
+  };
+
+  // Look for exact matches first (most specific)
+  for (const type of types) {
+    if (type in typeMap && typeMap[type]) {
+      return typeMap[type];
+    }
+  }
+  
+  // If no exact match, check for partial matches
+  for (const type of types) {
+    if (type.includes('restaurant')) {
+      return 'Restaurant';
+    }
+    if (type.includes('cafe') || type.includes('coffee')) {
+      return 'Cafe';
+    }
+    if (type.includes('bar') && !type.includes('barbecue')) {
+      return 'Bar';
+    }
+    if (type.includes('bakery') || type.includes('donut') || type.includes('bagel')) {
+      return 'Bakery';
+    }
+    if (type.includes('takeaway') || type.includes('delivery')) {
+      return 'Takeaway';
+    }
+  }
+  return null;
+}
+
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   placeId: z.string().min(1, 'Place ID is required').nullable(),
@@ -48,17 +129,9 @@ if (state.placeId) {
     
     // Auto-select category based on place types if category is not already set
     if (!state.category && place.value[0].types) {
-      const types = place.value[0].types;
-      if (types.includes('cafe')) {
-        state.category = "Cafe";
-      } else if (types.includes('restaurant')) {
-        state.category = "Restaurant";
-      } else if (types.includes('meal_takeaway')) {
-        state.category = "Takeaway";
-      } else if (types.includes('bar')) {
-        state.category = "Bar";
-      } else if (types.includes('bakery')) {
-        state.category = "Bakery";
+      const mappedCategory = mapPlaceTypesToCategory(place.value[0].types);
+      if (mappedCategory) {
+        state.category = mappedCategory;
       }
     }
   }
@@ -78,17 +151,9 @@ watch(selectedPlaceDetails, (newPlace) => {
   
   // Auto-select category based on place types
   if (newPlace && newPlace.types) {
-    const types = newPlace.types;
-    if (types.includes('cafe')) {
-      state.category = "Cafe";
-    } else if (types.includes('restaurant')) {
-      state.category = "Restaurant";
-    } else if (types.includes('meal_takeaway')) {
-      state.category = "Takeaway";
-    } else if (types.includes('bar')) {
-      state.category = "Bar";
-    } else if (types.includes('bakery')) {
-      state.category = "Bakery";
+    const mappedCategory = mapPlaceTypesToCategory(newPlace.types);
+    if (mappedCategory) {
+      state.category = mappedCategory;
     }
   }
 });

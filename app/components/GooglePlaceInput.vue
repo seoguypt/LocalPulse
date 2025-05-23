@@ -104,6 +104,7 @@ const { data: googlePlaceSearchResults, status, execute, clear } = await useFetc
         }
       }
     },
+    includedPrimaryTypes: ['food']
   },
   transform: (data: unknown) => {
     try {
