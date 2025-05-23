@@ -1,52 +1,13 @@
 <script setup lang="ts">
-import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
-
 const { data: businesses } = useFetch<Business[]>('/api/businesses');
-
-const schema = z.object({
-  placeId: z.string().min(1, 'Business Location is required'),
-});
-type Schema = z.output<typeof schema>
-
-const state = reactive<Partial<Schema>>({
-  placeId: undefined,
-});
-
-const router = useRouter();
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  router.push(`/new?placeId=${event.data.placeId}`);
-}
 </script>
  
 <template>
   <UContainer as="main">
     <div class="my-8">
-      <UCard>
-        <template #header>
-          <h2 class="text-xl font-bold">Add a New Business</h2>
-        </template>
-        
-        <p class="text-gray-500 dark:text-gray-400 mb-4">
-          Add your business to get a detailed visibility report and actionable insights for improvement.
-        </p>
-        
-        <UForm :schema="schema" :state="state" class="flex flex-col gap-4" @submit="onSubmit">
-          <UFormField label="Business" name="placeId">
-            <GooglePlaceInput 
-              class="w-full"
-              v-model="state.placeId" 
-              placeholder="Search for your business"
-            />
-          </UFormField>
+      <UButton to="/setup">Get your report</UButton>
 
-          <UButton type="submit" color="primary" size="xl" block :disabled="!state.placeId">
-            Go
-          </UButton>
-        </UForm>
-      </UCard>
-
-      <UCard v-if="businesses && businesses.length" class="mt-8">
+      <UCard v-if="businesses && businesses.length" class="mt-48">
         <template #header>
           <h2 class="text-xl font-bold">Your Businesses</h2>
         </template>

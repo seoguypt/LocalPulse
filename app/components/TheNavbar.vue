@@ -14,10 +14,7 @@ const isDark = computed({
 <template>
   <UContainer>
     <div class="flex items-center justify-between print:justify-center py-4">
-      <NuxtLink to="/" class="text-lg font-bold flex items-center gap-2">
-        <UIcon name="i-lucide-eye" class="text-primary-500" />
-        <span>VisiMate.au</span>
-      </NuxtLink>
+      <TheLogo />
       
       <div class="flex items-center gap-4 print:hidden">
         <ClientOnly>

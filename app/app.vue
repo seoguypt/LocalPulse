@@ -2,7 +2,6 @@
   <NuxtLoadingIndicator />
   <NuxtRouteAnnouncer />
   <UApp>
-    <TheNavbar />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

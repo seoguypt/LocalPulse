@@ -104,7 +104,7 @@ const { data: googlePlaceSearchResults, status, execute, clear } = await useFetc
         }
       }
     },
-    includedPrimaryTypes: ['food']
+    includedPrimaryTypes: ['food','establishment', 'health', 'finance', 'general_contractor']
   },
   transform: (data: unknown) => {
     try {
@@ -143,14 +143,14 @@ defineOptions({
 
 <template>
   <input v-if="name" type="hidden" :name="name" :value="modelValue" />
-  <USelectMenu v-model="place" label-key="title" v-model:search-term="googlePlaceSearchTerm"
+  <UInputMenu v-model="place" label-key="title" v-model:search-term="googlePlaceSearchTerm"
     :items="googlePlaceSearchResults" :loading="status === 'pending' || initialPlaceStatus === 'pending'"
-    ignore-filter v-bind="$attrs">
+    ignore-filter v-bind="$attrs" trailing>
     <template #item="{ item }">
       <div class="flex flex-col gap-px">
         <span>{{ item.title }}</span>
         <span class="text-sm text-gray-500">{{ item.description }}</span>
       </div>
     </template>
-  </USelectMenu>
+  </UInputMenu>
 </template>

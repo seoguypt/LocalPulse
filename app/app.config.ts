@@ -22,6 +22,16 @@ export default defineAppConfig({
         size: 'xl',
       }
     },
+    radioGroup: {
+      defaultVariants: {
+        size: 'xl',
+      }
+    },
+    formField: {
+      defaultVariants: {
+        size: 'xl',
+      }
+    },
     colors: {
       primary: 'cyan',
       neutral: 'gray'
