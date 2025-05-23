@@ -22,9 +22,6 @@ const schema = z.object({
   websiteUrl: z.string().min(1, 'Website URL is required').nullable(),
   instagramUsername: z.string().min(1, 'Instagram Username is required').nullable(),
   tiktokUsername: z.string().min(1, 'TikTok Username is required').nullable(),
-  youtubeUsername: z.string().min(1, 'YouTube Username is required').nullable(),
-  xUsername: z.string().min(1, 'Twitter Username is required').nullable(),
-  linkedinUsername: z.string().min(1, 'LinkedIn Username is required').nullable(),
   appleMapsUsername: z.string().min(1, 'Apple Maps Username is required').nullable(),
   uberEatsUrl: z.string().min(1, 'Uber Eats URL is required').nullable(),
   deliverooUrl: z.string().min(1, 'Deliveroo URL is required').nullable(),
@@ -42,9 +39,6 @@ const state = reactive<Schema>({
   instagramUsername: business.value.instagramUsername,
   tiktokUsername: business.value.tiktokUsername,
   websiteUrl: business.value.websiteUrl,
-  youtubeUsername: business.value.youtubeUsername,
-  xUsername: business.value.xUsername,
-  linkedinUsername: null, // business.value.linkedinUsername,
   appleMapsUsername: null, // business.value.appleMapsUsername,
   uberEatsUrl: business.value.uberEatsUrl,
   deliverooUrl: business.value.deliverooUrl,
@@ -118,15 +112,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <ChannelCardField label="TikTok" name="tiktokUsername" icon="logos-tiktok-icon"
               color="dark:text-white text-black"
               description="Short-form video platform to reach younger demographics with creative content." v-model="state.tiktokUsername" />
-
-            <ChannelCardField label="YouTube" name="youtubeUsername" icon="logos-youtube-icon"
-              description="Share videos like tutorials, demonstrations, and brand stories with your audience." v-model="state.youtubeUsername" />
-
-            <ChannelCardField label="Twitter / X" name="xUsername" icon="simple-icons-x" color="dark:text-white text-black"
-              description="Platform for quick updates, conversations, and real-time customer service." v-model="state.xUsername" />
-
-            <ChannelCardField label="LinkedIn" name="linkedinUsername" icon="logos-linkedin-icon"
-              description="B2B networking platform for sharing expertise and connecting with professionals." v-model="state.linkedinUsername" />
 
             <ChannelCardField label="Apple Maps" name="appleMapsUsername" icon="simple-icons-apple" color="text-black dark:text-white"
               description="Help iOS users find your business location with essential business information." v-model="state.appleMapsUsername" />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface BusinessChannelProps {
-  channel: 'website' | 'facebook' | 'instagram' | 'x' | 'youtube' | 'tiktok';
+  channel: 'website' | 'facebook' | 'instagram' | 'tiktok';
   business: Business;
 }
 
@@ -12,8 +12,6 @@ const username = computed(() => {
     case 'website': return props.business.websiteUrl;
     case 'facebook': return props.business.facebookUsername;
     case 'instagram': return props.business.instagramUsername;
-    case 'x': return props.business.xUsername;
-    case 'youtube': return props.business.youtubeUsername;
     case 'tiktok': return props.business.tiktokUsername;
     default: return null;
   }
@@ -44,8 +42,6 @@ const channelIcon = computed(() => {
     case 'website': return 'i-lucide-globe';
     case 'facebook': return 'logos-facebook';
     case 'instagram': return 'fa6-brands:instagram';
-    case 'x': return 'fa6-brands:x-twitter';
-    case 'youtube': return 'logos-youtube-icon';
     case 'tiktok': return 'logos-tiktok-icon';
     default: return 'i-lucide-link';
   }
@@ -55,7 +51,6 @@ const channelIcon = computed(() => {
 const uiCustomizations = computed(() => {
   switch (props.channel) {
     case 'instagram': return { leadingIcon: 'text-pink-500' };
-    case 'x': return { leadingIcon: 'text-black dark:text-white' };
     default: return {};
   }
 });

@@ -35,12 +35,8 @@ const platforms: Platform[] = [
     searchParam: 'site:instagram.com', urlPattern: 'instagram.com' },
   { id: 'facebook', label: 'Facebook', icon: 'i-simple-icons-facebook', iconColor: 'text-blue-600', 
     searchParam: 'site:facebook.com', urlPattern: 'facebook.com' },
-  { id: 'x', label: 'X (Twitter)', icon: 'i-simple-icons-x', iconColor: 'text-neutral-200', 
-    searchParam: '(site:twitter.com OR site:x.com) -inurl:status', urlPattern: 'twitter.com|x.com' },
   { id: 'tiktok', label: 'TikTok', icon: 'i-simple-icons-tiktok', iconColor: 'text-neutral-200', 
     searchParam: 'site:tiktok.com -inurl:video intext:Follow', urlPattern: 'tiktok.com' },
-  { id: 'youtube', label: 'YouTube', icon: 'i-simple-icons-youtube', iconColor: 'text-red-600', 
-    searchParam: 'site:youtube.com -inurl:watch', urlPattern: 'youtube.com' },
   { id: 'website', label: 'Website', icon: 'i-lucide-globe', iconColor: 'text-blue-500', 
     searchParam: '-site:facebook.com -site:instagram.com -site:twitter.com -site:x.com -site:tiktok.com -site:youtube.com', 
     urlPattern: '', isWebsite: true }
@@ -50,9 +46,7 @@ const platforms: Platform[] = [
 const platformDescriptions: Record<PlatformId, string> = {
   instagram: 'Instagram is a visual platform ideal for sharing photos and short videos, helping businesses build brand presence and engage with customers.',
   facebook: 'Facebook is a popular social network for connecting with customers, sharing updates, and building a community around your business.',
-  x: 'X (formerly Twitter) is a fast-paced platform for sharing news, updates, and engaging in conversations with your audience.',
   tiktok: 'TikTok is a short-form video platform that helps businesses reach younger audiences with creative and viral content.',
-  youtube: 'YouTube is the leading platform for sharing video content, tutorials, and building a subscriber base for your business.',
   website: 'A business website is your digital home base, providing information, contact details, and a professional presence online.'
 };
 
@@ -78,9 +72,7 @@ const createSocialSchema = () => {
   const socialMediaSchema = {
     instagram: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?instagram\.com\/[\w.]+\/?$/, 'Please enter a valid Instagram username or URL').nullable()),
     facebook: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?facebook\.com\/(?!p$)(?:p\/)?[\w\-.]+(?:\/[\w\-.]+)*\/?$|^https?:\/\/(?:www\.)?facebook\.com\/profile\.php\?id=\d+$/, 'Please enter a valid Facebook username or URL').nullable()),
-    x: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w.]+\/?$/, 'Please enter a valid X (Twitter) username or URL').nullable()),
     tiktok: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?tiktok\.com\/@?[\w.]+\/?$/, 'Please enter a valid TikTok username or URL').nullable()),
-    youtube: z.preprocess((val) => val || null, z.string().regex(/^@?[\w.](?!.*?\.{2})[\w.]+$|^https?:\/\/(?:www\.)?youtube\.com\/(c|channel|user)\/[\w\-.]+\/?$|^https?:\/\/(?:www\.)?youtube\.com\/@[\w\-.]+\/?$/, 'Please enter a valid YouTube username or URL').nullable()),
     website: z.preprocess((val) => val || null, z.string().url('Please enter a valid URL').nullable()),
   };
 
@@ -89,9 +81,7 @@ const createSocialSchema = () => {
     formSchema: z.object({
       instagramUsername: socialMediaSchema.instagram,
       facebookUsername: socialMediaSchema.facebook,
-      xUsername: socialMediaSchema.x,
       tiktokUsername: socialMediaSchema.tiktok,
-      youtubeUsername: socialMediaSchema.youtube,
       websiteUrl: socialMediaSchema.website,
     })
   };
@@ -105,9 +95,7 @@ const createPlatformState = () => {
   const state = reactive<FormSchema>({
     instagramUsername: null,
     facebookUsername: null,
-    xUsername: null,
     tiktokUsername: null,
-    youtubeUsername: null,
     websiteUrl: null,
   });
 
@@ -185,17 +173,6 @@ const extractUsername = (url: string, platform: PlatformId): string => {
           return pathParts[0] || '';
         case 'tiktok':
           return pathParts[0]?.startsWith('@') ? pathParts[0].replace('@', '') : '';
-        case 'x':
-          return ['status', 'tweets', 'search'].includes(pathParts[1] || '') ? pathParts[0] || '' : pathParts[0] || '';
-        case 'youtube':
-          if (pathParts[0] === 'c' || pathParts[0] === 'user' || pathParts[0] === 'channel') {
-            // For channel URLs like youtube.com/channel/UCXJOO5-ZnLewJIP_MQGrSWQ
-            // Extract just the channel ID
-            return pathParts[1] || '';
-          } else if (pathParts[0]?.startsWith('@')) {
-            return pathParts[0].replace('@', '');
-          }
-          return pathParts[0] || '';
         default:
           return pathParts[0]?.replace('@', '') || '';
       }
@@ -505,39 +482,6 @@ function isMetaResult(obj: any): obj is { title: string; description: string } {
   return obj && typeof obj.title === 'string' && typeof obj.description === 'string';
 }
 
-// Helper function to get a social profile URL from username
-const getPlatformProfileUrl = (platform: PlatformId, username: string): string => {
-  if (!username) return '';
-  if (username.startsWith('http')) return username;
-  
-  // Clean the username by removing @ if present
-  const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
-  
-  switch (platform) {
-    case 'instagram': return `https://www.instagram.com/${cleanUsername}/`;
-    case 'facebook': 
-      // If it's a numeric ID, use profile.php format
-      if (/^\d+$/.test(cleanUsername)) {
-        return `https://www.facebook.com/profile.php?id=${cleanUsername}`;
-      }
-      return `https://www.facebook.com/${cleanUsername}/`;
-    case 'x': return `https://x.com/${cleanUsername}/`;
-    case 'tiktok': return `https://www.tiktok.com/@${cleanUsername}/`;
-    case 'youtube': 
-      // If it looks like a channel ID with a pattern like UCXJOO5-ZnLewJIP_MQGrSWQ
-      if (/^UC[\w-]{22}$/.test(cleanUsername)) {
-        return `https://www.youtube.com/channel/${cleanUsername}`;
-      }
-      return `https://www.youtube.com/@${cleanUsername}`;
-    case 'website': 
-      if (!/^https?:\/\//i.test(username)) {
-        return `https://${username}`;
-      }
-      return username;
-    default: return '';
-  }
-};
-
 const fetchMeta = (platform: PlatformId, url: string) => {
   if (debounceTimers[platform]) {
     clearTimeout(debounceTimers[platform]!);
@@ -607,9 +551,7 @@ const onSubmit = async (event: FormSubmitEvent<FormSchema>) => {
       websiteUrl: event.data.websiteUrl,
       instagramUsername: event.data.instagramUsername,
       facebookUsername: event.data.facebookUsername,
-      xUsername: event.data.xUsername,
       tiktokUsername: event.data.tiktokUsername,
-      youtubeUsername: event.data.youtubeUsername,
     },
   });
 

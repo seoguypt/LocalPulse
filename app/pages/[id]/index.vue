@@ -62,14 +62,6 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
     'website-gbp-name-address-phone': 6,
     'website-physical-address': 2,
     'website-opening-hours': 2
-  },
-  'tradie': {
-  },
-  'retail': {
-  },
-  'health-wellness': {
-  },
-  'pet': {
   }
 };
 

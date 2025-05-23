@@ -8,8 +8,6 @@ const channels = [
   'website',
   'facebook',
   'instagram',
-  'x',
-  'youtube',
   'tiktok'
 ] as const;
 </script>
