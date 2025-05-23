@@ -6,42 +6,16 @@ const { data: businesses } = useFetch<Business[]>('/api/businesses');
 
 const schema = z.object({
   placeId: z.string().min(1, 'Business Location is required'),
-  category: z.string(),
 });
 type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
   placeId: undefined,
-  category: undefined,
-});
-
-const selectedPlaceDetails = ref<AutocompletePlace | null>(null);
-
-function handlePlaceDetailsUpdate(placeDetails: AutocompletePlace | null) {
-  selectedPlaceDetails.value = placeDetails;
-}
-
-// Auto-selection logic for category
-watch(selectedPlaceDetails, (newPlace) => {
-  if (newPlace && newPlace.types) {
-    const types = newPlace.types;
-    if (types.includes('cafe')) {
-      state.category = "Cafe";
-    } else if (types.includes('restaurant')) {
-      state.category = "Restaurant";
-    } else if (types.includes('meal_takeaway')) { // Google often uses 'meal_takeaway'
-      state.category = "Takeaway";
-    } else if (types.includes('bar')) {
-      state.category = "Bar";
-    } else if (types.includes('bakery')) {
-      state.category = "Bakery";
-    }
-  }
 });
 
 const router = useRouter();
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  router.push(`/setup/social-media-and-website?placeId=${event.data.placeId}&category=${event.data.category}`);
+  router.push(`/new?placeId=${event.data.placeId}`);
 }
 </script>
  
@@ -62,16 +36,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <GooglePlaceInput 
               class="w-full"
               v-model="state.placeId" 
-              @update:place-details="handlePlaceDetailsUpdate"
               placeholder="Search for your business"
             />
           </UFormField>
-          
-          <UFormField label="Category" name="category">
-            <CategorySelect v-model="state.category" class="w-full" />
-          </UFormField>
 
-          <UButton type="submit" color="primary" size="xl" block :disabled="!state.placeId || !state.category">
+          <UButton type="submit" color="primary" size="xl" block :disabled="!state.placeId">
             Go
           </UButton>
         </UForm>
