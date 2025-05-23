@@ -13,7 +13,7 @@ const slots = useSlots();
 </script>
 
 <template>
-  <UCard variant="outline">
+  <UCard>
     <UFormField :name="name" :description="description"
       :ui="{ description: 'text-sm text-gray-500 dark:text-gray-400 mt-1' }">
       <template #label>
