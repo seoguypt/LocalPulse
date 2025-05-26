@@ -11,13 +11,21 @@ const route = useRoute();
 const placeId = computed(() => route.query.placeId as string);
 const categoryId = computed(() => route.query.categoryId as CategoryId);
 
+const { data: place } = await useFetch('/api/google/places/getPlace', {
+  query: {
+    id: placeId.value,
+  },
+});
+
 const schema = z.object({
   websiteUrl: z.string().optional(),
+  appleMapsId: z.string().optional(),
 });
 type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
   websiteUrl: route.query.websiteUrl as string,
+  appleMapsId: route.query.appleMapsId as string,
 });
 
 const router = useRouter();
@@ -29,7 +37,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     query: {
       placeId: placeId.value,
       categoryId: categoryId.value,
-      websiteUrl,
+      websiteUrl: state.websiteUrl,
+      appleMapsId: state.appleMapsId,
     },
   });
 }
@@ -58,7 +67,18 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <h2 class="text-5xl font-bold text-center tracking-tight text-balance">Add your other listings</h2>
 
       <ChannelFormField :channel="CHANNEL_CONFIG['website']" v-model="state.websiteUrl" />
-      <ChannelFormField :channel="CHANNEL_CONFIG['apple-maps']" />
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center">
+        <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-if="place?.[0]?.websiteUri" @click="state.websiteUrl = place?.[0]?.websiteUri">
+          {{ minifyUrl(place?.[0]?.websiteUri) }}
+        </UButton>
+        <UButton size="xs" color="neutral" variant="soft" v-else>
+          No suggestions
+        </UButton>
+      </div>
+
+      <ChannelFormField :channel="CHANNEL_CONFIG['apple-maps']" v-model="state.appleMapsId" />
       
       <template #footer>
         <div class="flex justify-between">
