@@ -1,7 +1,47 @@
 import { z } from 'zod';
 
-export const categorySchema = z.enum(['food', 'retail', 'services', 'other']);
+export const categoryIdSchema = z.enum(['food', 'retail', 'services', 'other']);
+export type CategoryId = z.infer<typeof categoryIdSchema>;
+
+export const categorySchema = z.object({
+  id: categoryIdSchema,
+  label: z.string(),
+  icon: z.string(),
+  description: z.string(),
+  recommendedChannels: z.array(channelIdSchema),
+});
 export type Category = z.infer<typeof categorySchema>;
+
+export const CATEGORY_CONFIG: Record<CategoryId, Category> = {
+  'food': {
+    id: 'food',
+    label: 'Food & Drink',
+    description: 'Restaurants, cafés, bars, etc',
+    icon: 'i-lucide-utensils',
+    recommendedChannels: ['website', 'facebook', 'instagram', 'google-maps', 'apple-maps', 'uber-eats', 'deliveroo', 'doordash', 'menulog'],
+  },
+  'retail': {
+    id: 'retail',
+    label: 'Retail',
+    description: 'Clothing, electronics, home goods, etc',
+    icon: 'i-lucide-shopping-cart',
+    recommendedChannels: ['website', 'facebook', 'apple-maps', 'instagram', 'tiktok', 'youtube'],
+  },
+  'services': {
+    id: 'services',
+    label: 'Services',
+    description: 'Plumbers, electricians, etc',
+    icon: 'i-lucide-wrench',
+    recommendedChannels: ['website', 'facebook', 'apple-maps', ],
+  },
+  'other': {
+    id: 'other',
+    label: 'Other',
+    description: 'Anything else',
+    icon: 'i-lucide-tag',
+    recommendedChannels: ['website', 'facebook', 'apple-maps'],
+  }
+};
 
 /**
  * Given a list of types from Google Places data, return one of ['food', 'retail', 'services', 'other']
@@ -9,7 +49,7 @@ export type Category = z.infer<typeof categorySchema>;
  * @param data 
  * @returns 
  */
-export const getCategoryFromGooglePlaceTypes = (data: string[]): Category => {
+export const getCategoryIdFromGooglePlaceTypes = (data: string[]): CategoryId => {
   // Food and drink related types
   const foodTypes = new Set([
     'bakery',

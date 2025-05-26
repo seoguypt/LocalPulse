@@ -6,6 +6,12 @@ export default defineAppConfig({
         variant: 'outline',
       }
     },
+    inputMenu: {
+      defaultVariants: {
+        size: 'xl',
+        variant: 'outline',
+      }
+    },
     selectMenu: {
       defaultVariants: {
         size: 'xl',

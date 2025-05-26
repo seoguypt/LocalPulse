@@ -1,0 +1,91 @@
+import jwt from 'jsonwebtoken'
+
+interface TokenCache {
+  accessToken: string
+  expiresAt: number
+}
+
+let tokenCache: TokenCache | null = null
+
+export async function generateAppleMapKitToken(): Promise<string> {
+  const config = useRuntimeConfig()
+  
+  // Check if we have environment variables for generating tokens
+  const teamId = config.appleMapKitTeamId
+  const keyId = config.appleMapKitKeyId
+  const privateKey = config.appleMapKitPrivateKey ? Buffer.from(config.appleMapKitPrivateKey, 'base64').toString('utf-8') : undefined
+  
+  if (!teamId || !keyId || !privateKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Missing Apple MapKit configuration',
+    })
+  }
+  
+  // Check if we have a valid cached access token
+  const now = Date.now()
+  if (tokenCache && tokenCache.expiresAt > now + 60000) { // 1 minute buffer
+    return tokenCache.accessToken
+  }
+  
+  // Generate authorization token (JWT)
+  const issuedAt = Math.floor(now / 1000)
+  const expiresAt = issuedAt + (60 * 60) // 1 hour from now
+  
+  const payload = {
+    iss: teamId,
+    iat: issuedAt,
+    exp: expiresAt,
+  }
+  
+  const header = {
+    kid: keyId,
+    typ: 'JWT',
+    alg: 'ES256',
+  }
+  
+  try {
+    // Generate JWT authorization token
+    const authorizationToken = jwt.sign(payload, privateKey, { 
+      algorithm: 'ES256',
+      header 
+    })
+    
+    // Exchange authorization token for access token
+    const response = await fetch('https://maps-api.apple.com/v1/token', {
+      headers: {
+        'Authorization': `Bearer ${authorizationToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw createError({
+        statusCode: response.status,
+        statusMessage: `Apple Maps token exchange failed: ${response.status} ${response.statusText}`,
+      })
+    }
+
+    const tokenData = await response.json()
+    
+    if (!tokenData.accessToken) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'No access token received from Apple Maps API',
+      })
+    }
+    
+    // Cache the access token (assume it expires in 50 minutes to be safe)
+    tokenCache = {
+      accessToken: tokenData.accessToken,
+      expiresAt: now + (50 * 60 * 1000), // 50 minutes from now in milliseconds
+    }
+    
+    return tokenData.accessToken
+  } catch (error) {
+    console.error('Failed to generate Apple MapKit access token:', error)
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to generate Apple MapKit access token'
+    })
+  }
+} 

@@ -8,25 +8,26 @@ definePageMeta({
 
 const schema = z.object({
   placeId: z.string().min(1, 'Google Maps listing is required'),
-  category: categorySchema
+  categoryId: categoryIdSchema
 });
 type Schema = z.output<typeof schema>
 
+const route = useRoute();
 const state = reactive<Partial<Schema>>({
-  placeId: undefined,
-  category: undefined,
+  placeId: route.query.placeId as string,
+  categoryId: route.query.categoryId as CategoryId,
 });
 
 const router = useRouter();
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  router.push(`/setup/channels?placeId=${event.data.placeId}&category=${event.data.category}`);
+  router.push(`/setup/other-listings?placeId=${event.data.placeId}&categoryId=${event.data.categoryId}`);
 }
 
 const place = ref();
 watch(place, () => {
-  if (!place.value) return
+  if (!place.value || state.categoryId) return
 
-  state.category = getCategoryFromGooglePlaceTypes(place.value?.types);
+  state.categoryId = getCategoryIdFromGooglePlaceTypes(place.value?.types);
 });
 </script>
 
@@ -35,6 +36,10 @@ watch(place, () => {
     <UStepper orientation="horizontal" class="w-1/4 -mt-6" color="primary" :items="[
       {
         icon: 'i-lucide-tag'
+      },
+      {
+        icon: 'i-lucide-map-pin',
+        disabled: true,
       },
       {
         icon: 'i-lucide-share-2',
@@ -57,34 +62,10 @@ watch(place, () => {
         <URadioGroup color="primary" variant="card" orientation="horizontal" indicator="hidden" :ui="{
           fieldset: 'grid grid-cols-2 gap-4'
         }"
-        v-model="state.category"
+        v-model="state.categoryId"
         :disabled="!state.placeId"
-        :items="[
-          {
-            label: 'Food & Drink',
-            description: 'Restaurants, cafés, bars, etc',
-            value: 'food',
-            icon: 'i-lucide-utensils',
-          },
-          {
-            label: 'Retail',
-            description: 'Clothing, electronics, home goods, etc',
-            value: 'retail',
-            icon: 'i-lucide-shopping-cart',
-          },
-          {
-            label: 'Services',
-            description: 'Plumbers, electricians, etc',
-            value: 'services',
-            icon: 'i-lucide-wrench',
-          },
-          {
-            label: 'Other',
-            description: 'Anything else',
-            value: 'other',
-            icon: 'i-lucide-tag',
-          }
-        ]">
+        :items="Object.values(CATEGORY_CONFIG)"
+        value-key="id">
           <template #label="{ item }">
             <span class="inline-flex items-center">
               <UIcon :name="item.icon" class="text-gray-500 dark:text-gray-400" size="16" />
@@ -96,7 +77,7 @@ watch(place, () => {
 
       <template #footer>
         <div class="flex justify-end">
-          <UButton type="submit" color="primary" size="xl" trailing-icon="i-lucide-arrow-right" :disabled="!state.placeId || !state.category">
+          <UButton type="submit" color="primary" size="xl" trailing-icon="i-lucide-arrow-right" :disabled="!state.placeId || !state.categoryId">
             Continue
           </UButton>
         </div>

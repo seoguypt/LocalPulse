@@ -26,6 +26,9 @@ export default defineNuxtConfig({
     googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
     googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
     dbPath: process.env.NUXT_DB_PATH,
+    appleMapKitTeamId: process.env.NUXT_APPLE_MAPKIT_TEAM_ID,
+    appleMapKitKeyId: process.env.NUXT_APPLE_MAPKIT_KEY_ID,
+    appleMapKitPrivateKey: process.env.NUXT_APPLE_MAPKIT_PRIVATE_KEY,
     public: {
       googleApiKey: process.env.NUXT_PUBLIC_GOOGLE_API_KEY,
     }
