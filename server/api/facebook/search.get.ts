@@ -7,9 +7,6 @@ export default defineEventHandler(async (event) => {
 
   const googleResults = (await googleSearch(`${query} site:facebook.com`));
 
-  console.log('Google results count:', googleResults.length);
-  console.log('First few Google results:', googleResults.slice(0, 5).map(r => ({ title: r.title, link: r.link })));
-
   // These results contain facebook pages, posts, users, groups, and other content.
   // We want to find BUSINESS PAGES that most match the query and return them and their titles.
   // We exclude groups, personal profiles, events, marketplace, and other non-business content.
@@ -410,7 +407,6 @@ export default defineEventHandler(async (event) => {
       
       // If titles are very similar (>= 0.85), merge the groups
       if (similarity >= 0.85) {
-        console.log(`Merging similar pages: "${group1.bestTitle}" and "${group2.bestTitle}" (similarity: ${similarity})`);
         
         // Merge the groups, keeping the best scores
         mergedGroup.occurrences += group2.occurrences;
@@ -482,6 +478,5 @@ export default defineEventHandler(async (event) => {
     .sort((a, b) => b.score - a.score)
     .slice(0, 5); // Return top 5 matches
 
-  console.log('Final results:', finalResults);
   return finalResults;
 });
