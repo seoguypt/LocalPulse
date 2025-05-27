@@ -42,6 +42,18 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     },
   });
 }
+
+const appleMapsSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+
+  const response = await $fetch('/api/apple/maps/search', {
+    query: {
+      query: place.value[0].displayName.text,
+    }
+  });
+
+  return response.results;
+}, []);
 </script>
 
 <template>
@@ -79,6 +91,18 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
 
       <ChannelFormField :channel="CHANNEL_CONFIG['apple-maps']" v-model="state.appleMapsId" />
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center">
+        <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
+        <template v-if="appleMapsSuggestions.length > 0">
+          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in appleMapsSuggestions" @click="state.appleMapsId = suggestion.id">
+            {{ suggestion.name }} ({{ suggestion.structuredAddress.locality }})
+          </UButton>
+        </template>
+        <UButton v-else size="xs" color="neutral" variant="soft">
+          No suggestions
+        </UButton>
+      </div>
       
       <template #footer>
         <div class="flex justify-between">
