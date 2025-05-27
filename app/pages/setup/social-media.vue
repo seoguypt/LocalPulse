@@ -39,11 +39,11 @@ const state = reactive<Partial<Schema>>({
 });
 
 const facebookSuggestions = computedAsync(async () => {
-  const suggestions = [];
+  const suggestions = new Set<{ label: string; value: string }>();
 
   if (place.value?.[0]) {
     if (place.value[0].websiteUri && place.value[0].websiteUri.includes('facebook.com')) {
-      suggestions.push({
+      suggestions.add({
         label: minifyUrl(place.value[0].websiteUri),
         value: place.value[0].websiteUri,
       });
@@ -56,24 +56,45 @@ const facebookSuggestions = computedAsync(async () => {
         }
       });
 
-      suggestions.push(...response.map(result => ({
+      response.forEach(result => suggestions.add({
         label: minifyUrl(result.url),
         value: result.url,
-      })));
+      }));
     }
   }
 
-  return suggestions;
+  return Array.from(suggestions);
 }, []);
 
 const instagramSuggestions = computedAsync(async () => {
+  const suggestions = new Set<string>();
   if (!place.value?.[0].displayName) return [];
 
-  if (place.value[0].websiteUri && place.value[0].websiteUri.includes('instagram.com')) {
-    return [getInstagramUsernameFromUrl(place.value[0].websiteUri)];
+  if (place.value?.[0]) {
+    if (place.value[0].websiteUri && place.value[0].websiteUri.includes('instagram.com')) {
+      const username = getInstagramUsernameFromUrl(place.value[0].websiteUri);
+      if (username) {
+        suggestions.add(username);
+      }
+    }
+
+    if (place.value[0].displayName) {
+      const response = await $fetch('/api/instagram/search', {
+        query: {
+          query: place.value[0].displayName.text,
+        }
+      });
+
+      response.forEach(result => {
+        const username = getInstagramUsernameFromUrl(result.url);
+        if (username) {
+          suggestions.add(username);
+        }
+      });
+    }
   }
 
-  return [];
+  return Array.from(suggestions);
 }, []);
 
 const tiktokSuggestions = computedAsync(async () => {
