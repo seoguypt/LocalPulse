@@ -99,7 +99,14 @@ const instagramSuggestions = computedAsync(async () => {
 
 const tiktokSuggestions = computedAsync(async () => {
   if (!place.value?.[0].displayName) return [];
-  return [];
+
+  const response = await $fetch('/api/tiktok/search', {
+    query: {
+      query: place.value[0].displayName.text,
+    }
+  });
+
+  return response.slice(0, 2).map(result => result.username);
 }, []);
 
 const youtubeSuggestions = computedAsync(async () => {
