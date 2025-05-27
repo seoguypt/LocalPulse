@@ -18,7 +18,7 @@ const { data: place } = await useFetch('/api/google/places/getPlace', {
 });
 
 const schema = z.object({
-  websiteUrl: z.string().optional(),
+  websiteUrl: z.string().url().optional(),
   appleMapsId: z.string().optional(),
 });
 type Schema = z.output<typeof schema>
@@ -84,34 +84,32 @@ const appleMapsSuggestions = computedAsync(async () => {
     <UCard :ui="{ body: 'flex flex-col items-stretch justify-center sm:px-20 sm:py-12' }" class="mt-8">
       <h2 class="text-5xl font-bold text-center tracking-tight text-balance">Add your other listings</h2>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['website']" v-model="state.websiteUrl" />
+      <FormFieldWithIcon label="Website URL" name="websiteUrl" :icon="CHANNEL_CONFIG.website.icon"
+        :iconColor="CHANNEL_CONFIG.website.iconColor" class="mt-6">
+        <UInput v-model="state.websiteUrl" type="url" class="w-full" placeholder="https://www.example.com" />
+      </FormFieldWithIcon>
       <!-- Suggestions -->
-      <div class="flex gap-2 mt-2 items-center">
+      <div class="flex gap-2 mt-2 items-center" v-if="websiteSuggestions.length > 0">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="websiteSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in websiteSuggestions" @click="state.websiteUrl = suggestion">
-            {{ minifyUrl(suggestion) }}
-          </UButton>
-        </template>
-        <UButton v-else size="xs" color="neutral" variant="soft">
-          No suggestions
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in websiteSuggestions"
+          @click="state.websiteUrl = suggestion">
+          {{ minifyUrl(suggestion) }}
         </UButton>
       </div>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['apple-maps']" v-model="state.appleMapsId" />
+      <FormFieldWithIcon label="Apple Maps Listing" name="appleMapsId" :icon="CHANNEL_CONFIG['apple-maps'].icon"
+        :iconColor="CHANNEL_CONFIG['apple-maps'].iconColor" class="mt-8">
+        <ApplePlaceInput v-model="state.appleMapsId" class="w-full" />
+      </FormFieldWithIcon>
       <!-- Suggestions -->
-      <div class="flex gap-2 mt-2 items-center">
+      <div class="flex gap-2 mt-2 items-center" v-if="appleMapsSuggestions.length > 0">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="appleMapsSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in appleMapsSuggestions" @click="state.appleMapsId = suggestion.id">
-            {{ suggestion.name }} ({{ suggestion.structuredAddress.locality }})
-          </UButton>
-        </template>
-        <UButton v-else size="xs" color="neutral" variant="soft">
-          No suggestions
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in appleMapsSuggestions"
+          @click="state.appleMapsId = suggestion.id">
+          {{ suggestion.name }} ({{ suggestion.structuredAddress.locality }})
         </UButton>
       </div>
-      
+
       <template #footer>
         <div class="flex justify-between">
           <UButton :to="{

@@ -20,14 +20,22 @@ const { data: place } = await useFetch('/api/google/places/getPlace', {
 });
 
 const schema = z.object({
-  facebookUrl: z.string().optional(),
+  facebookUrl: z.string().regex(/^https?:\/\/(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?id=\d+$/, 'Please enter a valid Facebook Page URL').optional(),
   instagramUsername: z.string().optional(),
+  tiktokUsername: z.string().optional(),
+  youtubeChannelUrl: z.string().optional(),
+  xUsername: z.string().optional(),
+  linkedinUrl: z.string().optional(),
 });
 type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
   facebookUrl: route.query.facebookUrl as string,
   instagramUsername: route.query.instagramUsername as string,
+  tiktokUsername: route.query.tiktokUsername as string,
+  youtubeChannelUrl: route.query.youtubeChannelUrl as string,
+  xUsername: route.query.xUsername as string,
+  linkedinUrl: route.query.linkedinUrl as string,
 });
 
 const facebookSuggestions = computedAsync(async () => {
@@ -47,6 +55,26 @@ const instagramSuggestions = computedAsync(async () => {
     return [getInstagramUsernameFromUrl(place.value[0].websiteUri)];
   }
 
+  return [];
+}, []);
+
+const tiktokSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+  return [];
+}, []);
+
+const youtubeSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+  return [];
+}, []);
+
+const xSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+  return [];
+}, []);
+
+const linkedinSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
   return [];
 }, []);
 
@@ -86,38 +114,85 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     <UCard :ui="{ body: 'flex flex-col items-stretch justify-center sm:px-20 sm:py-12' }" class="mt-8">
       <h2 class="text-5xl font-bold text-center tracking-tight text-balance">Link your social media</h2>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['facebook']" v-model="state.facebookUrl" />
+      <FormFieldWithIcon label="Facebook Page URL" name="facebookUrl" :icon="CHANNEL_CONFIG.facebook.icon"
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('facebook') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.facebook.iconColor" class="mt-6">
+        <UInput v-model="state.facebookUrl" type="url" class="w-full" placeholder="facebook.com/example" />
+      </FormFieldWithIcon>
       <!-- Suggestions -->
-      <div class="flex gap-2 mt-2 items-center">
+      <div class="flex gap-2 mt-2 items-center" v-if="facebookSuggestions.length > 0">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="facebookSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in facebookSuggestions" @click="state.facebookUrl = suggestion">
-            {{ suggestion }}
-          </UButton>
-        </template>
-        <UButton v-else size="xs" color="neutral" variant="soft">
-          No suggestions
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in facebookSuggestions"
+          @click="state.facebookUrl = suggestion">
+          {{ suggestion }}
         </UButton>
       </div>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['instagram']" v-model="state.instagramUsername" />
+      <FormFieldWithIcon label="Instagram Username" name="instagramUsername" :icon="CHANNEL_CONFIG.instagram.icon"
+      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('instagram') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.instagram.iconColor" class="mt-8">
+        <UInput v-model="state.instagramUsername" type="text" class="w-full" placeholder="mybiz" />
+      </FormFieldWithIcon>
       <!-- Suggestions -->
-      <div class="flex gap-2 mt-2 items-center">
-        <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="instagramSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in instagramSuggestions" @click="state.instagramUsername = suggestion">
-            @{{ suggestion }}
-          </UButton>
-        </template>
-        <UButton v-else size="xs" color="neutral" variant="soft">
-          No suggestions
+      <div class="flex gap-2 mt-2 items-center" v-if="instagramSuggestions.length > 0">
+        <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in instagramSuggestions"
+          @click="state.instagramUsername = suggestion">
+          @{{ suggestion }}
         </UButton>
       </div>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['tiktok']" />
-      <ChannelFormField :channel="CHANNEL_CONFIG['x']" />
-      <ChannelFormField :channel="CHANNEL_CONFIG['youtube']" />
+      <FormFieldWithIcon label="TikTok Username" name="tiktokUsername" :icon="CHANNEL_CONFIG.tiktok.icon"
+      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('tiktok') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.tiktok.iconColor" class="mt-8">
+        <UInput v-model="state.instagramUsername" type="text" class="w-full" placeholder="mybiz" />
+      </FormFieldWithIcon>
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center" v-if="tiktokSuggestions.length > 0">
+        <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in tiktokSuggestions"
+          @click="state.tiktokUsername = suggestion">
+          @{{ suggestion }}
+        </UButton>
+      </div>
+
+      <FormFieldWithIcon label="YouTube Channel URL" name="youtubeChannelUrl" :icon="CHANNEL_CONFIG.youtube.icon"
+      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('youtube') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.youtube.iconColor" class="mt-8">
+        <UInput v-model="state.youtubeChannelUrl" type="url" class="w-full" placeholder="youtube.com/example" />
+      </FormFieldWithIcon>
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center" v-if="youtubeSuggestions.length > 0">
+        <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in youtubeSuggestions"
+          @click="state.youtubeChannelUrl = suggestion">
+          {{ suggestion }}
+        </UButton>
+      </div>
       
+      <FormFieldWithIcon label="Twitter / X Username" name="xUsername" :icon="CHANNEL_CONFIG.x.icon"
+      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('x') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.x.iconColor" class="mt-8">
+        <UInput v-model="state.xUsername" type="text" class="w-full" placeholder="mybiz" />
+      </FormFieldWithIcon>
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center" v-if="xSuggestions.length > 0">
+        <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in xSuggestions"
+          @click="state.xUsername = suggestion">
+          @{{ suggestion }}
+        </UButton>
+      </div>
+
+      <FormFieldWithIcon label="LinkedIn Profile URL" name="linkedinUrl" :icon="CHANNEL_CONFIG.linkedin.icon"
+      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('linkedin') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.linkedin.iconColor" class="mt-8">
+        <UInput v-model="state.linkedinUrl" type="url" class="w-full" placeholder="linkedin.com/example" />
+      </FormFieldWithIcon>
+      <!-- Suggestions -->
+      <div class="flex gap-2 mt-2 items-center" v-if="linkedinSuggestions.length > 0">
+        <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
+        <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in linkedinSuggestions"
+          @click="state.linkedinUrl = suggestion">
+          {{ suggestion }}
+        </UButton>
+      </div>
+
       <template #footer>
         <div class="flex justify-between">
           <UButton :to="{
