@@ -81,15 +81,23 @@ const instagramSuggestions = computedAsync(async () => {
 }, []);
 
 const tiktokSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
+  if (!place.value?.[0]?.displayName?.text) return [];
 
-  const response = await $fetch('/api/tiktok/search', {
-    query: {
-      query: place.value[0].displayName.text,
-    }
-  });
+  try {
+    const suggestions = await $fetch('/api/tiktok/suggestions', {
+      query: {
+        businessName: place.value[0].displayName.text,
+        websiteUrl: websiteUrl.value || undefined,
+        placeId: placeId.value || undefined,
+      }
+    });
 
-  return response.slice(0, 2).map(result => result.username);
+    // Return just usernames for the suggestion buttons
+    return suggestions.map(suggestion => suggestion.username);
+  } catch (error) {
+    console.error('Failed to fetch TikTok suggestions:', error);
+    return [];
+  }
 }, []);
 
 const youtubeSuggestions = computedAsync(async () => {
