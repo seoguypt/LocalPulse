@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const token = await generateAppleMapKitToken()
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse)
 
@@ -25,4 +25,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Failed to get Apple Maps place details',
     })
   }
+}, {
+  maxAge: 60 * 60 * 24,
 })

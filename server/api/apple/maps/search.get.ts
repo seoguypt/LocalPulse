@@ -9,7 +9,7 @@ const responseSchema = z.object({
   results: z.array(AppleSearchResponsePlaceSchema)
 })
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const token = await generateAppleMapKitToken()
   const { query, userLocation } = await getValidatedQuery(event, querySchema.parse)
 
@@ -54,4 +54,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Failed to search Apple Maps',
     })
   }
+}, {
+  maxAge: 60 * 60 * 24,
 })
