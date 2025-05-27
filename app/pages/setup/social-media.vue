@@ -24,7 +24,7 @@ const schema = z.object({
   instagramUsername: z.string().optional(),
   tiktokUsername: z.string().optional(),
   youtubeChannelUrl: z.string().includes('youtube.com').url().optional(),
-  xUsername: z.string().includes('x.com').optional(),
+  xUsername: z.string().optional(),
   linkedinUrl: z.string().includes('linkedin.com').url().optional(),
 });
 type Schema = z.output<typeof schema>
@@ -124,13 +124,45 @@ const youtubeSuggestions = computedAsync(async () => {
 }, []);
 
 const xSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
-  return [];
+  if (!place.value?.[0]?.displayName?.text) return [];
+
+  try {
+    const suggestions = await $fetch('/api/x/suggestions', {
+      query: {
+        businessName: place.value[0].displayName.text,
+        websiteUrl: websiteUrl.value || undefined,
+        placeId: placeId.value || undefined,
+      }
+    });
+
+    // Return just usernames for the suggestion buttons
+    return suggestions.map(suggestion => suggestion.username);
+  } catch (error) {
+    console.error('Failed to fetch X/Twitter suggestions:', error);
+    return [];
+  }
 }, []);
 
 const linkedinSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
-  return [];
+  if (!place.value?.[0]?.displayName?.text) return [];
+
+  try {
+    const suggestions = await $fetch('/api/linkedin/suggestions', {
+      query: {
+        businessName: place.value[0].displayName.text,
+        websiteUrl: websiteUrl.value || undefined,
+        placeId: placeId.value || undefined,
+      }
+    });
+
+    return suggestions.map(suggestion => ({
+      label: minifyUrl(suggestion.url),
+      value: suggestion.url
+    }));
+  } catch (error) {
+    console.error('Failed to fetch LinkedIn suggestions:', error);
+    return [];
+  }
 }, []);
 
 const router = useRouter();
@@ -252,8 +284,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <div class="flex gap-2 mt-2 items-center" v-if="linkedinSuggestions.length > 0">
         <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
         <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in linkedinSuggestions"
-          @click="state.linkedinUrl = suggestion">
-          {{ suggestion }}
+          @click="state.linkedinUrl = suggestion.value">
+          {{ suggestion.label }}
         </UButton>
       </div>
 
