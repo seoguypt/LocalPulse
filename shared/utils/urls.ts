@@ -17,29 +17,77 @@ export const minifyUrl = (url: string) => {
     // Handle empty or invalid URLs
     if (!url) return '';
     
-    // Try to parse the URL
-    const parsedUrl = new URL(url);
+    // First clean the URL (removes UTM params, fragments, trailing slashes)
+    const cleaned = cleanUrl(url);
+    if (!cleaned) return '';
+    
+    // Parse the cleaned URL
+    const parsedUrl = new URL(cleaned);
     
     // Get the hostname and remove www. prefix
     let result = parsedUrl.hostname.replace(/^www\./, '');
     
-    // Add path (without trailing slash)
+    // Add path (already cleaned of trailing slashes by cleanUrl)
     if (parsedUrl.pathname && parsedUrl.pathname !== '/') {
-      const path = parsedUrl.pathname.endsWith('/') 
-        ? parsedUrl.pathname.slice(0, -1) 
-        : parsedUrl.pathname;
-      result += path;
+      result += parsedUrl.pathname;
     }
     
-    // Add query parameters if they exist
+    // Add query parameters if they exist (already filtered by cleanUrl)
     if (parsedUrl.search) {
-      // Remove the leading ? from search
       result += parsedUrl.search;
     }
     
     return result;
   } catch (error) {
     // If URL parsing fails, return the original string or handle as needed
+    return url;
+  }
+}
+
+/**
+ * Cleans a URL by removing utm parameters, fragments, and trailing slashes.
+ * 
+ * @param {string} url - The URL to clean.
+ * @returns {string} The cleaned URL
+ * 
+ * @example
+ * cleanUrl("https://example.com/path/?utm_source=abc#top") // "https://example.com/path"
+ * cleanUrl("http://www.example.com/sub/") // "https://www.example.com/sub"
+ */
+export const cleanUrl = (url: string) => {
+  try {
+    // Handle empty or invalid URLs
+    if (!url) return '';
+    
+    // Try to parse the URL
+    const parsedUrl = new URL(url);
+    
+    // Create a new URL object to rebuild the clean URL
+    const cleanedUrl = new URL(parsedUrl.origin);
+    
+    // Add the pathname, removing trailing slash
+    cleanedUrl.pathname = parsedUrl.pathname.endsWith('/') && parsedUrl.pathname !== '/'
+      ? parsedUrl.pathname.slice(0, -1)
+      : parsedUrl.pathname;
+    
+    // Filter out UTM parameters and rebuild search params
+    const cleanedParams = new URLSearchParams();
+    for (const [key, value] of parsedUrl.searchParams) {
+      // Only skip UTM parameters, preserve all other parameters (including empty ones)
+      if (!key.toLowerCase().startsWith('utm_')) {
+        cleanedParams.append(key, value);
+      }
+    }
+    
+    // Only add search params if there are any
+    if (cleanedParams.toString()) {
+      cleanedUrl.search = cleanedParams.toString();
+    }
+    
+    // Return the cleaned URL (fragments are automatically excluded)
+    return cleanedUrl.toString();
+  } catch (error) {
+    // If URL parsing fails, return the original string
     return url;
   }
 }

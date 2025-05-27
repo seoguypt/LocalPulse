@@ -44,7 +44,7 @@ const websiteSuggestions = computedAsync(async () => {
   if (!place.value?.[0]) return [];
 
   if (place.value[0].websiteUri && !place.value[0].websiteUri.includes('facebook.com') && !place.value[0].websiteUri.includes('instagram.com')) {
-    return [place.value[0].websiteUri];
+    return [cleanUrl(place.value[0].websiteUri)];
   }
   return [];
 }, []);
