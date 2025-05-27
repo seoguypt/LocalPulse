@@ -58,7 +58,7 @@ const appleMapsSuggestions = computedAsync(async () => {
     }
   });
 
-  return response.results;
+  return response.results.slice(0, 2);
 }, []);
 </script>
 

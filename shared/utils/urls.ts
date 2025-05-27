@@ -20,8 +20,8 @@ export const minifyUrl = (url: string) => {
     // Try to parse the URL
     const parsedUrl = new URL(url);
     
-    // Get the hostname
-    let result = parsedUrl.hostname;
+    // Get the hostname and remove www. prefix
+    let result = parsedUrl.hostname.replace(/^www\./, '');
     
     // Add path (without trailing slash)
     if (parsedUrl.pathname && parsedUrl.pathname !== '/') {

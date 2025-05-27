@@ -20,12 +20,12 @@ const { data: place } = await useFetch('/api/google/places/getPlace', {
 });
 
 const schema = z.object({
-  facebookUrl: z.string().regex(/^https?:\/\/(www\.)?facebook\.com\/[a-zA-Z0-9._-]+\/?id=\d+$/, 'Please enter a valid Facebook Page URL').optional(),
+  facebookUrl: z.string().includes('facebook.com').url().optional(),
   instagramUsername: z.string().optional(),
   tiktokUsername: z.string().optional(),
-  youtubeChannelUrl: z.string().optional(),
-  xUsername: z.string().optional(),
-  linkedinUrl: z.string().optional(),
+  youtubeChannelUrl: z.string().includes('youtube.com').url().optional(),
+  xUsername: z.string().includes('x.com').optional(),
+  linkedinUrl: z.string().includes('linkedin.com').url().optional(),
 });
 type Schema = z.output<typeof schema>
 
@@ -39,13 +39,31 @@ const state = reactive<Partial<Schema>>({
 });
 
 const facebookSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
+  const suggestions = [];
 
-  if (place.value[0].websiteUri && place.value[0].websiteUri.includes('facebook.com')) {
-    return [place.value[0].websiteUri];
+  if (place.value?.[0]) {
+    if (place.value[0].websiteUri && place.value[0].websiteUri.includes('facebook.com')) {
+      suggestions.push({
+        label: minifyUrl(place.value[0].websiteUri),
+        value: place.value[0].websiteUri,
+      });
+    }
+
+    if (place.value[0].displayName) {
+      const response = await $fetch('/api/facebook/search', {
+        query: {
+          query: place.value[0].displayName.text,
+        }
+      });
+
+      suggestions.push(...response.map(result => ({
+        label: minifyUrl(result.url),
+        value: result.url,
+      })));
+    }
   }
 
-  return [];
+  return suggestions;
 }, []);
 
 const instagramSuggestions = computedAsync(async () => {
@@ -117,14 +135,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <FormFieldWithIcon label="Facebook Page URL" name="facebookUrl" :icon="CHANNEL_CONFIG.facebook.icon"
         :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('facebook') ? 'Recommended' : undefined"
         :iconColor="CHANNEL_CONFIG.facebook.iconColor" class="mt-6">
-        <UInput v-model="state.facebookUrl" type="url" class="w-full" placeholder="facebook.com/example" />
+        <UInput v-model="state.facebookUrl" type="url" class="w-full" placeholder="https://facebook.com/example" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center" v-if="facebookSuggestions.length > 0">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
         <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in facebookSuggestions"
-          @click="state.facebookUrl = suggestion">
-          {{ suggestion }}
+          @click="state.facebookUrl = suggestion.value">
+          {{ suggestion.label }}
         </UButton>
       </div>
 
@@ -143,7 +161,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
       <FormFieldWithIcon label="TikTok Username" name="tiktokUsername" :icon="CHANNEL_CONFIG.tiktok.icon"
       :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('tiktok') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.tiktok.iconColor" class="mt-8">
-        <UInput v-model="state.instagramUsername" type="text" class="w-full" placeholder="mybiz" />
+        <UInput v-model="state.tiktokUsername" type="text" class="w-full" placeholder="mybiz" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center" v-if="tiktokSuggestions.length > 0">
@@ -156,7 +174,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
       <FormFieldWithIcon label="YouTube Channel URL" name="youtubeChannelUrl" :icon="CHANNEL_CONFIG.youtube.icon"
       :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('youtube') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.youtube.iconColor" class="mt-8">
-        <UInput v-model="state.youtubeChannelUrl" type="url" class="w-full" placeholder="youtube.com/example" />
+        <UInput v-model="state.youtubeChannelUrl" type="url" class="w-full" placeholder="https://youtube.com/example" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center" v-if="youtubeSuggestions.length > 0">
@@ -182,7 +200,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
       <FormFieldWithIcon label="LinkedIn Profile URL" name="linkedinUrl" :icon="CHANNEL_CONFIG.linkedin.icon"
       :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('linkedin') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.linkedin.iconColor" class="mt-8">
-        <UInput v-model="state.linkedinUrl" type="url" class="w-full" placeholder="linkedin.com/example" />
+        <UInput v-model="state.linkedinUrl" type="url" class="w-full" placeholder="https://linkedin.com/example" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center" v-if="linkedinSuggestions.length > 0">
