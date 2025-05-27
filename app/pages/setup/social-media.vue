@@ -39,31 +39,25 @@ const state = reactive<Partial<Schema>>({
 });
 
 const facebookSuggestions = computedAsync(async () => {
-  const suggestions = new Set<{ label: string; value: string }>();
+  if (!place.value?.[0]?.displayName?.text) return [];
 
-  if (place.value?.[0]) {
-    if (place.value[0].websiteUri && place.value[0].websiteUri.includes('facebook.com')) {
-      suggestions.add({
-        label: minifyUrl(place.value[0].websiteUri),
-        value: place.value[0].websiteUri,
-      });
-    }
+  try {
+    const suggestions = await $fetch('/api/facebook/suggestions', {
+      query: {
+        businessName: place.value[0].displayName.text,
+        websiteUrl: websiteUrl.value || undefined,
+        placeId: placeId.value || undefined,
+      }
+    });
 
-    if (place.value[0].displayName) {
-      const response = await $fetch('/api/facebook/search', {
-        query: {
-          query: place.value[0].displayName.text,
-        }
-      });
-
-      response.forEach(result => suggestions.add({
-        label: minifyUrl(result.url),
-        value: result.url,
-      }));
-    }
+    return suggestions.map(suggestion => ({
+      label: minifyUrl(suggestion.url),
+      value: suggestion.url
+    }));
+  } catch (error) {
+    console.error('Failed to fetch Facebook suggestions:', error);
+    return [];
   }
-
-  return Array.from(suggestions).slice(0, 2);
 }, []);
 
 const instagramSuggestions = computedAsync(async () => {
