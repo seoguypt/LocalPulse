@@ -115,8 +115,6 @@ export default defineEventHandler(async (event) => {
     console.error('Instagram search failed:', error);
   }
 
-  console.log('suggestions', suggestions);
-
   // 4. Deduplicate and Filter, applying multi-source confidence boost
   const deduplicatedSuggestions = deduplicateInstagramSuggestions(suggestions);
   
