@@ -63,7 +63,7 @@ const facebookSuggestions = computedAsync(async () => {
     }
   }
 
-  return Array.from(suggestions);
+  return Array.from(suggestions).slice(0, 2);
 }, []);
 
 const instagramSuggestions = computedAsync(async () => {
@@ -94,7 +94,7 @@ const instagramSuggestions = computedAsync(async () => {
     }
   }
 
-  return Array.from(suggestions);
+  return Array.from(suggestions).slice(0, 2);
 }, []);
 
 const tiktokSuggestions = computedAsync(async () => {
