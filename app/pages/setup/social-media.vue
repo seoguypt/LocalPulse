@@ -10,6 +10,8 @@ const route = useRoute();
 
 const placeId = computed(() => route.query.placeId as string);
 const categoryId = computed(() => route.query.categoryId as CategoryId);
+const websiteUrl = computed(() => route.query.websiteUrl as string);
+const appleMapsId = computed(() => route.query.appleMapsId as string);
 
 const { data: place } = await useFetch('/api/google/places/getPlace', {
   query: {
@@ -18,53 +20,54 @@ const { data: place } = await useFetch('/api/google/places/getPlace', {
 });
 
 const schema = z.object({
-  websiteUrl: z.string().optional(),
-  appleMapsId: z.string().optional(),
+  facebookUrl: z.string().optional(),
+  instagramUsername: z.string().optional(),
 });
 type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
-  websiteUrl: route.query.websiteUrl as string,
-  appleMapsId: route.query.appleMapsId as string,
+  facebookUrl: route.query.facebookUrl as string,
+  instagramUsername: route.query.instagramUsername as string,
 });
+
+const facebookSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+
+  if (place.value[0].websiteUri && place.value[0].websiteUri.includes('facebook.com')) {
+    return [place.value[0].websiteUri];
+  }
+
+  return [];
+}, []);
+
+const instagramSuggestions = computedAsync(async () => {
+  if (!place.value?.[0].displayName) return [];
+
+  if (place.value[0].websiteUri && place.value[0].websiteUri.includes('instagram.com')) {
+    return [getInstagramUsernameFromUrl(place.value[0].websiteUri)];
+  }
+
+  return [];
+}, []);
 
 const router = useRouter();
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   router.push({
-    path: '/setup/social-media',
+    path: '/setup/food-delivery',
     query: {
       placeId: placeId.value,
       categoryId: categoryId.value,
+      websiteUrl: websiteUrl.value,
+      appleMapsId: appleMapsId.value,
       ...event.data,
     },
   });
 }
-
-const websiteSuggestions = computedAsync(async () => {
-  if (!place.value?.[0]) return [];
-
-  if (place.value[0].websiteUri && !place.value[0].websiteUri.includes('facebook.com') && !place.value[0].websiteUri.includes('instagram.com')) {
-    return [place.value[0].websiteUri];
-  }
-  return [];
-}, []);
-
-const appleMapsSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
-
-  const response = await $fetch('/api/apple/maps/search', {
-    query: {
-      query: place.value[0].displayName.text,
-    }
-  });
-
-  return response.results;
-}, []);
 </script>
 
 <template>
   <UForm :schema="schema" :state="state" class="flex items-center flex-col my-auto" @submit="onSubmit">
-    <UStepper orientation="horizontal" class="w-1/4 -mt-6" color="primary" :model-value="1" :items="[
+    <UStepper orientation="horizontal" class="w-1/4 -mt-6" color="primary" :model-value="2" :items="[
       {
         icon: 'i-lucide-tag'
       },
@@ -73,7 +76,6 @@ const appleMapsSuggestions = computedAsync(async () => {
       },
       {
         icon: 'i-lucide-share-2',
-        disabled: true,
       },
       {
         icon: 'i-lucide-rocket',
@@ -82,15 +84,15 @@ const appleMapsSuggestions = computedAsync(async () => {
     ]" />
 
     <UCard :ui="{ body: 'flex flex-col items-stretch justify-center sm:px-20 sm:py-12' }" class="mt-8">
-      <h2 class="text-5xl font-bold text-center tracking-tight text-balance">Add your other listings</h2>
+      <h2 class="text-5xl font-bold text-center tracking-tight text-balance">Link your social media</h2>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['website']" v-model="state.websiteUrl" />
+      <ChannelFormField :channel="CHANNEL_CONFIG['facebook']" v-model="state.facebookUrl" />
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="websiteSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in websiteSuggestions" @click="state.websiteUrl = suggestion">
-            {{ minifyUrl(suggestion) }}
+        <template v-if="facebookSuggestions.length > 0">
+          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in facebookSuggestions" @click="state.facebookUrl = suggestion">
+            {{ suggestion }}
           </UButton>
         </template>
         <UButton v-else size="xs" color="neutral" variant="soft">
@@ -98,27 +100,33 @@ const appleMapsSuggestions = computedAsync(async () => {
         </UButton>
       </div>
 
-      <ChannelFormField :channel="CHANNEL_CONFIG['apple-maps']" v-model="state.appleMapsId" />
+      <ChannelFormField :channel="CHANNEL_CONFIG['instagram']" v-model="state.instagramUsername" />
       <!-- Suggestions -->
       <div class="flex gap-2 mt-2 items-center">
         <span class="font-medium uppercase text-xs text-gray-400">Suggested:</span>
-        <template v-if="appleMapsSuggestions.length > 0">
-          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in appleMapsSuggestions" @click="state.appleMapsId = suggestion.id">
-            {{ suggestion.name }} ({{ suggestion.structuredAddress.locality }})
+        <template v-if="instagramSuggestions.length > 0">
+          <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in instagramSuggestions" @click="state.instagramUsername = suggestion">
+            @{{ suggestion }}
           </UButton>
         </template>
         <UButton v-else size="xs" color="neutral" variant="soft">
           No suggestions
         </UButton>
       </div>
+
+      <ChannelFormField :channel="CHANNEL_CONFIG['tiktok']" />
+      <ChannelFormField :channel="CHANNEL_CONFIG['x']" />
+      <ChannelFormField :channel="CHANNEL_CONFIG['youtube']" />
       
       <template #footer>
         <div class="flex justify-between">
           <UButton :to="{
-            path: '/setup',
+            path: '/setup/other-listings',
             query: {
               placeId,
               categoryId,
+              websiteUrl,
+              appleMapsId,
             }
           }" type="button" color="neutral" variant="ghost" size="xl" icon="i-lucide-arrow-left">
             Back

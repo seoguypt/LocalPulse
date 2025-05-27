@@ -8,7 +8,6 @@ export const categorySchema = z.object({
   label: z.string(),
   icon: z.string(),
   description: z.string(),
-  recommendedChannels: z.array(channelIdSchema),
 });
 export type Category = z.infer<typeof categorySchema>;
 
@@ -18,28 +17,24 @@ export const CATEGORY_CONFIG: Record<CategoryId, Category> = {
     label: 'Food & Drink',
     description: 'Restaurants, cafés, bars, etc',
     icon: 'i-lucide-utensils',
-    recommendedChannels: ['website', 'facebook', 'instagram', 'google-maps', 'apple-maps', 'uber-eats', 'deliveroo', 'doordash', 'menulog'],
   },
   'retail': {
     id: 'retail',
     label: 'Retail',
     description: 'Clothing, electronics, home goods, etc',
     icon: 'i-lucide-shopping-cart',
-    recommendedChannels: ['website', 'facebook', 'apple-maps', 'instagram', 'tiktok', 'youtube'],
   },
   'services': {
     id: 'services',
     label: 'Services',
     description: 'Plumbers, electricians, etc',
     icon: 'i-lucide-wrench',
-    recommendedChannels: ['website', 'facebook', 'apple-maps', ],
   },
   'other': {
     id: 'other',
     label: 'Other',
     description: 'Anything else',
     icon: 'i-lucide-tag',
-    recommendedChannels: ['website', 'facebook', 'apple-maps'],
   }
 };
 
