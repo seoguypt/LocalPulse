@@ -101,8 +101,26 @@ const tiktokSuggestions = computedAsync(async () => {
 }, []);
 
 const youtubeSuggestions = computedAsync(async () => {
-  if (!place.value?.[0].displayName) return [];
-  return [];
+  if (!place.value?.[0]?.displayName?.text) return [];
+
+  try {
+    const suggestions = await $fetch('/api/youtube/suggestions', {
+      query: {
+        businessName: place.value[0].displayName.text,
+        websiteUrl: websiteUrl.value || undefined,
+        placeId: placeId.value || undefined,
+      }
+    });
+
+    // Return URLs for the suggestion buttons (YouTube uses full URLs)
+    return suggestions.map(suggestion => ({
+      label: minifyUrl(suggestion.url),
+      value: suggestion.url
+    }));
+  } catch (error) {
+    console.error('Failed to fetch YouTube suggestions:', error);
+    return [];
+  }
 }, []);
 
 const xSuggestions = computedAsync(async () => {
@@ -206,8 +224,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <div class="flex gap-2 mt-2 items-center" v-if="youtubeSuggestions.length > 0">
         <span class="font-semibold uppercase text-xs text-gray-400">Suggested:</span>
         <UButton size="xs" color="neutral" variant="soft" v-for="suggestion in youtubeSuggestions"
-          @click="state.youtubeChannelUrl = suggestion">
-          {{ suggestion }}
+          @click="state.youtubeChannelUrl = suggestion.value">
+          {{ suggestion.label }}
         </UButton>
       </div>
 
