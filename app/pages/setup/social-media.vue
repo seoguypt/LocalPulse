@@ -119,16 +119,20 @@ const linkedinSuggestions = computedAsync(async () => {
 
 const router = useRouter();
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  router.push({
-    path: '/setup/food-delivery',
-    query: {
-      placeId: placeId.value,
-      categoryId: categoryId.value,
-      websiteUrl: websiteUrl.value,
-      appleMapsId: appleMapsId.value,
-      ...event.data,
-    },
-  });
+  if (categoryId.value === 'food') {
+    router.push({
+      path: '/setup/food-delivery',
+      query: {
+        placeId: placeId.value,
+        categoryId: categoryId.value,
+        websiteUrl: websiteUrl.value,
+        appleMapsId: appleMapsId.value,
+        ...event.data,
+      },
+    });
+  } else {
+    // Save the business data and redirect to the report
+  }
 }
 </script>
 
@@ -168,7 +172,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
 
       <FormFieldWithIcon label="Instagram Username" name="instagramUsername" :icon="CHANNEL_CONFIG.instagram.icon"
-      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('instagram') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.instagram.iconColor" class="mt-8">
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('instagram') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.instagram.iconColor" class="mt-8">
         <UInput v-model="state.instagramUsername" type="text" class="w-full" placeholder="mybiz" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
@@ -181,7 +186,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
 
       <FormFieldWithIcon label="TikTok Username" name="tiktokUsername" :icon="CHANNEL_CONFIG.tiktok.icon"
-      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('tiktok') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.tiktok.iconColor" class="mt-8">
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('tiktok') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.tiktok.iconColor" class="mt-8">
         <UInput v-model="state.tiktokUsername" type="text" class="w-full" placeholder="mybiz" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
@@ -194,7 +200,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
 
       <FormFieldWithIcon label="YouTube Channel URL" name="youtubeChannelUrl" :icon="CHANNEL_CONFIG.youtube.icon"
-      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('youtube') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.youtube.iconColor" class="mt-8">
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('youtube') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.youtube.iconColor" class="mt-8">
         <UInput v-model="state.youtubeChannelUrl" type="url" class="w-full" placeholder="https://youtube.com/example" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
@@ -205,9 +212,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           {{ suggestion }}
         </UButton>
       </div>
-      
+
       <FormFieldWithIcon label="Twitter / X Username" name="xUsername" :icon="CHANNEL_CONFIG.x.icon"
-      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('x') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.x.iconColor" class="mt-8">
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('x') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.x.iconColor" class="mt-8">
         <UInput v-model="state.xUsername" type="text" class="w-full" placeholder="mybiz" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
@@ -220,7 +228,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </div>
 
       <FormFieldWithIcon label="LinkedIn Profile URL" name="linkedinUrl" :icon="CHANNEL_CONFIG.linkedin.icon"
-      :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('linkedin') ? 'Recommended' : undefined" :iconColor="CHANNEL_CONFIG.linkedin.iconColor" class="mt-8">
+        :hint="CATEGORY_CONFIG[categoryId].recommendedSocialMedia?.includes('linkedin') ? 'Recommended' : undefined"
+        :iconColor="CHANNEL_CONFIG.linkedin.iconColor" class="mt-8">
         <UInput v-model="state.linkedinUrl" type="url" class="w-full" placeholder="https://linkedin.com/example" />
       </FormFieldWithIcon>
       <!-- Suggestions -->
