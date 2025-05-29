@@ -413,6 +413,8 @@ const mapProfilesToBusinessData = () => {
     category: categoryId.value,
   }
 
+  const locations: any[] = []
+
   // Map each discovered profile to the appropriate database field
   for (const profile of discoveredProfiles.value) {
     switch (profile.type) {
@@ -420,12 +422,25 @@ const mapProfilesToBusinessData = () => {
         businessData.websiteUrl = profile.title
         break
       case 'google-maps':
-        // Use the stored place ID
-        businessData.placeId = profile.placeId
+        // Create a location entry for Google Maps
+        locations.push({
+          placeId: profile.placeId,
+          name: profile.title,
+          address: profile.subtitle,
+        })
         break
       case 'apple-maps':
-        // Use the stored Apple Maps ID
-        businessData.appleMapsId = profile.placeId
+        // Find existing location with same address or create new one
+        let existingLocation = locations.find(loc => loc.address === profile.subtitle)
+        if (existingLocation) {
+          existingLocation.appleMapsId = profile.placeId
+        } else {
+          locations.push({
+            appleMapsId: profile.placeId,
+            name: profile.title,
+            address: profile.subtitle,
+          })
+        }
         break
       case 'facebook':
         businessData.facebookUsername = profile.title
@@ -478,7 +493,7 @@ const mapProfilesToBusinessData = () => {
     }
   }
 
-  return businessData
+  return { businessData, locations }
 }
 
 // Function to save business and navigate to report
@@ -488,11 +503,14 @@ const saveBusinessAndGetReport = async () => {
   try {
     isSaving.value = true
     
-    const businessData = mapProfilesToBusinessData()
+    const { businessData, locations } = mapProfilesToBusinessData()
     
     const business = await $fetch('/api/businesses', {
       method: 'POST',
-      body: businessData,
+      body: {
+        ...businessData,
+        locations,
+      },
     })
 
     if (business) {

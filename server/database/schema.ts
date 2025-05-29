@@ -5,8 +5,7 @@ export const businesses = sqliteTable('businesses', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   category: text('category').notNull(),
-  placeId: text('place_id'),
-  appleMapsId: text('apple_maps_id'),
+  // Social media and online presence fields (business-wide)
   websiteUrl: text('website_url'),
   facebookUsername: text('facebook_url'),
   instagramUsername: text('instagram_username'),
@@ -14,10 +13,26 @@ export const businesses = sqliteTable('businesses', {
   xUsername: text('x_username'),
   linkedinUrl: text('linkedin_url'),
   youtubeUrl: text('youtube_url'),
+  // Delivery platform URLs (business-wide)
   uberEatsUrl: text('uber_eats_url'),
   doorDashUrl: text('door_dash_url'),
   deliverooUrl: text('deliveroo_url'),
   menulogUrl: text('menulog_url'),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const businessLocations = sqliteTable('business_locations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  businessId: integer('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  placeId: text('place_id'),
+  appleMapsId: text('apple_maps_id'),
+  name: text('name'),
+  address: text('address'),
+  locationUberEatsUrl: text('location_uber_eats_url'),
+  locationDoorDashUrl: text('location_door_dash_url'),
+  locationDeliverooUrl: text('location_deliveroo_url'),
+  locationMenulogUrl: text('location_menulog_url'),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
