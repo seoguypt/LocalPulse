@@ -44,6 +44,9 @@ importers:
       '@vueuse/nuxt':
         specifier: 13.1.0
         version: 13.1.0(magicast@0.3.5)(nuxt@3.17.2(@libsql/client@0.15.5)(@parcel/watcher@2.5.1)(@types/node@22.15.12)(better-sqlite3@11.10.0)(db0@0.3.2(@libsql/client@0.15.5)(better-sqlite3@11.10.0)(drizzle-orm@0.43.1(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(sqlite3@5.1.7))(drizzle-orm@0.43.1(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.1)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.40.2)(sqlite3@5.1.7)(terser@5.39.0)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(yaml@2.7.1))(xml2js@0.6.2)(yaml@2.7.1))(vue@3.5.13(typescript@5.8.3))
+      '@vueuse/router':
+        specifier: ^13.3.0
+        version: 13.3.0(vue-router@4.5.1(vue@3.5.13(typescript@5.8.3)))(vue@3.5.13(typescript@5.8.3))
       better-sqlite3:
         specifier: ^11.10.0
         version: 11.10.0
@@ -68,6 +71,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
+      lodash.isequal:
+        specifier: ^4.5.0
+        version: 4.5.0
       nuxt:
         specifier: ^3.17.2
         version: 3.17.2(@libsql/client@0.15.5)(@parcel/watcher@2.5.1)(@types/node@22.15.12)(better-sqlite3@11.10.0)(db0@0.3.2(@libsql/client@0.15.5)(better-sqlite3@11.10.0)(drizzle-orm@0.43.1(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(sqlite3@5.1.7))(drizzle-orm@0.43.1(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.1)(lightningcss@1.29.2)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.40.2)(sqlite3@5.1.7)(terser@5.39.0)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(yaml@2.7.1))(xml2js@0.6.2)(yaml@2.7.1)
@@ -117,6 +123,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.9
         version: 9.0.9
+      '@types/lodash.isequal':
+        specifier: ^4.5.8
+        version: 4.5.8
       '@types/string-similarity':
         specifier: ^4.0.2
         version: 4.0.2
@@ -1803,6 +1812,12 @@ packages:
   '@types/jsonwebtoken@9.0.9':
     resolution: {integrity: sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ==}
 
+  '@types/lodash.isequal@4.5.8':
+    resolution: {integrity: sha512-uput6pg4E/tj2LGxCZo9+y27JNyB2OZuuI/T5F+ylVDYuqICLG2/ktjxx0v6GvVntAf8TvEzeQLcV0ffRirXuA==}
+
+  '@types/lodash@4.17.17':
+    resolution: {integrity: sha512-RRVJ+J3J+WmyOTqnz3PiBLA501eKwXl2noseKOrNo/6+XEHjTAxO4xHvxQB6QuNm+s4WRbn6rSiap8+EA+ykFQ==}
+
   '@types/long@5.0.0':
     resolution: {integrity: sha512-eQs9RsucA/LNjnMoJvWG/nXa7Pot/RbBzilF/QRIU/xRl+0ApxrSUFsV5lmf01SvSlqMzJ7Zwxe440wmz2SJGA==}
     deprecated: This is a stub types definition. long provides its own type definitions, so you do not need this installed.
@@ -2199,6 +2214,12 @@ packages:
       nuxt: ^3.0.0 || ^4.0.0-0
       vue: ^3.5.0
 
+  '@vueuse/router@13.3.0':
+    resolution: {integrity: sha512-6pqzHWSZbjFHZ3Uo3x4nykx/b0YfKnkYVoERQs3Is9xJODlO/CTW0LRuEwaQD3kov9TJ6q8ru9MybHZ8DU6mdA==}
+    peerDependencies:
+      vue: ^3.5.0
+      vue-router: ^4.0.0
+
   '@vueuse/shared@10.11.1':
     resolution: {integrity: sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==}
 
@@ -2207,6 +2228,11 @@ packages:
 
   '@vueuse/shared@13.1.0':
     resolution: {integrity: sha512-IVS/qRRjhPTZ6C2/AM3jieqXACGwFZwWTdw5sNTSKk2m/ZpkuuN+ri+WCVUP8TqaKwJYt/KuMwmXspMAw8E6ew==}
+    peerDependencies:
+      vue: ^3.5.0
+
+  '@vueuse/shared@13.3.0':
+    resolution: {integrity: sha512-L1QKsF0Eg9tiZSFXTgodYnu0Rsa2P0En2LuLrIs/jgrkyiDuJSsPZK+tx+wU0mMsYHUYEjNsuE41uqqkuR8VhA==}
     peerDependencies:
       vue: ^3.5.0
 
@@ -8577,6 +8603,12 @@ snapshots:
       '@types/ms': 2.1.0
       '@types/node': 22.15.12
 
+  '@types/lodash.isequal@4.5.8':
+    dependencies:
+      '@types/lodash': 4.17.17
+
+  '@types/lodash@4.17.17': {}
+
   '@types/long@5.0.0':
     dependencies:
       long: 5.3.2
@@ -9060,6 +9092,12 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
+  '@vueuse/router@13.3.0(vue-router@4.5.1(vue@3.5.13(typescript@5.8.3)))(vue@3.5.13(typescript@5.8.3))':
+    dependencies:
+      '@vueuse/shared': 13.3.0(vue@3.5.13(typescript@5.8.3))
+      vue: 3.5.13(typescript@5.8.3)
+      vue-router: 4.5.1(vue@3.5.13(typescript@5.8.3))
+
   '@vueuse/shared@10.11.1(vue@3.5.13(typescript@5.8.3))':
     dependencies:
       vue-demi: 0.14.10(vue@3.5.13(typescript@5.8.3))
@@ -9074,6 +9112,10 @@ snapshots:
       - typescript
 
   '@vueuse/shared@13.1.0(vue@3.5.13(typescript@5.8.3))':
+    dependencies:
+      vue: 3.5.13(typescript@5.8.3)
+
+  '@vueuse/shared@13.3.0(vue@3.5.13(typescript@5.8.3))':
     dependencies:
       vue: 3.5.13(typescript@5.8.3)
 
