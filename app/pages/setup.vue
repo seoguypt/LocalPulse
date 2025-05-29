@@ -12,13 +12,16 @@ const categoryId = useRouteQuery<CategoryId>('categoryId', 'other', {
 });
 const step = useRouteQuery<'start' | 'discovery' | 'review'>('step', 'start');
 
-const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string }[]> = ref([])
+const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, placeId?: string }[]> = ref([])
 
 // Add missing profile functionality
 const showAddForm = ref(false)
 const selectedChannelId = ref<ChannelId | undefined>(undefined)
 const newProfileValue = ref('')
 const selectedPlaceDetails = ref<any>(null)
+
+// Loading state for saving business
+const isSaving = ref(false)
 
 const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
   label: category.label,
@@ -148,6 +151,7 @@ const addProfile = (event: any) => {
     type: selectedChannelId.value,
     title: profileTitle,
     subtitle: profileSubtitle,
+    placeId: selectedChannelId.value === 'google-maps' || selectedChannelId.value === 'apple-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
   })
   
   // Reset form
@@ -165,7 +169,7 @@ const handlePlaceDetailsUpdate = (placeDetails: any) => {
   selectedPlaceDetails.value = placeDetails
 }
 
-const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string }) => {
+const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string, placeId?: string }) => {
   const index = discoveredProfiles.value.findIndex(p => 
     p.type === profileToRemove.type && p.title === profileToRemove.title
   )
@@ -256,6 +260,7 @@ const startDiscovery = async () => {
       type: 'apple-maps',
       title: place.name,
       subtitle: place.formattedAddressLines.join(', '),
+      placeId: place.id || place.name,
     });
   }
 
@@ -264,6 +269,7 @@ const startDiscovery = async () => {
       type: 'google-maps',
       title: place.displayName.text,
       subtitle: place.formattedAddress ?? undefined,
+      placeId: place.id,
     });
   }
 
@@ -308,7 +314,7 @@ const startDiscovery = async () => {
   }
 
   const websiteUrl = discoveredProfiles.value.find(profile => profile.type === 'website')?.title;
-  const placeId = discoveredProfiles.value.find(profile => profile.type === 'google-maps')?.title;
+  const placeId = discoveredProfiles.value.find(profile => profile.type === 'google-maps')?.placeId;
 
   // Social profiles
   discoveryProgress.value = 2;
@@ -398,6 +404,106 @@ const startDiscovery = async () => {
   discoveryProgress.value = 3;
 
   step.value = 'review';
+}
+
+// Function to map discovered profiles to database fields
+const mapProfilesToBusinessData = () => {
+  const businessData: any = {
+    name: businessName.value,
+    category: categoryId.value,
+  }
+
+  // Map each discovered profile to the appropriate database field
+  for (const profile of discoveredProfiles.value) {
+    switch (profile.type) {
+      case 'website':
+        businessData.websiteUrl = profile.title
+        break
+      case 'google-maps':
+        // Use the stored place ID
+        businessData.placeId = profile.placeId
+        break
+      case 'apple-maps':
+        // Use the stored Apple Maps ID
+        businessData.appleMapsId = profile.placeId
+        break
+      case 'facebook':
+        businessData.facebookUsername = profile.title
+        break
+      case 'instagram':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('instagram.com')) {
+          const match = profile.title.match(/instagram\.com\/([^\/\?]+)/)
+          businessData.instagramUsername = match ? match[1] : profile.title
+        } else {
+          businessData.instagramUsername = profile.title
+        }
+        break
+      case 'tiktok':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('tiktok.com')) {
+          const match = profile.title.match(/tiktok\.com\/@?([^\/\?]+)/)
+          businessData.tiktokUsername = match ? match[1] : profile.title
+        } else {
+          businessData.tiktokUsername = profile.title
+        }
+        break
+      case 'x':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('x.com')) {
+          const match = profile.title.match(/x\.com\/([^\/\?]+)/)
+          businessData.xUsername = match ? match[1] : profile.title
+        } else {
+          businessData.xUsername = profile.title
+        }
+        break
+      case 'linkedin':
+        businessData.linkedinUrl = profile.title
+        break
+      case 'youtube':
+        businessData.youtubeUrl = profile.title
+        break
+      case 'uber-eats':
+        businessData.uberEatsUrl = profile.title
+        break
+      case 'deliveroo':
+        businessData.deliverooUrl = profile.title
+        break
+      case 'doordash':
+        businessData.doorDashUrl = profile.title
+        break
+      case 'menulog':
+        businessData.menulogUrl = profile.title
+        break
+    }
+  }
+
+  return businessData
+}
+
+// Function to save business and navigate to report
+const saveBusinessAndGetReport = async () => {
+  if (isSaving.value) return
+  
+  try {
+    isSaving.value = true
+    
+    const businessData = mapProfilesToBusinessData()
+    
+    const business = await $fetch('/api/businesses', {
+      method: 'POST',
+      body: businessData,
+    })
+
+    if (business) {
+      await navigateTo(`/${business.id}`)
+    }
+  } catch (error) {
+    console.error('Error saving business:', error)
+    // You might want to show a toast notification here
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 
@@ -652,7 +758,7 @@ const startDiscovery = async () => {
           Back
         </UButton>
 
-        <UButton color="primary" trailing-icon="lucide-arrow-right">
+        <UButton color="primary" trailing-icon="lucide-arrow-right" @click="saveBusinessAndGetReport" :loading="isSaving" :disabled="isSaving">
           Get report
         </UButton>
       </div>
