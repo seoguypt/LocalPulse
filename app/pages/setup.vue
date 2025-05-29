@@ -7,17 +7,17 @@ definePageMeta({
 });
 
 const businessName = useRouteQuery('businessName', '');
-const businessCategory = useRouteQuery('businessCategory', '');
+const categoryId = useRouteQuery<CategoryId>('categoryId', 'other', {
+  transform: (value) => categoryIdSchema.parse(value),
+});
 const step = useRouteQuery<'start' | 'discovery' | 'review'>('step', 'start');
 
 const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string }[]> = ref([])
 
-const businessCategories = [
-  {
-    label: 'Pizza',
-    value: 'pizza'
-  }
-]
+const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
+  label: category.label,
+  value: category.id,
+}));
 
 const schema = z.object({
   businessName: z.string().min(1),
@@ -45,7 +45,7 @@ const getGooglePlaces = async (name: string) => {
       },
     },
     headers: {
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.websiteUri,places.formattedAddress',
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.websiteUri,places.formattedAddress,places.types',
       'X-Goog-Api-Key': googleApiKey,
     }
   })
@@ -59,12 +59,21 @@ const getGooglePlaces = async (name: string) => {
       }),
       websiteUri: z.string().optional(),
       formattedAddress: z.string().optional(),
+      types: z.array(z.string()),
     })),
   }).parse(rawResponse);
 
   if (!response.places) return [];
 
-  return response.places;
+  // Remove any suggestion where the name doesn't match (Apple returns results with similar names but not exact mataches)
+  // Normalize Unicode characters to handle accented characters properly
+  const normalizedSearchName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const places = response.places.filter(place => {
+    const normalizedResultName = place.displayName.text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return normalizedResultName.includes(normalizedSearchName);
+  });
+
+  return places;
 }
 
 const getApplePlaces = async (name: string) => {
@@ -81,8 +90,14 @@ const getApplePlaces = async (name: string) => {
   return places;
 }
 
+const discoveryProgress = ref(0);
 const startDiscovery = async () => {
   step.value = 'discovery';
+  discoveredProfiles.value = [];
+
+  // Google Maps and Apple Maps
+  discoveryProgress.value = 0;
+
   const [googlePlaces, applePlaces] = await Promise.all([getGooglePlaces(businessName.value), getApplePlaces(businessName.value)]);
 
   for (const place of applePlaces) {
@@ -123,6 +138,11 @@ const startDiscovery = async () => {
     }
   }
 
+  categoryId.value = getCategoryIdFromGooglePlaceTypes(googlePlaces.map(place => place.types).flat());
+
+  // Website
+  discoveryProgress.value = 1;
+
   if (discoveredProfiles.value.filter(profile => profile.type === 'website').length === 0) {
     const searchResults = await $fetch(`/api/google/search?query=${businessName.value}`);
     for (const result of searchResults) {
@@ -139,68 +159,92 @@ const startDiscovery = async () => {
   const websiteUrl = discoveredProfiles.value.find(profile => profile.type === 'website')?.title;
   const placeId = discoveredProfiles.value.find(profile => profile.type === 'google-maps')?.title;
 
-  const [facebookSuggestions, instagramSuggestions, tiktokSuggestions, xSuggestions, linkedinSuggestions, youtubeSuggestions] = await Promise.all([
-    $fetch(`/api/facebook/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
-    $fetch(`/api/instagram/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
-    $fetch(`/api/tiktok/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
-    $fetch(`/api/x/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
-    $fetch(`/api/linkedin/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
-    $fetch(`/api/youtube/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`),
+  // Social profiles
+  discoveryProgress.value = 2;
+
+  const getFacebookSuggestions = async () => {
+    const suggestions = await $fetch(`/api/facebook/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('facebook.com')) {
+        discoveredProfiles.value.push({
+          type: 'facebook',
+          title: suggestion.url,
+        });
+      }
+    }
+  }
+
+  const getInstagramSuggestions = async () => {
+    const suggestions = await $fetch(`/api/instagram/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('instagram.com')) {
+        discoveredProfiles.value.push({
+          type: 'instagram',
+          title: suggestion.url,
+        });
+      }
+    }
+  }
+
+  const getTiktokSuggestions = async () => {
+    const suggestions = await $fetch(`/api/tiktok/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('tiktok.com')) {
+        discoveredProfiles.value.push({
+          type: 'tiktok',
+          title: suggestion.url,
+        });
+      }
+    }
+  }
+
+  const getXSuggestions = async () => {
+    const suggestions = await $fetch(`/api/x/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('x.com')) {
+        discoveredProfiles.value.push({
+          type: 'x',
+          title: suggestion.url,  
+        });
+      }
+    }
+  }
+
+  const getLinkedinSuggestions = async () => {
+    const suggestions = await $fetch(`/api/linkedin/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('linkedin.com')) {
+        discoveredProfiles.value.push({
+          type: 'linkedin',
+          title: suggestion.url,
+        });
+      }
+    }
+  }
+
+  const getYoutubeSuggestions = async () => {
+    const suggestions = await $fetch(`/api/youtube/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    for (const suggestion of suggestions) {
+      if (suggestion.url.includes('youtube.com')) {
+        discoveredProfiles.value.push({
+          type: 'youtube',
+          title: suggestion.url,
+        });
+      }
+    }
+  }
+
+  await Promise.all([
+    getFacebookSuggestions(),
+    getInstagramSuggestions(),
+    getTiktokSuggestions(),
+    getXSuggestions(),
+    getLinkedinSuggestions(),
+    getYoutubeSuggestions(),
   ]);
 
-  for (const suggestion of facebookSuggestions) {
-    if (suggestion.url.includes('facebook.com')) {
-      discoveredProfiles.value.push({
-        type: 'facebook',
-        title: suggestion.url,
-      });
-    }
-  }
-
-  for (const suggestion of instagramSuggestions) {
-    if (suggestion.url.includes('instagram.com')) {
-      discoveredProfiles.value.push({
-        type: 'instagram',
-        title: suggestion.username,
-      });
-    }
-  }
-
-  for (const suggestion of tiktokSuggestions) {
-    if (suggestion.url.includes('tiktok.com')) {
-      discoveredProfiles.value.push({
-        type: 'tiktok',
-        title: suggestion.url,
-      });
-    }
-  }
-
-  for (const suggestion of xSuggestions) {
-    if (suggestion.url.includes('x.com')) {
-      discoveredProfiles.value.push({
-        type: 'x',
-        title: suggestion.url,
-      });
-    }
-  }
-
-  for (const suggestion of linkedinSuggestions) {
-    if (suggestion.url.includes('linkedin.com')) {
-      discoveredProfiles.value.push({
-        type: 'linkedin',
-        title: suggestion.url,
-      });
-    }
-  }
-
-  for (const suggestion of youtubeSuggestions) {
-    if (suggestion.url.includes('youtube.com')) {
-      discoveredProfiles.value.push({
-        type: 'youtube',
-        title: suggestion.url,
-      });
-    }
-  }
+  discoveryProgress.value = 3;
 
   step.value = 'review';
 }
@@ -223,10 +267,103 @@ const startDiscovery = async () => {
     </UForm>
     </template>
     <template v-if="step === 'discovery'">
-      <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Searching the Web… </h2>
-      <div>Finding your website, maps listings, social profiles, and more. </div>
+      <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Discovering your online presence...</h2>
 
-      <UIcon name="i-lucide-loader-circle" class="animate-spin" @click="step = 'review'" />
+      <UTree size="xl" :items="[
+        {
+          label: 'Map Listings',
+          icon: discoveryProgress < 1 ? 'i-lucide-loader-circle' : 'i-lucide-check',
+          ui: {
+            linkLeadingIcon: discoveryProgress < 1 ? 'animate-spin' : 'text-success',
+          },
+          defaultExpanded: true,
+          children: [
+            ...discoveredProfiles.filter(profile => profile.type === 'google-maps').map(profile => ({
+              label: profile.subtitle,
+              icon: CHANNEL_CONFIG['google-maps'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['google-maps'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'apple-maps').map(profile => ({
+              label: profile.subtitle,
+              icon: CHANNEL_CONFIG['apple-maps'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['apple-maps'].iconColor,
+              }
+            })),
+          ]
+        },
+        {
+          label: 'Website',
+          icon: discoveryProgress < 2 ? 'i-lucide-loader-circle' : 'i-lucide-check',
+          ui: {
+            linkLeadingIcon: discoveryProgress < 2 ? 'animate-spin' : 'text-success',
+          },
+          defaultExpanded: true,
+          children: [
+            ...discoveredProfiles.filter(profile => profile.type === 'website').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['website'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['website'].iconColor,
+              }
+            })),
+          ]
+        },  
+        {
+          label: 'Socials',
+          icon: discoveryProgress < 3 ? 'i-lucide-loader-circle' : 'i-lucide-check',
+          ui: {
+            linkLeadingIcon: discoveryProgress < 3 ? 'animate-spin' : 'text-success',
+          },
+          defaultExpanded: true,
+          children: [
+            ...discoveredProfiles.filter(profile => profile.type === 'facebook').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['facebook'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['facebook'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'instagram').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['instagram'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['instagram'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'tiktok').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['tiktok'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['tiktok'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'x').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['x'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['x'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'linkedin').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['linkedin'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['linkedin'].iconColor,
+              }
+            })),
+            ...discoveredProfiles.filter(profile => profile.type === 'youtube').map(profile => ({
+              label: profile.title,
+              icon: CHANNEL_CONFIG['youtube'].icon,
+              ui: {
+                linkLeadingIcon: CHANNEL_CONFIG['youtube'].iconColor,
+              }
+            })),
+          ]
+        }
+      ]" />
     </template>
     <template v-if="step === 'review'">
       <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Here's What We Found</h2>
@@ -234,7 +371,7 @@ const startDiscovery = async () => {
       <h3 class="text-2xl font-extrabold tracking-tight">{{ businessName }}</h3>
 
       <UFormField label="Business Category" class="mt-4">
-        <USelect v-model="businessCategory" :items="businessCategories" class="min-w-32" />
+        <USelect v-model="categoryId" :items="categoryItems" class="min-w-32" />
       </UFormField>
 
       <div class="mt-2">These are your discovered profiles. Add any we missed below and remove any that aren't yours.
