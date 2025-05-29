@@ -14,6 +14,12 @@ const step = useRouteQuery<'start' | 'discovery' | 'review'>('step', 'start');
 
 const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string }[]> = ref([])
 
+// Add missing profile functionality
+const showAddForm = ref(false)
+const selectedChannelId = ref<ChannelId | undefined>(undefined)
+const newProfileValue = ref('')
+const selectedPlaceDetails = ref<any>(null)
+
 const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
   label: category.label,
   value: category.id,
@@ -22,6 +28,151 @@ const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
 const schema = z.object({
   businessName: z.string().min(1),
 })
+
+// Get available channels that haven't been discovered yet
+const availableChannelOptions = computed(() => {
+  return Object.values(CHANNEL_CONFIG)
+    .map(channel => ({
+      label: channel.name,
+      value: channel.id,
+      icon: channel.icon,
+      ui: {
+        itemLeadingIcon: channel.iconColor
+      }
+    }))
+})
+
+// Dynamic validation schema based on selected channel
+const addProfileSchema = computed(() => {
+  if (!selectedChannelId.value) {
+    return z.object({
+      value: z.string().min(1, 'Please enter a value')
+    })
+  }
+  
+  const channelId = selectedChannelId.value
+  
+  // Define validation based on channel type and database schema
+  const validationMap: Record<ChannelId, z.ZodType<string>> = {
+    // Username fields (from schema: instagramUsername, tiktokUsername, xUsername)
+    'instagram': z.string().min(1, 'Instagram username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    'tiktok': z.string().min(1, 'TikTok username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    'x': z.string().min(1, 'X username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    
+    // URL fields (from schema: websiteUrl, facebookUsername (actually URL), linkedinUrl, youtubeUrl, etc.)
+    'website': z.string().url('Please enter a valid URL').min(1, 'Website URL is required'),
+    'facebook': z.string().url('Please enter a valid URL').refine(url => url.includes('facebook.com'), 'Must be a Facebook URL'),
+    'linkedin': z.string().url('Please enter a valid URL').refine(url => url.includes('linkedin.com'), 'Must be a LinkedIn URL'),
+    'youtube': z.string().url('Please enter a valid URL').refine(url => url.includes('youtube.com'), 'Must be a YouTube URL'),
+    'uber-eats': z.string().url('Please enter a valid URL').refine(url => url.includes('uber'), 'Must be an Uber Eats URL'),
+    'deliveroo': z.string().url('Please enter a valid URL').refine(url => url.includes('deliveroo.com'), 'Must be a Deliveroo URL'),
+    'doordash': z.string().url('Please enter a valid URL').refine(url => url.includes('doordash.com'), 'Must be a DoorDash URL'),
+    'menulog': z.string().url('Please enter a valid URL').refine(url => url.includes('menulog.com'), 'Must be a Menulog URL'),
+    
+    // Place IDs (handled by special components)
+    'google-maps': z.string().min(1, 'Please select a Google Maps place'),
+    'apple-maps': z.string().min(1, 'Please select an Apple Maps place'),
+  }
+  
+  return z.object({
+    value: validationMap[channelId] || z.string().min(1, 'Please enter a value')
+  })
+})
+
+// Helper functions
+const getChannelLabel = (channelId: ChannelId): string => {
+  const labels: Record<ChannelId, string> = {
+    'website': 'Website URL',
+    'facebook': 'Facebook Page URL',
+    'instagram': 'Instagram Username',
+    'tiktok': 'TikTok Username',
+    'youtube': 'YouTube Channel URL',
+    'uber-eats': 'Uber Eats URL',
+    'deliveroo': 'Deliveroo URL',
+    'doordash': 'DoorDash URL',
+    'menulog': 'Menulog URL',
+    'apple-maps': 'Apple Maps Listing',
+    'google-maps': 'Google Maps Listing',
+    'linkedin': 'LinkedIn Profile URL',
+    'x': 'X Username',
+  }
+  return labels[channelId] || CHANNEL_CONFIG[channelId]?.name || 'Value'
+}
+
+const getPlaceholder = (channelId: ChannelId): string => {
+  const placeholders: Record<ChannelId, string> = {
+    'website': 'https://yourwebsite.com',
+    'facebook': 'https://facebook.com/yourpage',
+    'instagram': 'username',
+    'tiktok': 'username',
+    'youtube': 'https://youtube.com/channel/...',
+    'uber-eats': 'https://ubereats.com/...',
+    'deliveroo': 'https://deliveroo.com/...',
+    'doordash': 'https://doordash.com/...',
+    'menulog': 'https://menulog.com/...',
+    'apple-maps': 'Search Apple Maps...',
+    'google-maps': 'Search Google Maps...',
+    'linkedin': 'https://linkedin.com/company/...',
+    'x': 'username',
+  }
+  return placeholders[channelId] || 'Enter value...'
+}
+
+const getInputType = (channelId: ChannelId): string => {
+  const urlChannels: ChannelId[] = ['website', 'facebook', 'linkedin', 'youtube', 'uber-eats', 'deliveroo', 'doordash', 'menulog']
+  return urlChannels.includes(channelId) ? 'url' : 'text'
+}
+
+// Add profile functionality
+const addProfile = (event: any) => {
+  if (!selectedChannelId.value || !newProfileValue.value) return
+  
+  let profileTitle = newProfileValue.value
+  let profileSubtitle: string | undefined = undefined
+  
+  // Handle place inputs specially to show names instead of IDs
+  if (selectedChannelId.value === 'google-maps' || selectedChannelId.value === 'apple-maps') {
+    if (selectedPlaceDetails.value) {
+      if (selectedChannelId.value === 'google-maps') {
+        profileTitle = selectedPlaceDetails.value.title || selectedPlaceDetails.value.displayName?.text || newProfileValue.value
+        profileSubtitle = selectedPlaceDetails.value.description || selectedPlaceDetails.value.formattedAddress
+      } else if (selectedChannelId.value === 'apple-maps') {
+        profileTitle = selectedPlaceDetails.value.name || newProfileValue.value
+        profileSubtitle = selectedPlaceDetails.value.formattedAddressLines?.join(', ')
+      }
+    }
+  }
+  
+  // Add the new profile to discovered profiles
+  discoveredProfiles.value.push({
+    type: selectedChannelId.value,
+    title: profileTitle,
+    subtitle: profileSubtitle,
+  })
+  
+  // Reset form
+  resetAddForm()
+}
+
+const resetAddForm = () => {
+  selectedChannelId.value = undefined
+  newProfileValue.value = ''
+  selectedPlaceDetails.value = null
+  showAddForm.value = false
+}
+
+const handlePlaceDetailsUpdate = (placeDetails: any) => {
+  selectedPlaceDetails.value = placeDetails
+}
+
+const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string }) => {
+  const index = discoveredProfiles.value.findIndex(p => 
+    p.type === profileToRemove.type && p.title === profileToRemove.title
+  )
+  if (index > -1) {
+    discoveredProfiles.value.splice(index, 1)
+  }
+}
 
 const { googleApiKey } = useRuntimeConfig().public;
 const getGooglePlaces = async (name: string) => {
@@ -391,13 +542,109 @@ const startDiscovery = async () => {
             <div v-if="profile.subtitle" class="text-sm text-gray-500">{{ profile.subtitle }}</div>
           </div>
 
-          <UButton icon="lucide-x" size="xs" variant="link" color="neutral">Not mine</UButton>
+          <UButton icon="lucide-x" size="xs" variant="link" color="neutral" @click="removeProfile(profile)">Not mine</UButton>
         </div>
       </div>
 
-      <UButton color="neutral" size="sm" class="mt-3 mx-auto" variant="link" icon="lucide-plus">
-        Add missing
-      </UButton>
+      <!-- Add missing button or form -->
+      <div class="mt-3">
+        <UButton 
+          v-if="!showAddForm && availableChannelOptions.length > 0" 
+          color="neutral" 
+          size="sm" 
+          class="mx-auto" 
+          variant="link" 
+          icon="lucide-plus"
+          @click="showAddForm = true"
+        >
+          Add missing
+        </UButton>
+
+        <!-- Add form -->
+        <UForm 
+          v-if="showAddForm" 
+          :schema="addProfileSchema" 
+          :state="{ value: newProfileValue }" 
+          @submit="addProfile"
+          class="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+        >
+          <div class="flex items-center justify-between">
+            <h4 class="font-medium">Add Missing Profile</h4>
+            <UButton 
+              icon="lucide-x" 
+              size="xs" 
+              variant="ghost" 
+              color="neutral"
+              @click="resetAddForm"
+              aria-label="Close add form"
+            />
+          </div>
+
+          <!-- Channel selector -->
+          <UFormField label="Channel Type" name="channelType">
+            <USelect 
+              v-model="selectedChannelId" 
+              :items="availableChannelOptions"
+              placeholder="Select a channel..."
+            />
+          </UFormField>
+
+          <!-- Dynamic input based on channel type -->
+          <FormFieldWithIcon 
+            v-if="selectedChannelId"
+            :label="getChannelLabel(selectedChannelId)"
+            :icon="CHANNEL_CONFIG[selectedChannelId].icon"
+            :icon-color="CHANNEL_CONFIG[selectedChannelId].iconColor"
+            name="value"
+          >
+            <!-- Use appropriate input component -->
+            <GooglePlaceInput 
+              v-if="selectedChannelId === 'google-maps'" 
+              v-model="newProfileValue" 
+              :placeholder="getPlaceholder(selectedChannelId)"
+              @update:place-details="handlePlaceDetailsUpdate"
+            />
+            <ApplePlaceInput 
+              v-else-if="selectedChannelId === 'apple-maps'" 
+              v-model="newProfileValue" 
+              :placeholder="getPlaceholder(selectedChannelId)"
+              @update:place-details="handlePlaceDetailsUpdate"
+            />
+            <UInput 
+              v-else
+              v-model="newProfileValue" 
+              :placeholder="getPlaceholder(selectedChannelId)"
+              :type="getInputType(selectedChannelId)"
+            />
+          </FormFieldWithIcon>
+
+          <!-- Action buttons -->
+          <div class="flex gap-2 pt-2">
+            <UButton 
+              type="submit" 
+              size="sm"
+              :disabled="!selectedChannelId || !newProfileValue"
+            >
+              Add Profile
+            </UButton>
+            <UButton 
+              variant="ghost" 
+              size="sm"
+              @click="resetAddForm"
+            >
+              Cancel
+            </UButton>
+          </div>
+        </UForm>
+
+        <!-- Show message when no more channels available -->
+        <div 
+          v-if="!showAddForm && availableChannelOptions.length === 0"
+          class="text-center text-sm text-gray-500 mt-3"
+        >
+          All available channels have been added
+        </div>
+      </div>
 
       <div class="flex items-center justify-between gap-2 mt-12">
         <UButton color="neutral" variant="link" icon="lucide-arrow-left"
