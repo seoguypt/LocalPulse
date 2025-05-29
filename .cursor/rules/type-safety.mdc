@@ -1,6 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-Use type safety where possible. Use zode to validate things. E.g. `import { defineEventHandler, getValidatedQuery } from "h3";` in nitro/server

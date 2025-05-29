@@ -3,21 +3,21 @@ description:
 globs: 
 alwaysApply: true
 ---
-- Readme.md contains saas idea, UX flow guidelines, in scope, out of scope
+- Readme.md contains basic app idea
 - Use `pnpm` to install node packages.
 - We are using Nuxt in v4 mode: https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4
 - Use NuxtUI and TailwindCSS for UI: https://ui.nuxt.com/getting-started
-- Use Zod in /shared/utils/schema for types and typesafety
+- Use Zod for types and type safety
 - Avoid premature optimization and remember KISS (Keep it simple stupid)
 - Prefer adding to pre-existing files, rather than creating new ones. Create new ones only if it absolutely makes sense.
-- exported functions, variables in `utils` (in shared, app and server) are autoimported. No need to manually import.
-- We intend to deploy this on Fly.io once development progresses far enough.
-- Our database will be sqlite with drizzle and drizzle-kit for simplicity and typescript.
+- Exported functions, variables in `utils` (in shared, app and server) are autoimported. No need to manually import.
+- Our database will be sqlite with drizzle and drizzle-kit for simplicity and typescript
 - Rely on convention over configuration to keep code shorter and have less complexity
 - Prefer typescript inference
 - Run `pnpm run db:push` to push migrations to the databases (don't generate please)
 - Use conventional commits
 - Don't use `any` or `as`. Use zod to parse and throw an error if the result doesn't match
+
 
 
 
