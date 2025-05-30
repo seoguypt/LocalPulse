@@ -319,18 +319,91 @@ const getCheckItemClasses = (check: any) => {
 
 <template>
   <UContainer as="main" v-if="business" class="py-6">
-    <UBreadcrumb :items="[
-      {
-        label: 'Home',
-        icon: 'i-lucide-house',
-        to: '/'
-      },
-      {
-        label: business.name,
-        icon: 'i-lucide-building',
-        to: `/${business.id}/`
-      }
-    ]" class="print:hidden" />
+    <!-- Print-only layout -->
+    <div class="hidden print:block">
+      <!-- Print header -->
+      <div class="mb-8 border-b pb-4">
+        <h1 class="text-2xl font-bold">{{ business.name }} - Complete Analysis</h1>
+        <p class="text-sm text-gray-600">Generated on {{ todayDate }}</p>
+        <div class="mt-2">
+          <span class="font-semibold">Overall Score: {{ totalImplementationScore.percentage }}%</span>
+          <span class="ml-4 text-sm">({{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points)</span>
+        </div>
+      </div>
+
+      <!-- Executive Summary -->
+      <div class="mb-8 break-inside-avoid">
+        <h2 class="text-xl font-bold mb-4">Executive Summary</h2>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div v-for="channel in channelStatus" :key="channel.name" class="break-inside-avoid">
+            <div class="font-semibold">{{ channel.name }}: {{ channel.percentage }}%</div>
+            <div class="text-gray-600">{{ channel.score }}/{{ channel.total }} points</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Critical Issues -->
+      <div class="mb-8 break-inside-avoid">
+        <h2 class="text-xl font-bold mb-4">Critical Issues</h2>
+        <div v-for="[channelName, channelChecks] in Object.entries(channelChecks)" :key="channelName" class="mb-4">
+          <div v-if="channelChecks.some(c => c.status === 'fail' || c.status === 'error')">
+            <h3 class="font-semibold text-red-600 mb-2">{{ channelName }}</h3>
+            <ul class="list-disc list-inside text-sm space-y-1">
+              <li v-for="check in channelChecks.filter(c => c.status === 'fail' || c.status === 'error')" :key="check.id">
+                <span class="font-medium">{{ check.title }}</span> ({{ check.points }} points)
+                <span v-if="check.result?.label" class="italic text-gray-600"> - {{ check.result.label }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page break before detailed sections -->
+      <div class="page-break"></div>
+
+      <!-- All checks expanded for print -->
+      <div v-for="[channelName, channelChecks] in Object.entries(channelChecks)" :key="channelName" class="mb-8 break-inside-avoid">
+        <h2 class="text-lg font-bold mb-4 border-b pb-2">{{ channelName }}</h2>
+        
+        <div v-for="check in channelChecks" :key="check.id" class="mb-6 break-inside-avoid">
+          <div class="flex items-center gap-2 mb-2">
+            <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
+            <h3 class="font-semibold">{{ check.title }}</h3>
+            <UBadge :color="getStatusColor(check.status)" variant="soft" class="capitalize">
+              {{ getStatusLabel(check.status) }}
+            </UBadge>
+            <span class="text-xs text-gray-500">({{ check.points }} points)</span>
+          </div>
+          
+          <div v-if="check.result?.label" class="text-sm italic text-gray-600 mb-2">
+            {{ check.result.label }}
+          </div>
+          
+          <ContentRenderer 
+            v-if="check.content"
+            :value="check.content" 
+            tag="article" 
+            class="prose prose-xs max-w-none print-content" 
+            :prose="false" 
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen-only layout -->
+    <div class="print:hidden">
+      <UBreadcrumb :items="[
+        {
+          label: 'Home',
+          icon: 'i-lucide-house',
+          to: '/'
+        },
+        {
+          label: business.name,
+          icon: 'i-lucide-building',
+          to: `/${business.id}/`
+        }
+      ]" class="print:hidden" />
 
     <div class="flex items-center justify-between print:flex-col print:gap-2 mt-2">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
@@ -503,6 +576,7 @@ const getCheckItemClasses = (check: any) => {
       </UCard>
     </div>
 
+    </div>
     <!-- Footer -->
     <footer class="mt-6 py-4 text-center text-xs text-slate-500">
       <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{
@@ -513,6 +587,41 @@ const getCheckItemClasses = (check: any) => {
 
 <style>
 @page {
-  margin: 0;
+  margin: 1in;
+  size: A4;
+}
+
+@media print {
+  .page-break {
+    page-break-before: always;
+  }
+  
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+  
+  .print-content h1, 
+  .print-content h2, 
+  .print-content h3 {
+    break-after: avoid;
+  }
+  
+  .print-content {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  
+  .print-content p {
+    margin-bottom: 0.5rem;
+  }
+  
+  .print-content ul, 
+  .print-content ol {
+    margin-bottom: 0.5rem;
+  }
+  
+  .print-content li {
+    margin-bottom: 0.25rem;
+  }
 }
 </style>
