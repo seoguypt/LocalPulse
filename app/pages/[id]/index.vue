@@ -1099,7 +1099,7 @@ const print = () => {
         icon: 'i-lucide-building',
         to: `/${business.id}/`
       }
-    ]" />
+    ]" class="print:hidden" />
 
     <div class="flex items-center justify-between print:flex-col print:gap-2 mt-2">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
