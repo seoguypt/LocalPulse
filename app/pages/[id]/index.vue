@@ -171,7 +171,7 @@ const totalCheckTime = computed(() => {
 })
 
 // Selection state for the tree
-const selectedCheckId = ref<string | null>(null)
+const selectedCheckId = ref<string | undefined>(undefined)
 const selectedCheck = computed(() => {
   return checks.value.find(c => c.id === selectedCheckId.value)
 })
@@ -315,6 +315,35 @@ const getCheckItemClasses = (check: any) => {
     default: return 'text-gray-500 dark:text-gray-400'
   }
 }
+
+const checksAsSelectItems = computed(() => {
+  // return checks.value.map(check => ({
+  //   label: check.title,
+  //   value: check.id,
+  //   icon: getCheckIcon(check.status),
+  //   ui: {
+  //     itemLeadingIcon: getCheckIconColor(check.status),
+  //   }
+  // }))
+  if (!channelChecks.value) return []
+
+  return Object.entries(channelChecks.value).flatMap(([categoryName, channels]) => 
+    [{
+      type: 'label' as const,
+      label: categoryName,
+    },...channels.map(check => ({
+      label: check.title,
+      value: check.id,
+      icon: getCheckIcon(check.status),
+      type: 'item' as const,
+      ui: {
+        itemLeadingIcon: getCheckIconColor(check.status),
+      }
+    })), {
+    type: 'separator' as const
+  }]
+  )
+})
 </script>
 
 <template>
@@ -405,7 +434,7 @@ const getCheckItemClasses = (check: any) => {
         }
       ]" />
 
-    <div class="flex items-center justify-between mt-2">
+    <div class="flex max-md:flex-col md:items-center justify-between mt-2 gap-3">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
 
       <div class="flex items-center gap-2">
@@ -420,8 +449,8 @@ const getCheckItemClasses = (check: any) => {
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-8 mt-8">
-      <UCard variant="subtle" class="col-span-1">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+      <UCard variant="subtle" class="col-span-1 max-md:row-start-3">
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-xl font-bold">{{ business.name }}</h2>
 
@@ -461,17 +490,17 @@ const getCheckItemClasses = (check: any) => {
         </div>
       </div>
 
-      <UCard variant="subtle" class="col-span-2 row-span-2">
+      <UCard variant="subtle" class="col-span-1 md:col-span-2 md:row-span-2">
         <h2 class="sr-only">Summary</h2>
 
         <div class="flex flex-col items-center gap-8">
           <div class="flex flex-col items-center gap-4">
-            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40 print:size-24" />
+            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
 
             <div class="text-xl font-bold">Overall Score</div>
           </div>
 
-          <div class="grid gap-4" :class="business.category === 'food' ? 'grid-cols-4' : 'grid-cols-3'">
+          <div class="grid gap-4" :class="business.category === 'food' ? 'grid-cols-2 md:grid-cols-4' : 'md:grid-cols-3'">
             <div class="flex flex-col items-center gap-2">
               <CircularProgress
                 :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
@@ -501,13 +530,11 @@ const getCheckItemClasses = (check: any) => {
         </div>
       </UCard>
 
-      <UCard variant="subtle" class="col-span-3">
-        <h2 class="sr-only">Checks</h2>
-
-        <div class="flex gap-6">
+      <UCard variant="subtle" class="md:col-span-3">
+        <div class="flex max-md:flex-col gap-12">
           <!-- Left Column: Tree View -->
-          <div class="shrink-0 w-sm">
-            <div class="flex items-center justify-between mb-4">
+          <div class="md:shrink-0 md:w-sm flex flex-col gap-4">
+            <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold">Checks</h3>
               <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="subtle" size="sm" @click="refreshChecks"
                 aria-label="Refresh checks">
@@ -516,7 +543,7 @@ const getCheckItemClasses = (check: any) => {
             </div>
 
             <UAccordion type="multiple" :default-value="channelChecks ? Object.keys(channelChecks) : []"
-              :items="treeData">
+              :items="treeData" class="max-md:hidden">
               <template #default="{ item }">
                 <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
                 <UBadge :color="item.passedPoints === item.totalPoints ? 'success' : 'warning'" variant="soft"
@@ -528,7 +555,7 @@ const getCheckItemClasses = (check: any) => {
               <template #content="{ item }">
                 <div class="flex flex-col">
                   <button type="button" v-for="check in item.checks" :key="check.id"
-                    class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated"
+                    class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated w-full"
                     @click="selectedCheckId = check.id" :class="[getCheckItemClasses(check)]">
                     <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
                     <span class="truncate">{{ check.title }}</span>
@@ -538,12 +565,14 @@ const getCheckItemClasses = (check: any) => {
             </UAccordion>
           </div>
 
+          <USelect v-model="selectedCheckId" :items="checksAsSelectItems" placeholder="Select a check" class="md:hidden sticky top-3" size="xl" :clearable="false" />
+
           <!-- Right Column: Details Panel -->
-          <div class="pl-6 w-full">
+          <div class="w-full">
             <div v-if="!selectedCheck" class="flex items-center justify-center h-full text-center">
               <div class="text-gray-500 dark:text-gray-400">
                 <UIcon name="i-lucide-mouse-pointer-click" class="size-8 mx-auto mb-2" />
-                <p class="text-sm">Select a check from the tree to view details</p>
+                <p class="text-sm">Select a check from the <span class="max-md:hidden">tree</span><span class="md:hidden">dropdown</span> to view details</p>
               </div>
             </div>
 
