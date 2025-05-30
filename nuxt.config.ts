@@ -32,5 +32,9 @@ export default defineNuxtConfig({
     public: {
       googleApiKey: process.env.NUXT_PUBLIC_GOOGLE_API_KEY,
     }
+  },
+
+  routeRules: {
+    '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' }
   }
 })
