@@ -6,168 +6,19 @@ const id = route.params.id as string;
 
 const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
-const mode = computed(() => {
-  // business.category should now be a categoryId ('food', 'retail', 'services', 'other')
-  return business.value?.category || 'other'; // Default to 'other'
-});
+if (!business.value) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Business not found'
+  })
+}
 
-// Definition of check weights by business mode (out of 100 total points)
-const modeCheckWeights: Record<string, Record<string, number>> = {
-  'food': {
-    // Google Business Profile (31 points total)
-    'google-listing': 8,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-photos': 3,
-    'google-listing-reviews': 8, // Higher weight for food businesses
+const { data: checkContent } = await useAsyncData('checkContent', async () => {
+  const checkContent = await queryCollection('checks')
+      .all()
 
-    // Core site hygiene & UX (25 points total)
-    'website': 6, // Site exists (treating as HTTPS check)
-    'website-200-299': 6,
-    'website-mobile-responsive': 6,
-    'website-performance': 4, // Slightly lower for food
-    'website-menu-page': 3, // Menu page exists - food specific
-
-    // Structured data & on-page SEO (15 points total)
-    'website-localbusiness-jsonld': 3,
-    'website-menu-jsonld': 3, // Food specific
-    'website-title': 4,
-    'website-meta-description': 2,
-    'website-canonical': 1,
-    'website-robots': 1,
-    'website-sitemap': 1,
-
-    // Social proof & conversion cues (20 points total)
-    'website-tel-link': 2,
-    'website-og-image': 1,
-    'instagram-profile': 5, // Higher for food
-    'facebook-page': 4,
-    'tiktok-profile': 3, // Food businesses benefit from TikTok
-
-    // Website ↔ GBP parity (9 points total)
-    'website-gbp-name-address-phone': 4,
-    'website-physical-address': 3,
-    'website-opening-hours': 2
-  },
-  'retail': {
-    // Google Business Profile (28 points total)
-    'google-listing': 8,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-phone-number': 2,
-    'google-listing-photos': 4,
-    'google-listing-reviews': 4,
-
-    // Core site hygiene & UX (30 points total)
-    'website': 8, // Higher for retail
-    'website-200-299': 8,
-    'website-mobile-responsive': 8,
-    'website-performance': 6, // Important for retail
-
-    // Structured data & on-page SEO (18 points total)
-    'website-localbusiness-jsonld': 4,
-    'website-title': 6,
-    'website-meta-description': 3,
-    'website-canonical': 2,
-    'website-robots': 2,
-    'website-sitemap': 1,
-
-    // Social proof & conversion cues (16 points total)
-    'website-tel-link': 2,
-    'website-og-image': 2,
-    'instagram-profile': 4,
-    'facebook-page': 3,
-    'tiktok-profile': 3,
-    'youtube-profile': 2, // Product demos
-
-    // Website ↔ GBP parity (8 points total)
-    'website-gbp-name-address-phone': 4,
-    'website-physical-address': 2,
-    'website-opening-hours': 2
-  },
-  'services': {
-    // Google Business Profile (35 points total)
-    'google-listing': 10, // Very important for services
-    'google-listing-primary-category': 5,
-    'google-listing-opening-times': 4,
-    'google-listing-website-matches': 4,
-    'google-listing-phone-number': 4,
-    'google-listing-photos': 3,
-    'google-listing-reviews': 5,
-
-    // Core site hygiene & UX (25 points total)
-    'website': 6,
-    'website-200-299': 6,
-    'website-mobile-responsive': 6,
-    'website-performance': 4,
-    'website-tel-link': 3, // Very important for services
-
-    // Structured data & on-page SEO (20 points total)
-    'website-localbusiness-jsonld': 5,
-    'website-title': 6,
-    'website-meta-description': 4,
-    'website-canonical': 2,
-    'website-robots': 2,
-    'website-sitemap': 1,
-
-    // Social proof & conversion cues (12 points total)
-    'website-og-image': 2,
-    'facebook-page': 5, // Main social platform for services
-    'instagram-profile': 2,
-    'linkedin-profile': 3, // Professional services
-
-    // Website ↔ GBP parity (8 points total)
-    'website-gbp-name-address-phone': 4,
-    'website-physical-address': 2,
-    'website-opening-hours': 2
-  },
-  'other': {
-    // Google Business Profile (30 points total) - balanced approach
-    'google-listing': 8,
-    'google-listing-primary-category': 4,
-    'google-listing-opening-times': 3,
-    'google-listing-website-matches': 3,
-    'google-listing-phone-number': 3,
-    'google-listing-photos': 4,
-    'google-listing-reviews': 5,
-
-    // Core site hygiene & UX (28 points total)
-    'website': 7, // HTTPS check
-    'website-200-299': 7,
-    'website-mobile-responsive': 7,
-    'website-performance': 5,
-    'website-tel-link': 2,
-
-    // Structured data & on-page SEO (18 points total)
-    'website-localbusiness-jsonld': 4,
-    'website-title': 5,
-    'website-meta-description': 3,
-    'website-canonical': 2,
-    'website-robots': 2,
-    'website-sitemap': 2,
-
-    // Social proof & conversion cues (16 points total)
-    'website-og-image': 2,
-    'facebook-page': 4,
-    'instagram-profile': 3,
-    'tiktok-profile': 2,
-    'youtube-profile': 2,
-    'linkedin-profile': 3,
-
-    // Website ↔ GBP parity (8 points total)
-    'website-gbp-name-address-phone': 4,
-    'website-physical-address': 2,
-    'website-opening-hours': 2
-  }
-};
-
-// Default to 'other' if no mode is selected or mode doesn't exist
-const checkWeights = computed(() => {
-  return modeCheckWeights[mode.value] || modeCheckWeights['other'];
-});
+  return checkContent.filter(check => check.businessCategories?.includes(business.value!.category) || check.businessCategories === null) 
+})
 
 const resultSchema = z.discriminatedUnion('type', [
   z.object({
@@ -179,93 +30,30 @@ const resultSchema = z.discriminatedUnion('type', [
 
 const checkSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  channel: z.string(),
+  title: z.string(),
+  channelCategory: z.string(),
   status: z.enum(['idle', 'pending', 'pass', 'fail', 'error']),
   result: resultSchema.nullable().default(null),
-  weight: z.number().default(1), // Weight for this check in the scoring system
   startTime: z.number().optional(), // Timestamp when check started
   endTime: z.number().optional(), // Timestamp when check completed
-  duration: z.number().optional() // Duration in milliseconds
+  duration: z.number().optional(), // Duration in milliseconds
+  points: z.number().default(0),
+  content: z.any()
 })
 
 type Check = z.infer<typeof checkSchema>
 
 const checks = ref<Check[]>([])
-
-// Centralized check definitions
-const allCheckDefinitions = [
-  // Google Business Profile checks (apply to all businesses)
-  { id: 'google-listing', name: 'Profile/listing exists', channel: 'Google Business Profile' },
-  { id: 'google-listing-primary-category', name: 'Primary category is set', channel: 'Google Business Profile' },
-  { id: 'google-listing-opening-times', name: 'Opening hours are present', channel: 'Google Business Profile' },
-  { id: 'google-listing-website-matches', name: 'Has the configured website', channel: 'Google Business Profile' },
-  { id: 'google-listing-phone-number', name: 'Phone number matches your website', channel: 'Google Business Profile' },
-  { id: 'google-listing-photos', name: '≥ 3 photos', channel: 'Google Business Profile' },
-  { id: 'google-listing-reviews', name: 'Rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
-
-  // Core site hygiene & UX (apply to all businesses)
-  { id: 'website', name: 'Uses modern security (HTTPS)', channel: 'Website' },
-  { id: 'website-200-299', name: 'Returns an expected status code', channel: 'Website' },
-  { id: 'website-mobile-responsive', name: 'Is mobile friendly', channel: 'Website' },
-  { id: 'website-performance', name: 'Shows content within 3 seconds', channel: 'Website' },
-
-  // Structured data & on-page SEO (apply to all businesses)
-  { id: 'website-localbusiness-jsonld', name: 'Has business structured data', channel: 'Website' },
-  { id: 'website-meta-description', name: 'Has an Search Engine optimised description', channel: 'Website' },
-  { id: 'website-canonical', name: 'Has a canonical (preferred) URL', channel: 'Website' },
-  { id: 'website-robots', name: 'Accessible for search engines', channel: 'Website' },
-  { id: 'website-sitemap', name: 'Has a sitemap', channel: 'Website' },
-
-  // Social proof & conversion cues (apply to all businesses)
-  { id: 'website-tel-link', name: 'Has a click-to-call link', channel: 'Website' },
-  { id: 'website-og-image', name: 'Has a preview image set', channel: 'Website' },
-  { id: 'facebook-page', name: 'Has a Facebook page', channel: 'Social Media' },
-  { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
-
-  // Website ↔ GBP parity (apply to all businesses)
-  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
-
-  // Food-specific checks
-  // { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food'] },
-  { id: 'website-menu-jsonld', name: 'Structured data for menus', channel: 'Website', modes: ['food'] },
-  { id: 'website-title', name: 'Title contains business name and suburb/city', channel: 'Website', modes: ['food'] },
-  { id: 'website-gbp-name-address-phone', name: 'Name, address & phone match your google listing', channel: 'Website', modes: ['food'] },
-
-  // Food & Retail-specific checks
-  { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website', modes: ['food', 'retail'] },
-
-  // Social media platforms (different relevance by category)
-  { id: 'tiktok-profile', name: 'Has a TikTok profile', channel: 'Social Media', modes: ['food', 'retail', 'other'] },
-  { id: 'youtube-profile', name: 'Has a YouTube channel', channel: 'Social Media', modes: ['retail', 'other'] },
-  { id: 'linkedin-profile', name: 'Has a LinkedIn profile', channel: 'Social Media', modes: ['services', 'other'] },
-
-  // Food delivery platforms (food-specific)
-  { id: 'uber-eats-listing', name: 'Uber Eats Listing', channel: 'Food Delivery', modes: ['food'] },
-  { id: 'menulog-listing', name: 'Menulog Listing', channel: 'Food Delivery', modes: ['food'] },
-  { id: 'doordash-listing', name: 'DoorDash Listing', channel: 'Food Delivery', modes: ['food'] },
-  { id: 'deliveroo-listing', name: 'Deliveroo Listing', channel: 'Food Delivery', modes: ['food'] },
-]
-
-// Filter checks based on the current mode
-const activeCheckDefinitions = computed(() => {
-  return allCheckDefinitions.filter(def =>
-    !def.modes || def.modes.includes(mode.value)
-  )
-})
-
-const addCheck = async (name: string, checkId: string, channel: string) => {
-  // Get the weight for this check, or default to 1
-  const weight = checkWeights.value?.[checkId] || 1
-
+const addCheck = async (title: string, checkId: string, channelCategory: string, points: any, content: any) => {
   const startTime = Date.now()
   const check: Ref<Check> = ref(checkSchema.parse({
     id: checkId,
-    name,
-    channel,
+    title,
+    channelCategory,
     status: 'pending',
-    weight,
-    startTime
+    startTime,
+    points: points[business.value!.category] || 0,
+    content
   }))
   checks.value.push(unref(check))
   try {
@@ -289,16 +77,16 @@ const addCheck = async (name: string, checkId: string, channel: string) => {
   }
 }
 
-// Dynamically load checks based on mode
-watchEffect(() => {
-  // Clear existing checks
+const refreshChecks = () => {
+  if (!checkContent.value) return;
+
   checks.value = []
 
-  // Add all active checks for the current mode
-  activeCheckDefinitions.value.forEach(def => {
-    addCheck(def.name, def.id, def.channel)
+  checkContent.value.forEach(checkContentItem => {
+    addCheck(checkContentItem.title, checkContentItem.path.split('/').pop()!, checkContentItem.channelCategory, checkContentItem.points, checkContentItem)
   })
-})
+}
+watchEffect(refreshChecks)
 
 // Organize checks by channel
 const channelChecks = computed<Record<string, Check[]>>(() => {
@@ -306,7 +94,7 @@ const channelChecks = computed<Record<string, Check[]>>(() => {
 
   // Group checks by channel
   checks.value.forEach(check => {
-    const channelName = check.channel || 'Uncategorized'
+    const channelName = check.channelCategory
     if (!channels[channelName]) {
       channels[channelName] = []
     }
@@ -334,9 +122,9 @@ const channelStatus = computed<ChannelStatus[]>(() => {
     if (items.length) {
       // Count successful checks, factoring in their weights
       items.forEach(item => {
-        totalWeight += item.weight
+        totalWeight += item.points
         if (item.status === 'pass') {
-          score += item.weight
+          score += item.points
         }
       })
 
@@ -356,10 +144,10 @@ const channelStatus = computed<ChannelStatus[]>(() => {
 // Total implementation score
 const totalImplementationScore = computed(() => {
   // Calculate total weight of all checks
-  const totalWeight = checks.value.reduce((acc, check) => acc + check.weight, 0)
+  const totalWeight = checks.value.reduce((acc, check) => acc + check.points, 0)
   // Calculate scored weight based on check results
   const scoredWeight = checks.value.reduce((acc, check) => {
-    return acc + (check.status === 'pass' ? check.weight : 0)
+    return acc + (check.status === 'pass' ? check.points : 0)
   }, 0)
   // Compute percentage using the critical score algorithm
   const percentage = totalWeight > 0 ? (scoredWeight / totalWeight) * 100 : 0
@@ -400,20 +188,22 @@ const treeData = computed(() => {
       if (statusDiff !== 0) return statusDiff
 
       // Within same status, sort by highest points to lowest
-      return b.weight - a.weight
+      return b.points - a.points
     })
 
     // Calculate channel score
-    const totalWeight = channelChecks.reduce((acc, check) => acc + check.weight, 0)
-    const passedWeight = channelChecks.reduce((acc, check) => acc + (check.status === 'pass' ? check.weight : 0), 0)
+    const totalPoints = channelChecks.reduce((acc, check) => acc + check.points, 0)
+    const passedPoints = channelChecks.reduce((acc, check) => acc + (check.status === 'pass' ? check.points : 0), 0)
 
     return {
       label: channelName,
       value: channelName,
-      totalWeight,
-      passedWeight,
+      totalPoints,
+      passedPoints,
       checks: sortedChecks
     }
+  }).sort((a, b) => {
+    return a.label.localeCompare(b.label)
   })
 
   return sortedChannels
@@ -438,473 +228,6 @@ const getCheckIconColor = (status: string) => {
     default: return 'text-gray-500'
   }
 }
-
-// Add refresh method to reload all checks
-const refreshChecks = () => {
-  // Clear existing checks and selection
-  checks.value = []
-
-  // Add all active checks for the current mode
-  activeCheckDefinitions.value.forEach(def => {
-    addCheck(def.name, def.id, def.channel)
-  })
-}
-
-// Define interface for check details
-interface CheckDetail {
-  what: string;
-  issues: string;
-  fix: string;
-  impact: string;
-}
-
-const checkDetails = ref<Record<string, CheckDetail>>({
-  'google-listing': {
-    what: `<p>Checks if your business is listed and visible as a <strong>Google Business Profile</strong> (Google Maps & Search).</p>`,
-    issues: `<ul>
-      <li>Customers can't find your business when searching locally.</li>
-      <li>Missing critical info (hours, directions) means lost sales.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Visit <a href="https://business.google.com">business.google.com</a> and add your business details.</li>
-      <li>Complete Google's simple verification.</li>
-      <li>Optimize your profile for better visibility.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Appear in local searches and gain immediate visibility.</li>
-      <li>Get more clicks, calls, and visits.</li>
-    </ul>`
-  },
-
-  'google-listing-primary-category': {
-    what: `<p>Ensures your business's <strong>primary category</strong> matches exactly what you offer.</p>`,
-    issues: `<ul>
-      <li>Less visibility or irrelevant search results.</li>
-      <li>Lost customers who can't find you for specific services.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Select the most accurate category in your Google profile.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Show up clearly in relevant searches.</li>
-      <li>Increase customer engagement and visits.</li>
-    </ul>`
-  },
-
-  'google-listing-opening-times': {
-    what: `<p>Confirms your opening and closing times are clearly listed.</p>`,
-    issues: `<ul>
-      <li>Confusion or negative reviews if customers can't find your hours.</li>
-      <li>Lost business from unclear availability.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Update your opening hours regularly in your Google profile.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Customers trust and easily visit during correct hours.</li>
-      <li>Reduced confusion and better Google ranking.</li>
-    </ul>`
-  },
-
-  'google-listing-website-matches': {
-    what: `<p>Checks that the website link on Google matches your official site exactly.</p>`,
-    issues: `<ul>
-      <li>Customers landing on incorrect or broken sites.</li>
-      <li>Loss of trust and fewer online conversions.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Ensure your Google profile website matches your main website exactly.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Smooth customer journey from search to your website.</li>
-      <li>Higher trust and more conversions.</li>
-    </ul>`
-  },
-
-  'google-listing-phone-number': {
-    what: `<p>Ensures your listed phone number matches your website.</p>`,
-    issues: `<ul>
-      <li>Missed or misdirected customer calls.</li>
-      <li>Lower Google ranking from mismatched info.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Update your phone number in Google to match your website exactly.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Fewer missed calls, higher customer trust.</li>
-      <li>Better ranking and visibility on Google.</li>
-    </ul>`
-  },
-
-  'google-listing-photos': {
-    what: `<p>Verifies at least three quality photos are uploaded.</p>`,
-    issues: `<ul>
-      <li>Listings without photos get overlooked.</li>
-      <li>Customers less likely to engage.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Upload clear, attractive photos of your business to your Google profile.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Attract more clicks and engagement.</li>
-      <li>Increased trust and visibility online.</li>
-    </ul>`
-  },
-
-  'google-listing-reviews': {
-    what: `<p>Checks your listing has at least 20 reviews averaging 4 stars or higher.</p>`,
-    issues: `<ul>
-      <li>Fewer clicks and lost customers due to low trust.</li>
-      <li>Poor ranking and visibility.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Encourage happy customers to review your business.</li>
-      <li>Respond professionally to all reviews.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Higher credibility and more customers.</li>
-      <li>Improved local search ranking.</li>
-    </ul>`
-  },
-
-  'website': {
-    what: `<p>Checks if your website uses secure <strong>HTTPS</strong> (padlock icon).</p>`,
-    issues: `<ul>
-      <li>Customers may avoid your site due to security warnings.</li>
-      <li>Your site's ranking and trust can be reduced.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Install an SSL certificate through your hosting provider.</li>
-      <li>Ensure all pages redirect to HTTPS securely.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Improved customer trust and higher rankings on Google.</li>
-      <li>Secure browsing experience for visitors.</li>
-    </ul>`
-  },
-
-  'website-200-299': {
-    what: `<p>Checks that your website consistently loads without errors (status codes 200-299).</p>`,
-    issues: `<ul>
-      <li>Customers face broken pages or errors.</li>
-      <li>Decreased trust and lost conversions.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Fix broken links or pages causing errors.</li>
-      <li>Regularly monitor your site for uptime and errors.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Smooth browsing experience and reliable access.</li>
-      <li>Higher customer satisfaction and conversions.</li>
-    </ul>`
-  },
-
-  'website-mobile-responsive': {
-    what: `<p>Ensures your website works well on smartphones and tablets.</p>`,
-    issues: `<ul>
-      <li>Customers have trouble navigating your site on mobile.</li>
-      <li>Lost sales from mobile visitors.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Use a responsive website design that adapts automatically.</li>
-      <li>Test your site on various mobile devices.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced user experience on all devices.</li>
-      <li>Improved conversions and Google rankings.</li>
-    </ul>`
-  },
-
-  'website-performance': {
-    what: `<p>Checks your website loads quickly, with content visible in under 3 seconds.</p>`,
-    issues: `<ul>
-      <li>Customers abandon slow-loading pages.</li>
-      <li>Lower search engine ranking and reduced visibility.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Optimize images, scripts, and website code for speed.</li>
-      <li>Use performance testing tools to monitor improvements.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Faster loading improves customer retention.</li>
-      <li>Better search rankings and higher engagement.</li>
-    </ul>`
-  },
-
-  'website-localbusiness-jsonld': {
-    what: `<p>Confirms structured data for <strong>LocalBusiness</strong> is included on your site.</p>`,
-    issues: `<ul>
-      <li>Your business may be less visible in local search results.</li>
-      <li>Lower trust from Google about your business details.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Add LocalBusiness JSON-LD structured data to your website.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced visibility in local search results.</li>
-      <li>Improved search engine trust and ranking.</li>
-    </ul>`
-  },
-
-  'website-menu-jsonld': {
-    what: `<p>Verifies your menu items are correctly structured using JSON-LD for food businesses.</p>`,
-    issues: `<ul>
-      <li>Your menu might not appear prominently in Google searches.</li>
-      <li>Lost opportunities from customers looking for specific dishes.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Implement Menu JSON-LD structured data on your menu pages.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Improved visibility of your menu items in search results.</li>
-      <li>Higher customer engagement and click-through rates.</li>
-    </ul>`
-  },
-
-  'website-title': {
-    what: `<p>Checks your website's page titles include your business name and suburb/city clearly.</p>`,
-    issues: `<ul>
-      <li>Lower visibility in local search results.</li>
-      <li>Missed opportunities to attract local customers.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Update your website titles to include your business name and location.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Better ranking and visibility in local search.</li>
-      <li>Increased clicks from targeted local searches.</li>
-    </ul>`
-  },
-
-  'website-meta-description': {
-    what: `<p>Ensures your site includes concise meta descriptions (under 160 characters).</p>`,
-    issues: `<ul>
-      <li>Lower click-through rate from search results.</li>
-      <li>Missed chance to clearly present your offerings.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Write clear, concise meta descriptions under 160 characters.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Improved click-through from Google.</li>
-      <li>Enhanced clarity and appeal of your search snippets.</li>
-    </ul>`
-  },
-
-  'website-canonical': {
-    what: `<p>Confirms every webpage specifies a canonical URL.</p>`,
-    issues: `<ul>
-      <li>Potential duplicate content issues harming SEO.</li>
-      <li>Reduced Google ranking due to confusion.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Add canonical tags to all pages pointing clearly to your preferred URL.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Better SEO performance and ranking clarity.</li>
-      <li>Avoids duplicate content penalties.</li>
-    </ul>`
-  },
-
-  'website-robots': {
-    what: `<p>Checks your robots.txt file isn't blocking your homepage from search engines.</p>`,
-    issues: `<ul>
-      <li>Your homepage won't appear in search results.</li>
-      <li>Significant loss of online visibility and traffic.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Ensure robots.txt allows search engines to access your homepage.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Ensures maximum visibility in search results.</li>
-      <li>Increases traffic and potential conversions.</li>
-    </ul>`
-  },
-
-  'website-sitemap': {
-    what: `<p>Ensures your sitemap file is accessible to search engines.</p>`,
-    issues: `<ul>
-      <li>Your website pages may not be fully discovered by search engines.</li>
-      <li>Lower search visibility and missed traffic.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create and submit a sitemap to Google Search Console.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Full website indexing by search engines.</li>
-      <li>Improved search rankings and visibility.</li>
-    </ul>`
-  },
-
-  'website-tel-link': {
-    what: `<p>Checks if your website includes clickable phone number links.</p>`,
-    issues: `<ul>
-      <li>Customers struggle to call directly from your site.</li>
-      <li>Reduced convenience and potential loss of calls.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Add click-to-call (tel:) links to your phone numbers on your website.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Easier customer contact and increased phone conversions.</li>
-      <li>Improved user experience.</li>
-    </ul>`
-  },
-
-  'website-og-image': {
-    what: `<p>Ensures your site has Open Graph images set for social sharing.</p>`,
-    issues: `<ul>
-      <li>Poor appearance when your site is shared on social media.</li>
-      <li>Reduced clicks and social engagement.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Add an appealing Open Graph (og:image) to your website pages.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Increased visibility and clicks from social media.</li>
-      <li>Enhanced professionalism and branding.</li>
-    </ul>`
-  },
-
-  'instagram-profile': {
-    what: `<p>Checks if your business has an active Instagram profile.</p>`,
-    issues: `<ul>
-      <li>Missed opportunity to engage customers visually.</li>
-      <li>Reduced brand visibility among younger demographics.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create and regularly update an Instagram profile for your business.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Greater brand exposure and customer interaction.</li>
-      <li>Increased customer loyalty and visibility.</li>
-    </ul>`
-  },
-
-  'facebook-page': {
-    what: `<p>Checks if your business has an active Facebook page.</p>`,
-    issues: `<ul>
-      <li>Missed engagement opportunities with a large audience.</li>
-      <li>Reduced credibility for customers checking social presence.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create and maintain an active Facebook page.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced customer engagement and brand credibility.</li>
-      <li>Improved online visibility and referrals.</li>
-    </ul>`
-  },
-
-  'tiktok-profile': {
-    what: `<p>Ensures your business maintains a TikTok profile.</p>`,
-    issues: `<ul>
-      <li>Missed opportunity to connect with younger audiences.</li>
-      <li>Reduced competitive presence.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create engaging content regularly on TikTok.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Increased reach and brand visibility among younger demographics.</li>
-      <li>Higher engagement and potential customer growth.</li>
-    </ul>`
-  },
-
-  'website-gbp-name-address-phone': {
-    what: `<p>Checks if your website and Google profile have matching business details.</p>`,
-    issues: `<ul>
-      <li>Confusion from inconsistent information.</li>
-      <li>Reduced trust from Google, affecting local rankings.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Ensure business details (name, address, phone) match exactly on your website and Google profile.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Increased trust and improved local search rankings.</li>
-      <li>Enhanced customer clarity and conversions.</li>
-    </ul>`
-  },
-
-  'website-physical-address': {
-    what: `<p>Verifies your physical address is prominently displayed on your site.</p>`,
-    issues: `<ul>
-      <li>Customers struggle to find your physical location.</li>
-      <li>Reduced Google local search ranking.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Add your business address clearly in the website header or footer.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Improved customer convenience and local SEO.</li>
-      <li>Higher credibility and trust.</li>
-    </ul>`
-  },
-
-  'website-opening-hours': {
-    what: `<p>Checks your website clearly displays opening hours.</p>`,
-    issues: `<ul>
-      <li>Customers unclear about when you're open.</li>
-      <li>Potential loss of visits or inquiries.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Display your opening hours clearly on your website.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced customer convenience and trust.</li>
-      <li>Increased foot traffic and customer satisfaction.</li>
-    </ul>`
-  },
-
-  'website-menu-page': {
-    what: `<p>Checks if your food business has a dedicated menu page on the website.</p>`,
-    issues: `<ul>
-      <li>Customers can't easily find what you offer.</li>
-      <li>Lost sales from unclear menu information.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create a clear, easy-to-find menu page on your website.</li>
-      <li>Include prices, descriptions, and appealing photos.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Increased customer engagement and orders.</li>
-      <li>Better user experience and higher conversions.</li>
-    </ul>`
-  },
-
-  'youtube-profile': {
-    what: `<p>Checks if your business has an active YouTube channel.</p>`,
-    issues: `<ul>
-      <li>Missed opportunity for video marketing and demonstrations.</li>
-      <li>Reduced visibility in video search results.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create a YouTube channel for your business.</li>
-      <li>Upload product demos, tutorials, or behind-the-scenes content.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced brand visibility and customer engagement.</li>
-      <li>Improved SEO through video content.</li>
-    </ul>`
-  },
-
-  'linkedin-profile': {
-    what: `<p>Checks if your business has a LinkedIn company profile.</p>`,
-    issues: `<ul>
-      <li>Missed professional networking opportunities.</li>
-      <li>Reduced credibility for B2B services.</li>
-    </ul>`,
-    fix: `<ol>
-      <li>Create a LinkedIn company page.</li>
-      <li>Share industry insights and company updates regularly.</li>
-    </ol>`,
-    impact: `<ul>
-      <li>Enhanced professional credibility and networking.</li>
-      <li>Better B2B lead generation opportunities.</li>
-    </ul>`
-  }
-});
-
 
 const colorMode = useColorMode();
 let originalColorMode: string;
@@ -941,7 +264,7 @@ const print = () => {
   // Wait for the next tick to ensure DOM updates
   nextTick(() => {
     window.print();
-    
+
     window.addEventListener('beforeprint', beforePrint);
   });
 }
@@ -1022,11 +345,6 @@ const getCheckItemClasses = (check: any) => {
           :to="`/${business.id}/edit/`">
           Edit
         </UButton>
-
-        <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report"
-          @click="refreshChecks">
-          Refresh
-        </UButton>
       </div>
     </div>
 
@@ -1081,7 +399,7 @@ const getCheckItemClasses = (check: any) => {
             <div class="text-xl font-bold">Overall Score</div>
           </div>
 
-          <div class="grid gap-4" :class="mode === 'food' ? 'grid-cols-4' : 'grid-cols-3'">
+          <div class="grid gap-4" :class="business.category === 'food' ? 'grid-cols-4' : 'grid-cols-3'">
             <div class="flex flex-col items-center gap-2">
               <CircularProgress
                 :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
@@ -1102,7 +420,7 @@ const getCheckItemClasses = (check: any) => {
             </div>
 
             <!-- Food Delivery channel only for food businesses -->
-            <div class="flex flex-col items-center gap-2" v-if="mode === 'food'">
+            <div class="flex flex-col items-center gap-2" v-if="business.category === 'food'">
               <CircularProgress :percentage="channelStatus.find(s => s.name === 'Food Delivery')?.percentage || 0"
                 class="size-20" />
               <div class="text-base font-bold">Food Delivery</div>
@@ -1119,7 +437,7 @@ const getCheckItemClasses = (check: any) => {
           <div class="border-r border-gray-200 dark:border-gray-700 pr-6 shrink-0 w-sm">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold">Checks</h3>
-              <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="ghost" size="sm" @click="refreshChecks"
+              <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="subtle" size="sm" @click="refreshChecks"
                 aria-label="Refresh checks">
                 Refresh
               </UButton>
@@ -1129,9 +447,10 @@ const getCheckItemClasses = (check: any) => {
               :items="treeData">
               <template #default="{ item }">
                 <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                <UBadge :color="item.passedWeight === item.totalWeight ? 'success' : 'warning'" variant="soft" class="ml-3">
-                    {{ Math.round(item.passedWeight / item.totalWeight * 100) }}
-                  </UBadge>
+                <UBadge :color="item.passedPoints === item.totalPoints ? 'success' : 'warning'" variant="soft"
+                  class="ml-3">
+                  {{ Math.round(item.passedPoints / item.totalPoints * 100) }}
+                </UBadge>
               </template>
 
               <template #content="{ item }">
@@ -1140,7 +459,7 @@ const getCheckItemClasses = (check: any) => {
                     class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated"
                     @click="selectedCheckId = check.id" :class="[getCheckItemClasses(check)]">
                     <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
-                    <span class="truncate">{{ check.name }}</span>
+                    <span class="truncate">{{ check.title }}</span>
                   </button>
                 </div>
               </template>
@@ -1162,12 +481,12 @@ const getCheckItemClasses = (check: any) => {
                 <div class="flex items-center gap-3 mb-2">
                   <UIcon :name="getCheckIcon(selectedCheck.status)"
                     :class="{ 'animate-spin': selectedCheck.status === 'pending' }" class="size-5" />
-                  <h3 class="text-lg font-semibold">{{ selectedCheck.name }}</h3>
+                  <h3 class="text-lg font-semibold">{{ selectedCheck.title }}</h3>
                 </div>
 
                 <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <span>{{ selectedCheck.channel }}</span>
-                  <span>{{ selectedCheck.weight }} points</span>
+                  <span>{{ selectedCheck.channelCategory }}</span>
+                  <span>{{ selectedCheck.points }} points</span>
                   <UBadge :color="getStatusColor(selectedCheck.status)" variant="soft" class="capitalize">
                     {{ getStatusLabel(selectedCheck.status) }}
                   </UBadge>
@@ -1179,28 +498,7 @@ const getCheckItemClasses = (check: any) => {
                 </div>
               </div>
 
-              <!-- Check Details -->
-              <div v-if="checkDetails[selectedCheck.id]" class="space-y-6 overflow-y-auto">
-                <div class="prose prose-sm dark:prose-invert max-w-none">
-                  <h4>What is this check?</h4>
-                  <div v-html="checkDetails[selectedCheck.id]?.what" />
-                </div>
-
-                <div class="prose prose-sm dark:prose-invert max-w-none">
-                  <h4>What issues may it cause?</h4>
-                  <div v-html="checkDetails[selectedCheck.id]?.issues" />
-                </div>
-
-                <div class="prose prose-sm dark:prose-invert max-w-none">
-                  <h4>How do you fix it?</h4>
-                  <div v-html="checkDetails[selectedCheck.id]?.fix" />
-                </div>
-
-                <div class="prose prose-sm dark:prose-invert max-w-none">
-                  <h4>What is the positive impact?</h4>
-                  <div v-html="checkDetails[selectedCheck.id]?.impact" />
-                </div>
-              </div>
+              <ContentRenderer v-if="selectedCheck" :value="selectedCheck.content" tag="article" class="prose prose-sm dark:prose-invert" :prose="false" />
 
               <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
                 No additional information available for this check.
