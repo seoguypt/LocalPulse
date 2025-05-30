@@ -4,7 +4,9 @@ import { stealthGetHtml } from '../../../../utils/stealthyRequests';
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const business = await useDrizzle().query.businesses.findFirst({
+  const db = useDrizzle();
+
+  const business = await db.query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -24,18 +26,26 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  // If there's no placeId, we can't compare with Google Business Profile
-  if (!business.placeId) {
+  // Get a business location with a googlePlaceId
+  const location = await db.query.businessLocations.findFirst({
+    where: and(
+      eq(tables.businessLocations.businessId, id),
+      isNotNull(tables.businessLocations.googlePlaceId)
+    ),
+  });
+
+  // If there's no googlePlaceId, we can't compare with Google Business Profile
+  if (!location?.googlePlaceId) {
     return {
       type: 'check' as const,
       value: false,
-      label: 'No Google Business Profile ID (placeId) provided'
+      label: 'No Google Business Profile ID (googlePlaceId) provided'
     };
   }
 
   try {
     // Fetch GBP data
-    const placeData = await $fetch(`/api/google/places/getPlace?id=${business.placeId}`);
+    const placeData = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
     
     // Google Places API might return an array or a single object
     const place = Array.isArray(placeData) ? placeData[0] : placeData;

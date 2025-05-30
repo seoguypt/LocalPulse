@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const business = await useDrizzle().query.businesses.findFirst({
+  const db = useDrizzle();
+
+  const business = await db.query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -12,26 +14,35 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const response = await $fetch(`/api/google/places/getPlace?id=${business.placeId}`);
-  
-  // Check if photos array exists and has at least 3 entries
-  const photos = response[0]?.photos || [];
-  const photoCount = Array.isArray(photos) ? photos.length : 0;
-  
-  // Pass check if there are at least 3 photos
-  const hasEnoughPhotos = photoCount >= 3;
-  
-  // Add label to provide more context
-  let label = null;
-  if (hasEnoughPhotos) {
-    label = `${photoCount} photos. Good!`;
-  } else {
-    label = `Only ${photoCount} photo${photoCount === 1 ? '' : 's'}. Need at least 3.`;
+  // Get a business location with a googlePlaceId
+  const location = await db.query.businessLocations.findFirst({
+    where: and(
+      eq(tables.businessLocations.businessId, id),
+      isNotNull(tables.businessLocations.googlePlaceId)
+    ),
+  });
+
+  if (!location?.googlePlaceId) {
+    return { 
+      type: 'check' as const, 
+      value: false, 
+      label: 'No Google Place ID found for this business location' 
+    };
   }
 
-  return { 
-    type: 'check' as const,
-    value: hasEnoughPhotos,
-    label,
-  };
+  const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
+  
+  // Check if photos array exists and has at least one entry
+  const hasPhotos = !!(response[0]?.photos && response[0]?.photos.length > 0);
+
+  // If we have photos, show the count as a label
+  let label = null;
+  if (hasPhotos && response[0]?.photos) {
+    const photoCount = response[0].photos.length;
+    label = `${photoCount} photo${photoCount !== 1 ? 's' : ''} found`;
+  } else {
+    label = 'No photos found on Google listing';
+  }
+
+  return { type: 'check' as const, value: hasPhotos, label };
 }); 

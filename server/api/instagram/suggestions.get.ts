@@ -10,10 +10,10 @@ interface InstagramSuggestion {
 }
 
 export default defineEventHandler(async (event) => {
-  const { businessName, websiteUrl, placeId } = await getValidatedQuery(event, z.object({
+  const { businessName, websiteUrl, googlePlaceId } = await getValidatedQuery(event, z.object({
     businessName: z.string().min(3),
     websiteUrl: z.string().url().optional(),
-    placeId: z.string().optional(),
+    googlePlaceId: z.string().optional(),
   }).parse);
 
   const suggestions: InstagramSuggestion[] = [];
@@ -56,10 +56,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // 2. Google Places Data (Second Priority - 90% potential confidence)
-  if (placeId) {
+  if (googlePlaceId) {
     try {
       const placeData = await $fetch('/api/google/places/getPlace', {
-        query: { id: placeId }
+        query: { id: googlePlaceId }
       });
 
       if (placeData?.[0]?.websiteUri) {

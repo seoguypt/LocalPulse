@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const business = await useDrizzle().query.businesses.findFirst({
+  const db = useDrizzle();
+
+  const business = await db.query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -12,7 +14,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const response = await $fetch(`/api/google/places/getPlace?id=${business.placeId}`);
+  // Get a business location with a googlePlaceId
+  const location = await db.query.businessLocations.findFirst({
+    where: and(
+      eq(tables.businessLocations.businessId, id),
+      isNotNull(tables.businessLocations.googlePlaceId)
+    ),
+  });
+
+  if (!location?.googlePlaceId) {
+    return { 
+      type: 'check' as const, 
+      value: false, 
+      label: 'No Google Place ID found for this business location' 
+    };
+  }
+
+  const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
   // Check if types array exists and has at least one entry
   const hasTypes = !!(response[0]?.types && response[0]?.types.length > 0);

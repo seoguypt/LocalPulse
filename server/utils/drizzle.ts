@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-export { sql, eq, and, or } from 'drizzle-orm'
+export { sql, eq, and, or, isNotNull } from 'drizzle-orm'
 
 import * as schema from '../database/schema';
 

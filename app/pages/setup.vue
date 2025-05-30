@@ -12,7 +12,7 @@ const categoryId = useRouteQuery<CategoryId>('categoryId', 'other', {
 });
 const step = useRouteQuery<'start' | 'discovery' | 'review'>('step', 'start');
 
-const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, placeId?: string }[]> = ref([])
+const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]> = ref([])
 
 // Add missing profile functionality
 const showAddForm = ref(false)
@@ -151,7 +151,8 @@ const addProfile = (event: any) => {
     type: selectedChannelId.value,
     title: profileTitle,
     subtitle: profileSubtitle,
-    placeId: selectedChannelId.value === 'google-maps' || selectedChannelId.value === 'apple-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
+    googlePlaceId: selectedChannelId.value === 'google-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
+    appleMapsId: selectedChannelId.value === 'apple-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
   })
   
   // Reset form
@@ -169,7 +170,7 @@ const handlePlaceDetailsUpdate = (placeDetails: any) => {
   selectedPlaceDetails.value = placeDetails
 }
 
-const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string, placeId?: string }) => {
+const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }) => {
   const index = discoveredProfiles.value.findIndex(p => 
     p.type === profileToRemove.type && p.title === profileToRemove.title
   )
@@ -260,7 +261,7 @@ const startDiscovery = async () => {
       type: 'apple-maps',
       title: place.name,
       subtitle: place.formattedAddressLines.join(', '),
-      placeId: place.id || place.name,
+      appleMapsId: place.id || place.name,
     });
   }
 
@@ -269,7 +270,7 @@ const startDiscovery = async () => {
       type: 'google-maps',
       title: place.displayName.text,
       subtitle: place.formattedAddress ?? undefined,
-      placeId: place.id,
+      googlePlaceId: place.id,
     });
   }
 
@@ -314,13 +315,13 @@ const startDiscovery = async () => {
   }
 
   const websiteUrl = discoveredProfiles.value.find(profile => profile.type === 'website')?.title;
-  const placeId = discoveredProfiles.value.find(profile => profile.type === 'google-maps')?.placeId;
+  const googlePlaceId = discoveredProfiles.value.find(profile => profile.type === 'google-maps')?.googlePlaceId;
 
   // Social profiles
   discoveryProgress.value = 2;
 
   const getFacebookSuggestions = async () => {
-    const suggestions = await $fetch(`/api/facebook/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/facebook/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
 
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('facebook.com')) {
@@ -333,7 +334,7 @@ const startDiscovery = async () => {
   }
 
   const getInstagramSuggestions = async () => {
-    const suggestions = await $fetch(`/api/instagram/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/instagram/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('instagram.com')) {
         discoveredProfiles.value.push({
@@ -345,7 +346,7 @@ const startDiscovery = async () => {
   }
 
   const getTiktokSuggestions = async () => {
-    const suggestions = await $fetch(`/api/tiktok/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/tiktok/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('tiktok.com')) {
         discoveredProfiles.value.push({
@@ -357,7 +358,7 @@ const startDiscovery = async () => {
   }
 
   const getXSuggestions = async () => {
-    const suggestions = await $fetch(`/api/x/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/x/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('x.com')) {
         discoveredProfiles.value.push({
@@ -369,7 +370,7 @@ const startDiscovery = async () => {
   }
 
   const getLinkedinSuggestions = async () => {
-    const suggestions = await $fetch(`/api/linkedin/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/linkedin/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('linkedin.com')) {
         discoveredProfiles.value.push({
@@ -381,7 +382,7 @@ const startDiscovery = async () => {
   }
 
   const getYoutubeSuggestions = async () => {
-    const suggestions = await $fetch(`/api/youtube/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&placeId=${placeId}`);
+    const suggestions = await $fetch(`/api/youtube/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
     for (const suggestion of suggestions) {
       if (suggestion.url.includes('youtube.com')) {
         discoveredProfiles.value.push({
@@ -424,7 +425,7 @@ const mapProfilesToBusinessData = () => {
       case 'google-maps':
         // Create a location entry for Google Maps
         locations.push({
-          placeId: profile.placeId,
+          googlePlaceId: profile.googlePlaceId,
           name: profile.title,
           address: profile.subtitle,
         })
@@ -433,10 +434,10 @@ const mapProfilesToBusinessData = () => {
         // Find existing location with same address or create new one
         let existingLocation = locations.find(loc => loc.address === profile.subtitle)
         if (existingLocation) {
-          existingLocation.appleMapsId = profile.placeId
+          existingLocation.appleMapsId = profile.appleMapsId
         } else {
           locations.push({
-            appleMapsId: profile.placeId,
+            appleMapsId: profile.appleMapsId,
             name: profile.title,
             address: profile.subtitle,
           })

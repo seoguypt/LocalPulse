@@ -5,27 +5,16 @@ import type { TableColumn } from '@nuxt/ui';
 const route = useRoute();
 const id = route.params.id as string;
 
-const categoryToModeMap: Record<string, string> = {
-  'Cafe': 'food-beverage',
-  'Restaurant': 'food-beverage',
-  'Takeaway': 'food-beverage',
-  'Bar': 'food-beverage',
-  'Bakery': 'food-beverage',
-};
-
 const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
 
 const mode = computed(() => {
-  const bCategory = business.value?.category;
-  if (bCategory && categoryToModeMap[bCategory]) {
-    return categoryToModeMap[bCategory];
-  }
-  return 'food-beverage'; // Default mode
+  // business.category should now be a categoryId ('food', 'retail', 'services', 'other')
+  return business.value?.category || 'other'; // Default to 'other'
 });
 
 // Definition of check weights by business mode (out of 100 total points)
 const modeCheckWeights: Record<string, Record<string, number>> = {
-  'food-beverage': {
+  'food': {
     // Google Business Profile (31 points total)
     'google-listing': 8,
     'google-listing-primary-category': 4,
@@ -33,41 +22,152 @@ const modeCheckWeights: Record<string, Record<string, number>> = {
     'google-listing-website-matches': 3,
     'google-listing-phone-number': 2,
     'google-listing-photos': 3,
+    'google-listing-reviews': 8, // Higher weight for food businesses
 
     // Core site hygiene & UX (25 points total)
     'website': 6, // Site exists (treating as HTTPS check)
     'website-200-299': 6,
     'website-mobile-responsive': 6,
-    'website-performance': 6, // First Contentful Paint
-    'website-menu-page': 4, // Menu page exists
-    'website-menu-navigation': 3, // Menu in navigation
+    'website-performance': 4, // Slightly lower for food
+    'website-menu-page': 3, // Menu page exists - food specific
 
-    // Structured data & on-page SEO (17 points total)
+    // Structured data & on-page SEO (15 points total)
     'website-localbusiness-jsonld': 3,
-    'website-menu-jsonld': 2,
-    'website-title': 5,
+    'website-menu-jsonld': 3, // Food specific
+    'website-title': 4,
     'website-meta-description': 2,
     'website-canonical': 1,
     'website-robots': 1,
     'website-sitemap': 1,
 
-    // Social proof & conversion cues (18 points total)
-    'google-listing-reviews': 5, // Rating and # of reviews
-    'website-tel-link': 1,
+    // Social proof & conversion cues (20 points total)
+    'website-tel-link': 2,
     'website-og-image': 1,
-    'instagram-profile': 3,
-    'facebook-page': 3,
+    'instagram-profile': 5, // Higher for food
+    'facebook-page': 4,
+    'tiktok-profile': 3, // Food businesses benefit from TikTok
 
-    // Website ↔ GBP parity (10 points total)
-    'website-gbp-name-address-phone': 6,
+    // Website ↔ GBP parity (9 points total)
+    'website-gbp-name-address-phone': 4,
+    'website-physical-address': 3,
+    'website-opening-hours': 2
+  },
+  'retail': {
+    // Google Business Profile (28 points total)
+    'google-listing': 8,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-website-matches': 3,
+    'google-listing-phone-number': 2,
+    'google-listing-photos': 4,
+    'google-listing-reviews': 4,
+
+    // Core site hygiene & UX (30 points total)
+    'website': 8, // Higher for retail
+    'website-200-299': 8,
+    'website-mobile-responsive': 8,
+    'website-performance': 6, // Important for retail
+
+    // Structured data & on-page SEO (18 points total)
+    'website-localbusiness-jsonld': 4,
+    'website-title': 6,
+    'website-meta-description': 3,
+    'website-canonical': 2,
+    'website-robots': 2,
+    'website-sitemap': 1,
+
+    // Social proof & conversion cues (16 points total)
+    'website-tel-link': 2,
+    'website-og-image': 2,
+    'instagram-profile': 4,
+    'facebook-page': 3,
+    'tiktok-profile': 3,
+    'youtube-profile': 2, // Product demos
+
+    // Website ↔ GBP parity (8 points total)
+    'website-gbp-name-address-phone': 4,
+    'website-physical-address': 2,
+    'website-opening-hours': 2
+  },
+  'services': {
+    // Google Business Profile (35 points total)
+    'google-listing': 10, // Very important for services
+    'google-listing-primary-category': 5,
+    'google-listing-opening-times': 4,
+    'google-listing-website-matches': 4,
+    'google-listing-phone-number': 4,
+    'google-listing-photos': 3,
+    'google-listing-reviews': 5,
+
+    // Core site hygiene & UX (25 points total)
+    'website': 6,
+    'website-200-299': 6,
+    'website-mobile-responsive': 6,
+    'website-performance': 4,
+    'website-tel-link': 3, // Very important for services
+
+    // Structured data & on-page SEO (20 points total)
+    'website-localbusiness-jsonld': 5,
+    'website-title': 6,
+    'website-meta-description': 4,
+    'website-canonical': 2,
+    'website-robots': 2,
+    'website-sitemap': 1,
+
+    // Social proof & conversion cues (12 points total)
+    'website-og-image': 2,
+    'facebook-page': 5, // Main social platform for services
+    'instagram-profile': 2,
+    'linkedin-profile': 3, // Professional services
+
+    // Website ↔ GBP parity (8 points total)
+    'website-gbp-name-address-phone': 4,
+    'website-physical-address': 2,
+    'website-opening-hours': 2
+  },
+  'other': {
+    // Google Business Profile (30 points total) - balanced approach
+    'google-listing': 8,
+    'google-listing-primary-category': 4,
+    'google-listing-opening-times': 3,
+    'google-listing-website-matches': 3,
+    'google-listing-phone-number': 3,
+    'google-listing-photos': 4,
+    'google-listing-reviews': 5,
+
+    // Core site hygiene & UX (28 points total)
+    'website': 7, // HTTPS check
+    'website-200-299': 7,
+    'website-mobile-responsive': 7,
+    'website-performance': 5,
+    'website-tel-link': 2,
+
+    // Structured data & on-page SEO (18 points total)
+    'website-localbusiness-jsonld': 4,
+    'website-title': 5,
+    'website-meta-description': 3,
+    'website-canonical': 2,
+    'website-robots': 2,
+    'website-sitemap': 2,
+
+    // Social proof & conversion cues (16 points total)
+    'website-og-image': 2,
+    'facebook-page': 4,
+    'instagram-profile': 3,
+    'tiktok-profile': 2,
+    'youtube-profile': 2,
+    'linkedin-profile': 3,
+
+    // Website ↔ GBP parity (8 points total)
+    'website-gbp-name-address-phone': 4,
     'website-physical-address': 2,
     'website-opening-hours': 2
   }
 };
 
-// Default to food-beverage if no mode is selected
+// Default to 'other' if no mode is selected or mode doesn't exist
 const checkWeights = computed(() => {
-  return modeCheckWeights[mode.value];
+  return modeCheckWeights[mode.value] || modeCheckWeights['other'];
 });
 
 const resultSchema = z.discriminatedUnion('type', [
@@ -96,47 +196,56 @@ const checks = ref<Check[]>([])
 
 // Centralized check definitions
 const allCheckDefinitions = [
-  // Google Business Profile checks
+  // Google Business Profile checks (apply to all businesses)
   { id: 'google-listing', name: 'Google Business Profile (GBP) exists', channel: 'Google Business Profile' },
   { id: 'google-listing-primary-category', name: 'GBP primary category is set', channel: 'Google Business Profile' },
   { id: 'google-listing-opening-times', name: 'GBP opening hours are present', channel: 'Google Business Profile' },
   { id: 'google-listing-website-matches', name: 'GBP website URL matches the scanned site', channel: 'Google Business Profile' },
   { id: 'google-listing-phone-number', name: 'GBP phone number matches the site', channel: 'Google Business Profile' },
-  { id: 'google-listing-photos', name: '≥ 3 photos on GBP (food or venue)', channel: 'Google Business Profile' },
+  { id: 'google-listing-photos', name: '≥ 3 photos on GBP', channel: 'Google Business Profile' },
   { id: 'google-listing-reviews', name: 'Google rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
 
-  // Core site hygiene & UX
+  // Core site hygiene & UX (apply to all businesses)
   { id: 'website', name: 'Site enforces HTTPS', channel: 'Website' },
   { id: 'website-200-299', name: 'Site returns 200-299 status codes', channel: 'Website' },
   { id: 'website-mobile-responsive', name: 'Site is mobile-responsive', channel: 'Website' },
   { id: 'website-performance', name: 'Median First Contentful Paint ≤ 3s', channel: 'Website' },
 
-  // Structured data & on-page SEO
+  // Structured data & on-page SEO (apply to all businesses)
   { id: 'website-localbusiness-jsonld', name: 'LocalBusiness JSON-LD detected', channel: 'Website' },
-  { id: 'website-menu-jsonld', name: 'Menu JSON-LD detected', channel: 'Website', modes: ['food-beverage'] },
-  { id: 'website-title', name: '<title> contains business name + suburb/city', channel: 'Website' },
   { id: 'website-meta-description', name: '<meta description> present (≤ 160 chars)', channel: 'Website' },
   { id: 'website-canonical', name: '<link rel="canonical"> present on every page', channel: 'Website' },
   { id: 'website-robots', name: 'robots.txt does not block the homepage', channel: 'Website' },
   { id: 'website-sitemap', name: 'Sitemap file discoverable', channel: 'Website' },
 
-  // Social proof & conversion cues
+  // Social proof & conversion cues (apply to all businesses)
   { id: 'website-tel-link', name: 'Click-to-call tel: link on site', channel: 'Website' },
   { id: 'website-og-image', name: 'og:image (Open-Graph preview) present', channel: 'Website' },
-  { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
   { id: 'facebook-page', name: 'Has a Facebook page', channel: 'Social Media' },
-  { id: 'tiktok-profile', name: 'Has a TikTok profile', channel: 'Social Media' },
+  { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
 
-  // Website ↔ GBP parity
-  { id: 'website-gbp-name-address-phone', name: 'Website name, address & phone match GBP', channel: 'Website' },
-  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
-  { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website' },
+  // Website ↔ GBP parity (apply to all businesses)
+  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' }, 
 
-  // Food delivery platforms
-  { id: 'uber-eats-listing', name: 'Uber Eats Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
-  { id: 'menulog-listing', name: 'Menulog Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
-  { id: 'doordash-listing', name: 'DoorDash Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
-  { id: 'deliveroo-listing', name: 'Deliveroo Listing', channel: 'Food Delivery', modes: ['food-beverage'] },
+  // Food-specific checks
+  { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food'] },
+  { id: 'website-menu-jsonld', name: 'Menu JSON-LD detected', channel: 'Website', modes: ['food'] },
+  { id: 'website-title', name: '<title> contains business name + suburb/city', channel: 'Website', modes: ['food'] },
+  { id: 'website-gbp-name-address-phone', name: 'Website name, address & phone match GBP', channel: 'Website', modes: ['food'] },
+
+  // Food & Retail-specific checks
+  { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website', modes: ['food', 'retail'] },
+
+  // Social media platforms (different relevance by category)
+  { id: 'tiktok-profile', name: 'Has a TikTok profile', channel: 'Social Media', modes: ['food', 'retail', 'other'] },
+  { id: 'youtube-profile', name: 'Has a YouTube channel', channel: 'Social Media', modes: ['retail', 'other'] },
+  { id: 'linkedin-profile', name: 'Has a LinkedIn profile', channel: 'Social Media', modes: ['services', 'other'] },
+
+  // Food delivery platforms (food-specific)
+  { id: 'uber-eats-listing', name: 'Uber Eats Listing', channel: 'Food Delivery', modes: ['food'] },
+  { id: 'menulog-listing', name: 'Menulog Listing', channel: 'Food Delivery', modes: ['food'] },
+  { id: 'doordash-listing', name: 'DoorDash Listing', channel: 'Food Delivery', modes: ['food'] },
+  { id: 'deliveroo-listing', name: 'Deliveroo Listing', channel: 'Food Delivery', modes: ['food'] },
 ]
 
 // Filter checks based on the current mode
@@ -851,6 +960,54 @@ const checkDetails = ref<Record<string, CheckDetail>>({
       <li>Enhanced customer convenience and trust.</li>
       <li>Increased foot traffic and customer satisfaction.</li>
     </ul>`
+  },
+
+  'website-menu-page': {
+    what: `<p>Checks if your food business has a dedicated menu page on the website.</p>`,
+    issues: `<ul>
+      <li>Customers can't easily find what you offer.</li>
+      <li>Lost sales from unclear menu information.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create a clear, easy-to-find menu page on your website.</li>
+      <li>Include prices, descriptions, and appealing photos.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Increased customer engagement and orders.</li>
+      <li>Better user experience and higher conversions.</li>
+    </ul>`
+  },
+
+  'youtube-profile': {
+    what: `<p>Checks if your business has an active YouTube channel.</p>`,
+    issues: `<ul>
+      <li>Missed opportunity for video marketing and demonstrations.</li>
+      <li>Reduced visibility in video search results.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create a YouTube channel for your business.</li>
+      <li>Upload product demos, tutorials, or behind-the-scenes content.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced brand visibility and customer engagement.</li>
+      <li>Improved SEO through video content.</li>
+    </ul>`
+  },
+
+  'linkedin-profile': {
+    what: `<p>Checks if your business has a LinkedIn company profile.</p>`,
+    issues: `<ul>
+      <li>Missed professional networking opportunities.</li>
+      <li>Reduced credibility for B2B services.</li>
+    </ul>`,
+    fix: `<ol>
+      <li>Create a LinkedIn company page.</li>
+      <li>Share industry insights and company updates regularly.</li>
+    </ol>`,
+    impact: `<ul>
+      <li>Enhanced professional credibility and networking.</li>
+      <li>Better B2B lead generation opportunities.</li>
+    </ul>`
   }
 });
 
@@ -1016,7 +1173,7 @@ const print = () => {
             <div class="text-xl font-bold">Overall Score</div>
           </div>
 
-          <div class="grid grid-cols-4 gap-4">
+          <div class="grid gap-4" :class="mode === 'food' ? 'grid-cols-4' : 'grid-cols-3'">
             <div class="flex flex-col items-center gap-2">
               <CircularProgress
                 :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
@@ -1036,7 +1193,8 @@ const print = () => {
               <div class="text-base font-bold">Social Media</div>
             </div>
 
-            <div class="flex flex-col items-center gap-2">
+            <!-- Food Delivery channel only for food businesses -->
+            <div class="flex flex-col items-center gap-2" v-if="mode === 'food'">
               <CircularProgress :percentage="channelStatus.find(s => s.name === 'Food Delivery')?.percentage || 0"
                 class="size-20" />
               <div class="text-base font-bold">Food Delivery</div>

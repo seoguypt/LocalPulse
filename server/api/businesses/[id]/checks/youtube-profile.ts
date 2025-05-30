@@ -1,11 +1,7 @@
-import { z } from 'zod'
-
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const db = useDrizzle();
-
-  const business = await db.query.businesses.findFirst({
+  const business = await useDrizzle().query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -16,13 +12,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Fetch business locations separately
-  const locations = await db.query.businessLocations.findMany({
-    where: eq(tables.businessLocations.businessId, id),
-  });
-
-  return {
-    ...business,
-    locations,
+  // Check if the business has a YouTube URL in the database
+  return { 
+    type: 'check' as const, 
+    value: !!business.youtubeUrl 
   };
-});
+}); 

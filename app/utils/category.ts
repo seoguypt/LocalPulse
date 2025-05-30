@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { channelIdSchema } from './channel';
 
 export const categoryIdSchema = z.enum(['food', 'retail', 'services', 'other']);
 export type CategoryId = z.infer<typeof categoryIdSchema>;

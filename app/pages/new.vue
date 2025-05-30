@@ -89,7 +89,7 @@ function mapPlaceTypesToCategory(types: string[]): string | null {
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  placeId: z.string().min(1, 'Place ID is required').nullable(),
+  googlePlaceId: z.string().min(1, 'Place ID is required').nullable(),
   category: z.string().min(1, 'Category is required'),
   facebookUsername: z.string().nullable().optional(),
   websiteUrl: z.string().nullable().optional(),
@@ -107,7 +107,7 @@ type Schema = z.infer<typeof schema>
 // Initialize state with query params if available
 const state = reactive<Schema>({
   name: '',
-  placeId: route.query.placeId as string || null,
+  googlePlaceId: route.query.googlePlaceId as string || null,
   category: route.query.category as string || '',
   facebookUsername: null,
   instagramUsername: null,
@@ -121,9 +121,9 @@ const state = reactive<Schema>({
   bingPlaceId: null,
 });
 
-// If we have a placeId from query params, fetch the place details to get the name
-if (state.placeId) {
-  const { data: place } = await useFetch(`/api/google/places/getPlace?id=${state.placeId}`);
+// If we have a googlePlaceId from query params, fetch the place details to get the name
+if (state.googlePlaceId) {
+  const { data: place } = await useFetch(`/api/google/places/getPlace?id=${state.googlePlaceId}`);
   if (place.value && place.value[0]) {
     state.name = place.value[0].displayName?.text || '';
 
@@ -201,10 +201,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <CategorySelect v-model="state.category" class="w-full" />
       </UFormField>
 
-      <ChannelCardField label="Google Business Profile" name="placeId" icon="logos-google-maps"
+      <ChannelCardField label="Google Business Profile" name="googlePlaceId" icon="logos-google-maps"
         description="Manage your presence across Google Search and Maps to improve local visibility."
-        v-model="state.placeId">
-        <GooglePlaceInput v-model="state.placeId" class="w-full" @update:place-details="handlePlaceDetailsUpdate"
+        v-model="state.googlePlaceId">
+        <GooglePlaceInput v-model="state.googlePlaceId" class="w-full" @update:place-details="handlePlaceDetailsUpdate"
           placeholder="Search for your business" />
       </ChannelCardField>
 
@@ -263,7 +263,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <div class="flex justify-end gap-3">
         <UButton label="Cancel" color="neutral" variant="ghost" to="/" />
         <UButton type="submit" label="Create Business" color="primary"
-          :disabled="!state.name || !state.placeId || !state.category" />
+          :disabled="!state.name || !state.googlePlaceId || !state.category" />
       </div>
     </UForm>
   </UContainer>

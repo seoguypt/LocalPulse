@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import type { BusinessWithLocations } from '../../../shared/utils/schema'
 
 const route = useRoute();
 const id = route.params.id as string;
 
-const { data: business } = await useFetch<Business>(`/api/businesses/${id}`);
+const { data: business } = await useFetch<BusinessWithLocations>(`/api/businesses/${id}`);
 
 if (!business.value) {
   throw createError({
@@ -14,48 +15,401 @@ if (!business.value) {
   });
 }
 
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  placeId: z.string().min(1, 'Place ID is required').nullable(),
-  category: z.string(),
-  facebookUsername: z.string().min(1, 'Facebook Username is required').nullable(),
-  websiteUrl: z.string().min(1, 'Website URL is required').nullable(),
-  instagramUsername: z.string().min(1, 'Instagram Username is required').nullable(),
-  tiktokUsername: z.string().min(1, 'TikTok Username is required').nullable(),
-  appleMapsUsername: z.string().min(1, 'Apple Maps Username is required').nullable(),
-  uberEatsUrl: z.string().min(1, 'Uber Eats URL is required').nullable(),
-  deliverooUrl: z.string().min(1, 'Deliveroo URL is required').nullable(),
-  doorDashUrl: z.string().min(1, 'Doordash URL is required').nullable(),
-  menulogUrl: z.string().min(1, 'Menulog URL is required').nullable(),
-  bingPlaceId: z.string().min(1, 'Bing Place ID is required').nullable(),
-});
-type Schema = z.infer<typeof schema>
+// Convert business data to profiles format
+const businessProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]> = ref([])
 
-const state = reactive<Schema>({
-  name: business.value.name,
-  placeId: business.value.placeId,
-  category: business.value.category,
-  facebookUsername: business.value.facebookUsername,
-  instagramUsername: business.value.instagramUsername,
-  tiktokUsername: business.value.tiktokUsername,
-  websiteUrl: business.value.websiteUrl,
-  appleMapsUsername: null, // business.value.appleMapsUsername,
-  uberEatsUrl: business.value.uberEatsUrl,
-  deliverooUrl: business.value.deliverooUrl,
-  doorDashUrl: business.value.doorDashUrl,
-  menulogUrl: business.value.menulogUrl,
-  bingPlaceId: null, // business.value.bingPlaceId,
-});
+// Add missing profile functionality
+const showAddForm = ref(false)
+const selectedChannelId = ref<ChannelId | undefined>(undefined)
+const newProfileValue = ref('')
+const selectedPlaceDetails = ref<any>(null)
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+// Loading state for saving business
+const isSaving = ref(false)
+
+const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
+  label: category.label,
+  value: category.id,
+}));
+
+// Business name and category
+const businessName = ref(business.value.name)
+const categoryId = ref<CategoryId>(business.value.category as CategoryId)
+
+// Convert business data to profiles
+const convertBusinessToProfiles = () => {
+  const profiles: { type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[] = []
+  
+  if (!business.value) return profiles
+  
+  if (business.value.websiteUrl) {
+    profiles.push({
+      type: 'website',
+      title: business.value.websiteUrl,
+    })
+  }
+  
+  if (business.value.facebookUsername) {
+    profiles.push({
+      type: 'facebook',
+      title: business.value.facebookUsername,
+    })
+  }
+  
+  if (business.value.instagramUsername) {
+    profiles.push({
+      type: 'instagram',
+      title: business.value.instagramUsername,
+    })
+  }
+  
+  if (business.value.tiktokUsername) {
+    profiles.push({
+      type: 'tiktok',
+      title: business.value.tiktokUsername,
+    })
+  }
+  
+  if (business.value.xUsername) {
+    profiles.push({
+      type: 'x',
+      title: business.value.xUsername,
+    })
+  }
+  
+  if (business.value.linkedinUrl) {
+    profiles.push({
+      type: 'linkedin',
+      title: business.value.linkedinUrl,
+    })
+  }
+  
+  if (business.value.youtubeUrl) {
+    profiles.push({
+      type: 'youtube',
+      title: business.value.youtubeUrl,
+    })
+  }
+  
+  if (business.value.uberEatsUrl) {
+    profiles.push({
+      type: 'uber-eats',
+      title: business.value.uberEatsUrl,
+    })
+  }
+  
+  if (business.value.deliverooUrl) {
+    profiles.push({
+      type: 'deliveroo',
+      title: business.value.deliverooUrl,
+    })
+  }
+  
+  if (business.value.doorDashUrl) {
+    profiles.push({
+      type: 'doordash',
+      title: business.value.doorDashUrl,
+    })
+  }
+  
+  if (business.value.menulogUrl) {
+    profiles.push({
+      type: 'menulog',
+      title: business.value.menulogUrl,
+    })
+  }
+  
+  // Add location profiles
+  if (business.value.locations) {
+    for (const location of business.value.locations) {
+      if (location.googlePlaceId) {
+        profiles.push({
+          type: 'google-maps',
+          title: location.name || 'Google Maps Listing',
+          subtitle: location.address || undefined,
+          googlePlaceId: location.googlePlaceId,
+        })
+      }
+      
+      if (location.appleMapsId) {
+        profiles.push({
+          type: 'apple-maps',
+          title: location.name || 'Apple Maps Listing',
+          subtitle: location.address || undefined,
+          appleMapsId: location.appleMapsId,
+        })
+      }
+    }
+  }
+  
+  return profiles
+}
+
+// Initialize profiles from business data
+businessProfiles.value = convertBusinessToProfiles()
+
+// Get available channels that haven't been added yet
+const availableChannelOptions = computed(() => {
+  const usedChannels = new Set(businessProfiles.value.map(p => p.type))
+  return Object.values(CHANNEL_CONFIG)
+    .filter(channel => !usedChannels.has(channel.id))
+    .map(channel => ({
+      label: channel.name,
+      value: channel.id,
+      icon: channel.icon,
+      ui: {
+        itemLeadingIcon: channel.iconColor
+      }
+    }))
+})
+
+// Dynamic validation schema based on selected channel
+const addProfileSchema = computed(() => {
+  if (!selectedChannelId.value) {
+    return z.object({
+      value: z.string().min(1, 'Please enter a value')
+    })
+  }
+  
+  const channelId = selectedChannelId.value
+  
+  // Define validation based on channel type and database schema
+  const validationMap: Record<ChannelId, z.ZodType<string>> = {
+    // Username fields (from schema: instagramUsername, tiktokUsername, xUsername)
+    'instagram': z.string().min(1, 'Instagram username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    'tiktok': z.string().min(1, 'TikTok username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    'x': z.string().min(1, 'X username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
+    
+    // URL fields (from schema: websiteUrl, facebookUsername (actually URL), linkedinUrl, youtubeUrl, etc.)
+    'website': z.string().url('Please enter a valid URL').min(1, 'Website URL is required'),
+    'facebook': z.string().url('Please enter a valid URL').refine(url => url.includes('facebook.com'), 'Must be a Facebook URL'),
+    'linkedin': z.string().url('Please enter a valid URL').refine(url => url.includes('linkedin.com'), 'Must be a LinkedIn URL'),
+    'youtube': z.string().url('Please enter a valid URL').refine(url => url.includes('youtube.com'), 'Must be a YouTube URL'),
+    'uber-eats': z.string().url('Please enter a valid URL').refine(url => url.includes('uber'), 'Must be an Uber Eats URL'),
+    'deliveroo': z.string().url('Please enter a valid URL').refine(url => url.includes('deliveroo.com'), 'Must be a Deliveroo URL'),
+    'doordash': z.string().url('Please enter a valid URL').refine(url => url.includes('doordash.com'), 'Must be a DoorDash URL'),
+    'menulog': z.string().url('Please enter a valid URL').refine(url => url.includes('menulog.com'), 'Must be a Menulog URL'),
+    
+    // Place IDs (handled by special components)
+    'google-maps': z.string().min(1, 'Please select a Google Maps place'),
+    'apple-maps': z.string().min(1, 'Please select an Apple Maps place'),
+  }
+  
+  return z.object({
+    value: validationMap[channelId] || z.string().min(1, 'Please enter a value')
+  })
+})
+
+// Helper functions
+const getChannelLabel = (channelId: ChannelId): string => {
+  const labels: Record<ChannelId, string> = {
+    'website': 'Website URL',
+    'facebook': 'Facebook Page URL',
+    'instagram': 'Instagram Username',
+    'tiktok': 'TikTok Username',
+    'youtube': 'YouTube Channel URL',
+    'uber-eats': 'Uber Eats URL',
+    'deliveroo': 'Deliveroo URL',
+    'doordash': 'DoorDash URL',
+    'menulog': 'Menulog URL',
+    'apple-maps': 'Apple Maps Listing',
+    'google-maps': 'Google Maps Listing',
+    'linkedin': 'LinkedIn Profile URL',
+    'x': 'X Username',
+  }
+  return labels[channelId] || CHANNEL_CONFIG[channelId]?.name || 'Value'
+}
+
+const getPlaceholder = (channelId: ChannelId): string => {
+  const placeholders: Record<ChannelId, string> = {
+    'website': 'https://yourwebsite.com',
+    'facebook': 'https://facebook.com/yourpage',
+    'instagram': 'username',
+    'tiktok': 'username',
+    'youtube': 'https://youtube.com/channel/...',
+    'uber-eats': 'https://ubereats.com/...',
+    'deliveroo': 'https://deliveroo.com/...',
+    'doordash': 'https://doordash.com/...',
+    'menulog': 'https://menulog.com/...',
+    'apple-maps': 'Search Apple Maps...',
+    'google-maps': 'Search Google Maps...',
+    'linkedin': 'https://linkedin.com/company/...',
+    'x': 'username',
+  }
+  return placeholders[channelId] || 'Enter value...'
+}
+
+const getInputType = (channelId: ChannelId): string => {
+  const urlChannels: ChannelId[] = ['website', 'facebook', 'linkedin', 'youtube', 'uber-eats', 'deliveroo', 'doordash', 'menulog']
+  return urlChannels.includes(channelId) ? 'url' : 'text'
+}
+
+// Add profile functionality
+const addProfile = (event: any) => {
+  if (!selectedChannelId.value || !newProfileValue.value) return
+  
+  let profileTitle = newProfileValue.value
+  let profileSubtitle: string | undefined = undefined
+  
+  // Handle place inputs specially to show names instead of IDs
+  if (selectedChannelId.value === 'google-maps' || selectedChannelId.value === 'apple-maps') {
+    if (selectedPlaceDetails.value) {
+      if (selectedChannelId.value === 'google-maps') {
+        profileTitle = selectedPlaceDetails.value.title || selectedPlaceDetails.value.displayName?.text || newProfileValue.value
+        profileSubtitle = selectedPlaceDetails.value.description || selectedPlaceDetails.value.formattedAddress
+      } else if (selectedChannelId.value === 'apple-maps') {
+        profileTitle = selectedPlaceDetails.value.name || newProfileValue.value
+        profileSubtitle = selectedPlaceDetails.value.formattedAddressLines?.join(', ')
+      }
+    }
+  }
+  
+  // Add the new profile to business profiles
+  businessProfiles.value.push({
+    type: selectedChannelId.value,
+    title: profileTitle,
+    subtitle: profileSubtitle,
+    googlePlaceId: selectedChannelId.value === 'google-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
+    appleMapsId: selectedChannelId.value === 'apple-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
+  })
+  
+  // Reset form
+  resetAddForm()
+}
+
+const resetAddForm = () => {
+  selectedChannelId.value = undefined
+  newProfileValue.value = ''
+  selectedPlaceDetails.value = null
+  showAddForm.value = false
+}
+
+const handlePlaceDetailsUpdate = (placeDetails: any) => {
+  selectedPlaceDetails.value = placeDetails
+}
+
+const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }) => {
+  const index = businessProfiles.value.findIndex(p => 
+    p.type === profileToRemove.type && p.title === profileToRemove.title
+  )
+  if (index > -1) {
+    businessProfiles.value.splice(index, 1)
+  }
+}
+
+// Function to map profiles to business data
+const mapProfilesToBusinessData = () => {
+  const businessData: any = {
+    name: businessName.value,
+    category: categoryId.value,
+  }
+
+  const locations: any[] = []
+
+  // Map each profile to the appropriate database field
+  for (const profile of businessProfiles.value) {
+    switch (profile.type) {
+      case 'website':
+        businessData.websiteUrl = profile.title
+        break
+      case 'google-maps':
+        // Create a location entry for Google Maps
+        locations.push({
+          googlePlaceId: profile.googlePlaceId,
+          name: profile.title,
+          address: profile.subtitle,
+        })
+        break
+      case 'apple-maps':
+        // Find existing location with same address or create new one
+        let existingLocation = locations.find(loc => loc.address === profile.subtitle)
+        if (existingLocation) {
+          existingLocation.appleMapsId = profile.appleMapsId
+        } else {
+          locations.push({
+            appleMapsId: profile.appleMapsId,
+            name: profile.title,
+            address: profile.subtitle,
+          })
+        }
+        break
+      case 'facebook':
+        businessData.facebookUsername = profile.title
+        break
+      case 'instagram':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('instagram.com')) {
+          const match = profile.title.match(/instagram\.com\/([^\/\?]+)/)
+          businessData.instagramUsername = match ? match[1] : profile.title
+        } else {
+          businessData.instagramUsername = profile.title
+        }
+        break
+      case 'tiktok':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('tiktok.com')) {
+          const match = profile.title.match(/tiktok\.com\/@?([^\/\?]+)/)
+          businessData.tiktokUsername = match ? match[1] : profile.title
+        } else {
+          businessData.tiktokUsername = profile.title
+        }
+        break
+      case 'x':
+        // Extract username from URL or use as-is if it's already a username
+        if (profile.title.includes('x.com')) {
+          const match = profile.title.match(/x\.com\/([^\/\?]+)/)
+          businessData.xUsername = match ? match[1] : profile.title
+        } else {
+          businessData.xUsername = profile.title
+        }
+        break
+      case 'linkedin':
+        businessData.linkedinUrl = profile.title
+        break
+      case 'youtube':
+        businessData.youtubeUrl = profile.title
+        break
+      case 'uber-eats':
+        businessData.uberEatsUrl = profile.title
+        break
+      case 'deliveroo':
+        businessData.deliverooUrl = profile.title
+        break
+      case 'doordash':
+        businessData.doorDashUrl = profile.title
+        break
+      case 'menulog':
+        businessData.menulogUrl = profile.title
+        break
+    }
+  }
+
+  return { businessData, locations }
+}
+
+// Function to save business
+const saveBusinessChanges = async () => {
+  if (isSaving.value) return
+  
   try {
+    isSaving.value = true
+    
+    const { businessData, locations } = mapProfilesToBusinessData()
+    
     await $fetch(`/api/businesses/${id}`, {
       method: 'PUT',
-      body: event.data,
-    });
-    navigateTo(`/${id}`);
-  } catch (error: any) {
-    console.error('Error updating business:', error);
+      body: {
+        ...businessData,
+        locations,
+      },
+    })
+
+    await navigateTo(`/${id}`)
+  } catch (error) {
+    console.error('Error updating business:', error)
+    // You might want to show a toast notification here
+  } finally {
+    isSaving.value = false
   }
 }
 </script>
@@ -79,67 +433,156 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         to: `/${business.id}/edit/`
       }
     ]" />
+    
     <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mt-4">Edit {{ business.name }}</h1>
 
-    <UForm :schema="schema" :state="state" @submit="onSubmit">
-      <UCard class="mt-6" variant="subtle" :ui="{ body: 'space-y-8' }">
-        <UFormField label="Business Name" name="name" size="xl">
-          <UInput v-model="state.name" class="w-full" />
-        </UFormField>
+    <div class="mt-6 space-y-6">
+      <!-- Business Name -->
+      <UFormField label="Business Name">
+        <UInput v-model="businessName" class="w-full" />
+      </UFormField>
 
-        <UFormField label="Category" name="category" size="xl">
-          <CategorySelect v-model="state.category" class="w-full" />
-        </UFormField>
+      <!-- Business Category -->
+      <UFormField label="Business Category">
+        <USelect v-model="categoryId" :items="categoryItems" class="min-w-32" />
+      </UFormField>
 
-        <div class="space-y-4">
-          <h2 class="text-lg font-bold">Channels</h2>
+      <!-- Profiles Section -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Your Profiles</h2>
+        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Manage your business profiles across different platforms. Add any we missed below and remove any that aren't yours.
+        </div>
 
-          <div class="grid grid-cols-3 gap-4">
-            <ChannelCardField label="Website" name="websiteUrl" icon="i-lucide-globe"
-              description="Central hub for your online presence with detailed information about your business." v-model="state.websiteUrl" />
+        <div class="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
+          <div v-for="profile in businessProfiles" :key="profile.title"
+            class="flex items-center justify-between gap-3 py-4">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <UIcon :name="CHANNEL_CONFIG[profile.type].icon" :class="CHANNEL_CONFIG[profile.type].iconColor"
+                  size="12" />
+                <span class="text-sm font-semibold text-gray-400">{{ CHANNEL_CONFIG[profile.type].name }}</span>
+              </div>
 
-            <ChannelCardField label="Google Business Profile" name="placeId" icon="logos-google-maps"
-              description="Manage your presence across Google Search and Maps to improve local visibility." v-model="state.placeId">
-              <GooglePlaceInput v-model="state.placeId" class="w-full" />
-            </ChannelCardField>
+              <div class="font-medium">{{ profile.title }}</div>
+              <div v-if="profile.subtitle" class="text-sm text-gray-500">{{ profile.subtitle }}</div>
+            </div>
 
-            <ChannelCardField label="Instagram" name="instagramUsername" icon="simple-icons-instagram" color="text-[#ED0191]"
-              description="Visual platform for sharing product photos and connecting with younger audiences." v-model="state.instagramUsername" />
-
-            <ChannelCardField label="Facebook" name="facebookUsername" icon="logos-facebook"
-              description="Connect with customers, share updates, and build a community around your brand." v-model="state.facebookUsername" />
-
-            <ChannelCardField label="TikTok" name="tiktokUsername" icon="logos-tiktok-icon"
-              color="dark:text-white text-black"
-              description="Short-form video platform to reach younger demographics with creative content." v-model="state.tiktokUsername" />
-
-            <ChannelCardField label="Apple Maps" name="appleMapsUsername" icon="simple-icons-apple" color="text-black dark:text-white"
-              description="Help iOS users find your business location with essential business information." v-model="state.appleMapsUsername" />
-
-            <ChannelCardField label="Bing Places for Business" name="bingPlaceId" icon="logos-bing" color="text-[#028272]"
-              description="Reach customers using Microsoft's search engine with business listings." v-model="state.bingPlaceId" />
-
-            <ChannelCardField label="Uber Eats" name="uberEatsUrl" icon="simple-icons-ubereats" color="text-[#03C167]"
-              description="Food delivery platform connecting restaurants with customers seeking delivery." v-model="state.uberEatsUrl" />
-
-            <ChannelCardField label="Deliveroo" name="deliverooUrl" icon="simple-icons-deliveroo" color="text-[#00CCBC]"
-              description="Food delivery service focused on quality dining experiences." v-model="state.deliverooUrl" />
-
-            <ChannelCardField label="Doordash" name="doorDashUrl" icon="simple-icons-doordash" color="text-[#F44322]"
-              description="Delivery service with access to a large customer base across many locations." v-model="state.doorDashUrl" />
-
-            <ChannelCardField label="Menulog" name="menulogUrl" icon="i-lucide-hamburger" color="text-[#FF8001]"
-              description="Online food ordering and delivery service popular in Australia and New Zealand." v-model="state.menulogUrl" />
+            <UButton icon="lucide-x" size="xs" variant="link" color="neutral" @click="removeProfile(profile)">Remove</UButton>
           </div>
         </div>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton label="Cancel" color="neutral" variant="ghost" :to="`/${id}`" />
-            <UButton type="submit" label="Save Changes" color="primary" />
+        <!-- Add missing button or form -->
+        <div class="mt-4">
+          <UButton 
+            v-if="!showAddForm && availableChannelOptions.length > 0" 
+            color="neutral" 
+            size="sm" 
+            variant="link" 
+            icon="lucide-plus"
+            @click="showAddForm = true"
+          >
+            Add missing profile
+          </UButton>
+
+          <!-- Add form -->
+          <UForm 
+            v-if="showAddForm" 
+            :schema="addProfileSchema" 
+            :state="{ value: newProfileValue }" 
+            @submit="addProfile"
+            class="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+          >
+            <div class="flex items-center justify-between">
+              <h4 class="font-medium">Add Missing Profile</h4>
+              <UButton 
+                icon="lucide-x" 
+                size="xs" 
+                variant="ghost" 
+                color="neutral"
+                @click="resetAddForm"
+                aria-label="Close add form"
+              />
+            </div>
+
+            <!-- Channel selector -->
+            <UFormField label="Channel Type" name="channelType">
+              <USelect 
+                v-model="selectedChannelId" 
+                :items="availableChannelOptions"
+                placeholder="Select a channel..."
+              />
+            </UFormField>
+
+            <!-- Dynamic input based on channel type -->
+            <FormFieldWithIcon 
+              v-if="selectedChannelId"
+              :label="getChannelLabel(selectedChannelId)"
+              :icon="CHANNEL_CONFIG[selectedChannelId].icon"
+              :icon-color="CHANNEL_CONFIG[selectedChannelId].iconColor"
+              name="value"
+            >
+              <!-- Use appropriate input component -->
+              <GooglePlaceInput 
+                v-if="selectedChannelId === 'google-maps'" 
+                v-model="newProfileValue" 
+                :placeholder="getPlaceholder(selectedChannelId)"
+                @update:place-details="handlePlaceDetailsUpdate"
+              />
+              <ApplePlaceInput 
+                v-else-if="selectedChannelId === 'apple-maps'" 
+                v-model="newProfileValue" 
+                :placeholder="getPlaceholder(selectedChannelId)"
+                @update:place-details="handlePlaceDetailsUpdate"
+              />
+              <UInput 
+                v-else
+                v-model="newProfileValue" 
+                :placeholder="getPlaceholder(selectedChannelId)"
+                :type="getInputType(selectedChannelId)"
+              />
+            </FormFieldWithIcon>
+
+            <!-- Action buttons -->
+            <div class="flex gap-2 pt-2">
+              <UButton 
+                type="submit" 
+                size="sm"
+                :disabled="!selectedChannelId || !newProfileValue"
+              >
+                Add Profile
+              </UButton>
+              <UButton 
+                variant="ghost" 
+                size="sm"
+                @click="resetAddForm"
+              >
+                Cancel
+              </UButton>
+            </div>
+          </UForm>
+
+          <!-- Show message when no more channels available -->
+          <div 
+            v-if="!showAddForm && availableChannelOptions.length === 0"
+            class="text-center text-sm text-gray-500 mt-3"
+          >
+            All available channels have been added
           </div>
-        </template>
-      </UCard>
-    </UForm>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex justify-between gap-3 pt-6">
+        <UButton label="Cancel" color="neutral" variant="ghost" :to="`/${id}`" />
+        <UButton 
+          @click="saveBusinessChanges" 
+          label="Save Changes" 
+          color="primary" 
+          :loading="isSaving" 
+          :disabled="isSaving"
+        />
+      </div>
+    </div>
   </UContainer>
 </template>

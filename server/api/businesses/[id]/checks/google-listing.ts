@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const business = await useDrizzle().query.businesses.findFirst({
+  const db = useDrizzle();
+
+  const business = await db.query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -12,5 +14,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return { type: 'check' as const, value: !!business.placeId };
+  // Check if any business location has a googlePlaceId
+  const location = await db.query.businessLocations.findFirst({
+    where: and(
+      eq(tables.businessLocations.businessId, id),
+      isNotNull(tables.businessLocations.googlePlaceId)
+    ),
+  });
+
+  return { type: 'check' as const, value: !!location?.googlePlaceId };
 });

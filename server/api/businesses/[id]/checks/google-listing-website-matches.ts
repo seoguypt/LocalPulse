@@ -1,7 +1,9 @@
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
 
-  const business = await useDrizzle().query.businesses.findFirst({
+  const db = useDrizzle();
+
+  const business = await db.query.businesses.findFirst({
     where: eq(tables.businesses.id, id),
   });
 
@@ -12,18 +14,29 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const response = await $fetch(`/api/google/places/getPlace?id=${business.placeId}`);
-  const normalizeUrl = (url: string | null | undefined) => {
-    if (!url) return '';
-    // Remove protocol (http/https), www, and trailing slashes
-    return url.toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .replace(/\/$/, '');
-  };
+  // Get a business location with a googlePlaceId
+  const location = await db.query.businessLocations.findFirst({
+    where: and(
+      eq(tables.businessLocations.businessId, id),
+      isNotNull(tables.businessLocations.googlePlaceId)
+    ),
+  });
+
+  if (!location?.googlePlaceId) {
+    return { 
+      type: 'check' as const, 
+      value: false, 
+      label: 'No Google Place ID found for this business location' 
+    };
+  }
+
+  const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
-  const googleUrl = normalizeUrl(response[0].websiteUri);
-  const businessUrl = normalizeUrl(business.websiteUrl);
+  // Check if the website URL matches
+  const googleWebsite = response[0]?.websiteUri;
+  const businessWebsite = business.websiteUrl;
   
-  return { type: 'check' as const, value: !!googleUrl && !!businessUrl && googleUrl === businessUrl };
+  const matches = googleWebsite && businessWebsite && googleWebsite === businessWebsite;
+  
+  return { type: 'check' as const, value: !!matches };
 });

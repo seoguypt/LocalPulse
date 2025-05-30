@@ -12,6 +12,12 @@ export const businessLocationInsertSchema = createInsertSchema(tables.businessLo
 export const businessLocationSchema = createSelectSchema(tables.businessLocations);
 export type BusinessLocation = z.infer<typeof businessLocationSchema>;
 
+// Business with locations type
+export const businessWithLocationsSchema = businessSchema.extend({
+  locations: z.array(businessLocationSchema),
+});
+export type BusinessWithLocations = z.infer<typeof businessWithLocationsSchema>;
+
 import { googlePlacesSearchTextResponseSchema } from '../../server/api/google/places/searchText.post';
 export { googlePlacesSearchTextResponseSchema }
 export type GooglePlacesSearchTextResponse = z.infer<typeof googlePlacesSearchTextResponseSchema>;
