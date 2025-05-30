@@ -434,7 +434,7 @@ const getCheckItemClasses = (check: any) => {
 
         <div class="flex gap-6">
           <!-- Left Column: Tree View -->
-          <div class="border-r border-gray-200 dark:border-gray-700 pr-6 shrink-0 w-sm">
+          <div class="shrink-0 w-sm">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold">Checks</h3>
               <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="subtle" size="sm" @click="refreshChecks"
@@ -477,7 +477,7 @@ const getCheckItemClasses = (check: any) => {
 
             <div v-else class="space-y-4">
               <!-- Check Header -->
-              <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+              <div class="border-b border-gray-100 dark:border-gray-800 pb-4">
                 <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <span>{{ selectedCheck.channelCategory }}</span>
                   <span>{{ selectedCheck.points }} points</span>
