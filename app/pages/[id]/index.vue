@@ -478,12 +478,6 @@ const getCheckItemClasses = (check: any) => {
             <div v-else class="space-y-4">
               <!-- Check Header -->
               <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
-                <div class="flex items-center gap-3 mb-2">
-                  <UIcon :name="getCheckIcon(selectedCheck.status)"
-                    :class="{ 'animate-spin': selectedCheck.status === 'pending' }" class="size-5" />
-                  <h3 class="text-lg font-semibold">{{ selectedCheck.title }}</h3>
-                </div>
-
                 <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <span>{{ selectedCheck.channelCategory }}</span>
                   <span>{{ selectedCheck.points }} points</span>

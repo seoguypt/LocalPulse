@@ -73,7 +73,7 @@ Once approved (typically 1-2 weeks):
 ::
 
 ::fix-step{number="4" title="Optimize for success"}
-- **Photography matters**: Deliveroo offers free photography for new partners
+- **Photography matters**: Deliveroo offers photography for new partners
 - **Menu engineering**: Create delivery-friendly portions and packaging
 - **Promotions**: Use Deliveroo's marketing tools for launch offers
 - **Reviews**: Encourage satisfied customers to leave reviews
