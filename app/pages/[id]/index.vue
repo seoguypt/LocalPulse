@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod';
-import type { TableColumn } from '@nuxt/ui';
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -225,7 +224,7 @@ const allCheckDefinitions = [
   { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
 
   // Website ↔ GBP parity (apply to all businesses)
-  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' }, 
+  { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
 
   // Food-specific checks
   { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food'] },
@@ -383,145 +382,66 @@ const totalCheckTime = computed(() => {
   return lastEndTime - firstStartTime
 })
 
-const getChannelPrimaryColor = (channel: string) => {
-  const colorMap: Record<string, string> = {
-    'Google Business Profile': 'bg-green-500',
-    'Website': 'bg-purple-500',
-    'Social Media': 'bg-blue-500',
-    'Food Delivery': 'bg-yellow-500',
-    'Service Platforms': 'bg-purple-500',
-    'Marketplaces': 'bg-teal-500',
-    'Booking Platforms': 'bg-rose-500',
-    'Pet Platforms': 'bg-indigo-500'
-  }
-  return colorMap[channel] || 'bg-gray-500'
-}
-
-const activeChannel = ref('all')
-
-// Custom sort function for status column to prioritize fails
-const statusSortingFn = (rowA: any, rowB: any, columnId: string): number => {
-  // Order: fail, error, pending, pass
-  const statusOrder: Record<string, number> = {
-    'fail': 0,
-    'error': 1,
-    'pending': 2,
-    'pass': 3,
-    'idle': 4
-  }
-
-  // Safely get status values with fallbacks
-  let statusValueA: string = 'pending'
-  let statusValueB: string = 'pending'
-
-  try {
-    if (rowA && typeof rowA.getValue === 'function') {
-      statusValueA = rowA.getValue(columnId) || 'pending'
-    }
-
-    if (rowB && typeof rowB.getValue === 'function') {
-      statusValueB = rowB.getValue(columnId) || 'pending'
-    }
-  } catch (error) {
-    console.error('Error in status sorting function:', error)
-  }
-
-  // Get numeric values with fallback to pending (2)
-  const orderA = statusOrder[statusValueA] ?? 2
-  const orderB = statusOrder[statusValueB] ?? 2
-
-  return orderA - orderB
-}
-
-const columns: TableColumn<Check>[] = [
-  {
-    id: 'expand',
-  },
-  {
-    accessorKey: 'channel',
-    header: 'Channel',
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-  },
-  {
-    accessorKey: 'weight',
-    header: () => h('div', { class: 'text-right' }, 'Weight'),
-  },
-  {
-    accessorKey: 'duration',
-    header: () => h('div', { class: 'text-right' }, 'Time'),
-  },
-  {
-    accessorKey: 'status',
-    header: () => h('div', { class: 'text-right' }, 'Status'),
-    sortingFn: statusSortingFn,
-  },
-  {
-    id: 'actions',
-  },
-]
-
-const formatTime = (time: number) => {
-  if (time < 1000) {
-    return `${time}ms`
-  }
-  return `${(time / 1000).toFixed(1)}s`
-}
-
-// For A4 styling
-const todayDate = new Date().toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit'
-});
-
-// Get status colors for semantic UI
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'pass': return 'success'
-    case 'fail': return 'error'
-    case 'error': return 'warning'
-    case 'pending': return 'neutral'
-    default: return 'neutral'
-  }
-}
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'pass': return 'i-lucide-check'
-    case 'fail': return 'i-lucide-x'
-    case 'error': return 'i-lucide-bug'
-    case 'pending': return 'i-lucide-loader'
-    default: return 'i-lucide-help-circle'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'pass': return 'Pass'
-    case 'fail': return 'Fail'
-    case 'error': return 'Error'
-    case 'pending': return 'Pending'
-    default: return 'Unknown'
-  }
-}
-
-const channelFilterItems = computed(() => {
-  return [{
-    label: 'All',
-    value: 'all'
-  }, ...Object.keys(channelChecks.value).map(name => ({
-    label: name,
-    value: name
-  }))
-  ]
+// Selection state for the tree
+const selectedCheckId = ref<string | null>(null)
+const selectedCheck = computed(() => {
+  return checks.value.find(c => c.id === selectedCheckId.value)
 })
+
+// Transform checks into tree structure with custom sorting
+const treeData = computed(() => {
+  const sortedChannels = Object.entries(channelChecks.value).map(([channelName, channelChecks]) => {
+    // Sort checks within each channel
+    const sortedChecks = [...channelChecks].sort((a, b) => {
+      // Status priority: pending → failed → errored → passed
+      const statusOrder = { pending: 0, fail: 1, error: 2, pass: 3, idle: 4 }
+      const statusDiff = (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4)
+
+      if (statusDiff !== 0) return statusDiff
+
+      // Within same status, sort by highest points to lowest
+      return b.weight - a.weight
+    })
+
+    // Calculate channel score
+    const totalWeight = channelChecks.reduce((acc, check) => acc + check.weight, 0)
+    const passedWeight = channelChecks.reduce((acc, check) => acc + (check.status === 'pass' ? check.weight : 0), 0)
+
+    return {
+      label: channelName,
+      value: channelName,
+      totalWeight,
+      passedWeight,
+      checks: sortedChecks
+    }
+  })
+
+  return sortedChannels
+})
+
+const getCheckIcon = (status: string) => {
+  switch (status) {
+    case 'fail': return 'lucide-x'
+    case 'pass': return 'lucide-check'
+    case 'error': return 'lucide-bug'
+    case 'pending': return 'lucide-loader'
+    default: return 'lucide-help-circle'
+  }
+}
+
+const getCheckIconColor = (status: string) => {
+  switch (status) {
+    case 'pass': return 'text-success-500/70'
+    case 'fail': return 'text-error-500'
+    case 'error': return 'text-warning-500'
+    case 'pending': return 'text-primary-500 animate-spin'
+    default: return 'text-gray-500'
+  }
+}
 
 // Add refresh method to reload all checks
 const refreshChecks = () => {
-  // Clear existing checks
+  // Clear existing checks and selection
   checks.value = []
 
   // Add all active checks for the current mode
@@ -529,32 +449,6 @@ const refreshChecks = () => {
     addCheck(def.name, def.id, def.channel)
   })
 }
-
-const columnFilters = computed(() => {
-  if (activeChannel.value === 'all') {
-    return []
-  }
-  return [
-    {
-      id: 'channel',
-      value: activeChannel.value
-    }
-  ]
-})
-
-// Default sort order - sort by status first (fails first), then by weight
-const sorting = ref([
-  {
-    id: 'status',
-    desc: false
-  },
-  {
-    id: 'weight',
-    desc: true
-  }
-])
-
-const table = useTemplateRef('table')
 
 // Define interface for check details
 interface CheckDetail {
@@ -1011,31 +905,11 @@ const checkDetails = ref<Record<string, CheckDetail>>({
   }
 });
 
-let originalExpanded: string[];
-let originalActiveChannel: string;
+
+const colorMode = useColorMode();
 let originalColorMode: string;
 const beforePrint = (...args: any[]) => {
   if (!import.meta.client) return;
-
-  // Before printing, minimise all rows and expand all failed/error rows
-  originalExpanded = [];
-  if (table?.value?.tableApi) {
-    const rows = table.value.tableApi.getRowModel().rows;
-    rows.forEach(row => {
-      if (row.getIsExpanded()) {
-        originalExpanded.push(row.id);
-      }
-
-      if (row.original.status === 'fail' || row.original.status === 'error') {
-        row.toggleExpanded(true);
-      } else {
-        row.toggleExpanded(false);
-      }
-    });
-  }
-
-  originalActiveChannel = activeChannel.value;
-  activeChannel.value = 'all';
 
   originalColorMode = colorMode.preference;
   colorMode.preference = 'light';
@@ -1045,18 +919,6 @@ const afterPrint = () => {
   if (!import.meta.client) return;
 
   colorMode.preference = originalColorMode;
-  activeChannel.value = originalActiveChannel;
-
-  if (table?.value?.tableApi) {
-    const rows = table.value.tableApi.getRowModel().rows;
-    rows.forEach(row => {
-      if (originalExpanded.includes(row.id)) {
-        row.toggleExpanded(true);
-      } else {
-        row.toggleExpanded(false);
-      }
-    });
-  }
 }
 
 onMounted(() => {
@@ -1069,7 +931,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('afterprint', afterPrint);
 })
 
-const colorMode = useColorMode();
 const print = () => {
   if (!import.meta.client) return;
 
@@ -1084,16 +945,63 @@ const print = () => {
     window.addEventListener('beforeprint', beforePrint);
   });
 }
-</script>c
+
+// Utility functions still needed for the template
+const formatTime = (time: number) => {
+  if (time < 1000) {
+    return `${time}ms`
+  }
+  return `${(time / 1000).toFixed(1)}s`
+}
+
+// For A4 styling
+const todayDate = new Date().toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+});
+
+// Get status colors for semantic UI
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'pass': return 'success'
+    case 'fail': return 'error'
+    case 'error': return 'warning'
+    case 'pending': return 'neutral'
+    default: return 'neutral'
+  }
+}
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'pass': return 'Pass'
+    case 'fail': return 'Fail'
+    case 'error': return 'Error'
+    case 'pending': return 'Pending'
+    default: return 'Unknown'
+  }
+}
+
+const getCheckItemClasses = (check: any) => {
+  if (check.id == selectedCheckId.value) {
+    return 'text-primary bg-elevated'
+  }
+
+  switch (check.status) {
+    case 'fail': return 'text-gray-900 dark:text-white'
+    default: return 'text-gray-500 dark:text-gray-400'
+  }
+}
+</script>
 
 <template>
   <UContainer as="main" v-if="business" class="py-6">
     <UBreadcrumb :items="[
       {
-    label: 'Home',
-    icon: 'i-lucide-house',
-    to: '/'
-  },
+        label: 'Home',
+        icon: 'i-lucide-house',
+        to: '/'
+      },
       {
         label: business.name,
         icon: 'i-lucide-building',
@@ -1110,10 +1018,10 @@ const print = () => {
           Download / Print
         </UButton>
 
-        <UButton icon="i-lucide-pencil" color="neutral" variant="soft" class="print:hidden" :to="`/${business.id}/edit/`"
-            >
-            Edit
-          </UButton>
+        <UButton icon="i-lucide-pencil" color="neutral" variant="soft" class="print:hidden"
+          :to="`/${business.id}/edit/`">
+          Edit
+        </UButton>
 
         <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="solid" aria-label="Refresh Report"
           @click="refreshChecks">
@@ -1127,12 +1035,12 @@ const print = () => {
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-xl font-bold">{{ business.name }}</h2>
 
-          <UButton icon="i-lucide-pencil" color="neutral" variant="link" class="print:hidden" :to="`/${business.id}/edit/`"
-            >
+          <UButton icon="i-lucide-pencil" color="neutral" variant="link" class="print:hidden"
+            :to="`/${business.id}/edit/`">
             Edit
           </UButton>
         </div>
-        
+
         <BusinessChannels :business="business" class="mt-4">
           <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">
             {{ business.category }}
@@ -1206,93 +1114,91 @@ const print = () => {
       <UCard variant="subtle" class="col-span-3">
         <h2 class="sr-only">Checks</h2>
 
-        <UTabs size="md" variant="link" :content="false" :items="channelFilterItems" v-model="activeChannel"
-          class="w-full print:hidden">
-          <template #trailing="{ item }">
-            <UBadge v-if="item.value !== 'all'"
-              :color="getStatusColor(channelStatus.find(s => s.name === item.value)?.status || 'missing')"
-              variant="subtle">
-              {{channelStatus.find(s => s.name === item.value)?.score || 0}}/{{channelStatus.find(s => s.name ===
-                item.value)?.total || 0}}
-            </UBadge>
-          </template>
-        </UTabs>
-
-        <UTable :data="checks" :columns="columns" class="mb-0" v-model:column-filters="columnFilters"
-          v-model:sorting="sorting" ref="table" :ui="{ tr: 'data-[expanded=true]:bg-elevated/50' }">
-          <template #expand-cell="{ row }">
-            <UButton icon="i-lucide-chevron-down" color="neutral" variant="ghost" square @click="row.toggleExpanded()"
-              aria-label="Expand to view fix instructions and check information"
-              :ui="{ leadingIcon: ['transition-transform', row.getIsExpanded() ? 'duration-200 rotate-180' : ''] }" />
-          </template>
-          <template #name-cell="{ row }">
-            {{ row.original.name }}
-          </template>
-          <template #channel-cell="{ row }">
-            <div class="flex items-center gap-1.5">
-              <span :class="getChannelPrimaryColor(row.original.channel)" class="size-1.5 rounded-full mt-px"></span>
-              {{ row.original.channel }}
-            </div>
-          </template>
-          <template #weight-cell="{ row }">
-            <div class="text-sm text-right">{{ row.original.weight }} pts</div>
-          </template>
-          <template #duration-cell="{ row }">
-            <div class="text-sm text-right" v-if="row.original.duration">{{ formatTime(row.original.duration) }}</div>
-            <div class="text-sm text-right" v-else>-</div>
-          </template>
-          <template #status-cell="{ row }">
-            <div class="text-right">
-              <UBadge :color="getStatusColor(row.original.status)" variant="soft" class="capitalize"
-                :icon="getStatusIcon(row.original.status)"
-                :ui="{ leadingIcon: row.original.status === 'pending' ? 'animate-spin' : '' }">
-                {{ getStatusLabel(row.original.status) }}
-              </UBadge>
-            </div>
-          </template>
-
-          <template #actions-cell="{ row }">
-            <div class="justify-end flex items-center gap-2 print:hidden">
-              <UButton v-if="row.original.status === 'fail' || row.original.status === 'error'" icon="i-lucide-wrench"
-                color="neutral" variant="link" @click="row.toggleExpanded()"
-                aria-label="Expand to view fix instructions and check information">
-                Fix
+        <div class="flex gap-6">
+          <!-- Left Column: Tree View -->
+          <div class="border-r border-gray-200 dark:border-gray-700 pr-6 shrink-0 w-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold">Checks</h3>
+              <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="ghost" size="sm" @click="refreshChecks"
+                aria-label="Refresh checks">
+                Refresh
               </UButton>
             </div>
-          </template>
 
-          <template #expanded="{ row }">
-            <div class="p-6 rounded-lg whitespace-normal"
-              :class="{ 'print:hidden': !(row.original.status === 'fail' || row.original.status === 'error') }">
-              <div v-if="row.original.result?.label" class="mb-4 text-sm italic">
-                {{ row.original.result.label }}
+            <UAccordion type="multiple" :default-value="channelChecks ? Object.keys(channelChecks) : []"
+              :items="treeData">
+              <template #default="{ item }">
+                <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                <UBadge :color="item.passedWeight === item.totalWeight ? 'success' : 'warning'" variant="soft" class="ml-3">
+                    {{ item.passedWeight / item.totalWeight * 100 }}
+                  </UBadge>
+              </template>
+
+              <template #content="{ item }">
+                <div class="flex flex-col">
+                  <button type="button" v-for="check in item.checks" :key="check.id"
+                    class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated"
+                    @click="selectedCheckId = check.id" :class="[getCheckItemClasses(check)]">
+                    <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
+                    <span class="truncate">{{ check.name }}</span>
+                  </button>
+                </div>
+              </template>
+            </UAccordion>
+          </div>
+
+          <!-- Right Column: Details Panel -->
+          <div class="pl-6 w-full">
+            <div v-if="!selectedCheck" class="flex items-center justify-center h-full text-center">
+              <div class="text-gray-500 dark:text-gray-400">
+                <UIcon name="i-lucide-mouse-pointer-click" class="size-8 mx-auto mb-2" />
+                <p class="text-sm">Select a check from the tree to view details</p>
+              </div>
+            </div>
+
+            <div v-else class="space-y-4">
+              <!-- Check Header -->
+              <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <div class="flex items-center gap-3 mb-2">
+                  <UIcon :name="getCheckIcon(selectedCheck.status)"
+                    :class="{ 'animate-spin': selectedCheck.status === 'pending' }" class="size-5" />
+                  <h3 class="text-lg font-semibold">{{ selectedCheck.name }}</h3>
+                </div>
+
+                <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <span>{{ selectedCheck.channel }}</span>
+                  <span>{{ selectedCheck.weight }} points</span>
+                  <UBadge :color="getStatusColor(selectedCheck.status)" variant="soft" class="capitalize">
+                    {{ getStatusLabel(selectedCheck.status) }}
+                  </UBadge>
+                  <span v-if="selectedCheck.duration">{{ formatTime(selectedCheck.duration) }}</span>
+                </div>
+
+                <div v-if="selectedCheck.result?.label" class="mt-2 text-sm italic text-gray-600 dark:text-gray-400">
+                  {{ selectedCheck.result.label }}
+                </div>
               </div>
 
-              <div v-if="checkDetails[row.original.id]">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div class="prose prose-sm dark:prose-invert max-w-none">
-                    <div>
-                      <h3>What is this check?</h3>
-                      <div v-html="checkDetails[row.original.id]?.what" />
-                    </div>
+              <!-- Check Details -->
+              <div v-if="checkDetails[selectedCheck.id]" class="space-y-6 overflow-y-auto">
+                <div class="prose prose-sm dark:prose-invert max-w-none">
+                  <h4>What is this check?</h4>
+                  <div v-html="checkDetails[selectedCheck.id]?.what" />
+                </div>
 
-                    <div>
-                      <h3>What issues may it cause?</h3>
-                      <div v-html="checkDetails[row.original.id]?.issues" />
-                    </div>
-                  </div>
+                <div class="prose prose-sm dark:prose-invert max-w-none">
+                  <h4>What issues may it cause?</h4>
+                  <div v-html="checkDetails[selectedCheck.id]?.issues" />
+                </div>
 
-                  <div class="prose prose-sm dark:prose-invert max-w-none">
-                    <div>
-                      <h3>How do you fix it?</h3>
-                      <div v-html="checkDetails[row.original.id]?.fix" />
-                    </div>
+                <div class="prose prose-sm dark:prose-invert max-w-none">
+                  <h4>How do you fix it?</h4>
+                  <div v-html="checkDetails[selectedCheck.id]?.fix" />
+                </div>
 
-                    <div>
-                      <h3>What is the positive impact?</h3>
-                      <div v-html="checkDetails[row.original.id]?.impact" />
-                    </div>
-                  </div>
+                <div class="prose prose-sm dark:prose-invert max-w-none">
+                  <h4>What is the positive impact?</h4>
+                  <div v-html="checkDetails[selectedCheck.id]?.impact" />
                 </div>
               </div>
 
@@ -1300,12 +1206,7 @@ const print = () => {
                 No additional information available for this check.
               </div>
             </div>
-          </template>
-        </UTable>
-
-        <div class="px-4 py-3.5 text-sm text-muted print:hidden">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+          </div>
         </div>
       </UCard>
     </div>
