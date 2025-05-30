@@ -403,18 +403,17 @@ const getCheckItemClasses = (check: any) => {
           icon: 'i-lucide-building',
           to: `/${business.id}/`
         }
-      ]" class="print:hidden" />
+      ]" />
 
-    <div class="flex items-center justify-between print:flex-col print:gap-2 mt-2">
+    <div class="flex items-center justify-between mt-2">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
-      <div class="hidden print:block text-xs text-gray-500 leading-none">{{ todayDate }}</div>
 
-      <div class="flex items-center gap-2 print:hidden">
+      <div class="flex items-center gap-2">
         <UButton icon="i-lucide-download" color="neutral" variant="ghost" aria-label="Download PDF" @click="print()">
           Download / Print
         </UButton>
 
-        <UButton icon="i-lucide-pencil" color="neutral" variant="soft" class="print:hidden"
+        <UButton icon="i-lucide-pencil" color="neutral" variant="soft"
           :to="`/${business.id}/edit/`">
           Edit
         </UButton>
@@ -426,7 +425,7 @@ const getCheckItemClasses = (check: any) => {
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-xl font-bold">{{ business.name }}</h2>
 
-          <UButton icon="i-lucide-pencil" color="neutral" variant="link" class="print:hidden"
+          <UButton icon="i-lucide-pencil" color="neutral" variant="link"
             :to="`/${business.id}/edit/`">
             Edit
           </UButton>
@@ -449,7 +448,7 @@ const getCheckItemClasses = (check: any) => {
         </p>
 
         <div class="mt-auto pt-4 flex items-center gap-3">
-          <UButton color="primary" variant="soft" size="lg" class="print:hidden" to="/chat" icon="i-lucide-headset"
+          <UButton color="primary" variant="soft" size="lg" to="/chat" icon="i-lucide-headset"
             trailing-icon="i-lucide-arrow-right">
             <span>Schedule a <strong><em>free</em></strong> chat</span>
           </UButton>
