@@ -506,15 +506,22 @@ const saveBusinessAndGetReport = async () => {
     
     const { businessData, locations } = mapProfilesToBusinessData()
     
+    // Generate UUID for the new business
+    const businessId = generateUUID()
+    
     const business = await $fetch('/api/businesses', {
       method: 'POST',
       body: {
+        id: businessId,
         ...businessData,
         locations,
       },
     })
 
     if (business) {
+      // Store the business ID in localStorage
+      addBusinessId(business.id)
+      
       await navigateTo(`/${business.id}`)
     }
   } catch (error) {

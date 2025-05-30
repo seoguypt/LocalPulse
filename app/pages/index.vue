@@ -1,5 +1,20 @@
 <script setup lang="ts">
-const { data: businesses } = useFetch<Business[]>('/api/businesses');
+// Get business IDs from localStorage
+const storedBusinessIds = ref<string[]>([])
+
+// Only run on client side
+onMounted(() => {
+  storedBusinessIds.value = getStoredBusinessIds()
+})
+
+// Fetch businesses based on stored IDs
+const { data: businesses } = await useFetch<Business[]>('/api/businesses', {
+  query: computed(() => {
+    const ids = storedBusinessIds.value
+    return ids.length > 0 ? { ids: ids.join(',') } : {}
+  }),
+  default: () => []
+})
 </script>
  
 <template>

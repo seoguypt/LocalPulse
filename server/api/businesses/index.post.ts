@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 const createBusinessRequestSchema = z.object({
+  // Optional UUID - if not provided, will be generated server-side
+  id: z.string().optional(),
   // Business fields
   name: z.string(),
   category: z.string(),
@@ -36,10 +38,16 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle()
   
   // Extract business data (excluding locations and googlePlaceId)
-  const { locations, googlePlaceId, ...businessData } = requestData
+  const { locations, googlePlaceId, id, ...businessData } = requestData
+  
+  // Generate UUID if not provided
+  const businessId = id || crypto.randomUUID()
   
   // Insert business first
-  const [business] = await db.insert(tables.businesses).values(businessData).returning()
+  const [business] = await db.insert(tables.businesses).values({
+    id: businessId,
+    ...businessData
+  }).returning()
   
   // Prepare locations array
   let finalLocations = [...(locations || [])]

@@ -30,7 +30,7 @@ const updateBusinessRequestSchema = z.object({
 });
 
 export default defineEventHandler(async (event) => {
-  const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
+  const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
   const requestData = await readValidatedBody(event, updateBusinessRequestSchema.parse);
 
   if (Object.keys(requestData).length === 0) {

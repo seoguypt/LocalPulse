@@ -1,7 +1,7 @@
 import { stealthFetch } from '../../../../utils/stealthyRequests';
 
 export default defineEventHandler(async (event) => {
-  const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
+  const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
 
   const business = await useDrizzle().query.businesses.findFirst({
     where: eq(tables.businesses.id, id),

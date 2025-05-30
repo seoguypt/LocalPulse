@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 
 export const businesses = sqliteTable('businesses', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
   category: text('category').notNull(),
   // Social media and online presence fields (business-wide)
@@ -25,7 +25,7 @@ export const businesses = sqliteTable('businesses', {
 
 export const businessLocations = sqliteTable('business_locations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  businessId: integer('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  businessId: text('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   googlePlaceId: text('google_place_id'),
   appleMapsId: text('apple_maps_id'),
   name: text('name'),

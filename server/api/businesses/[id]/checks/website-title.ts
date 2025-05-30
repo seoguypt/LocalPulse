@@ -2,7 +2,7 @@ import { load } from 'cheerio';
 import { stealthGetHtml } from '../../../../utils/stealthyRequests';
 
 export default defineEventHandler(async (event) => {
-  const { id } = await getValidatedRouterParams(event, z.object({ id: z.coerce.number() }).parse);
+  const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
 
   const db = useDrizzle();
 
