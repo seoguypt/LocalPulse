@@ -196,30 +196,30 @@ const checks = ref<Check[]>([])
 // Centralized check definitions
 const allCheckDefinitions = [
   // Google Business Profile checks (apply to all businesses)
-  { id: 'google-listing', name: 'Google Business Profile (GBP) exists', channel: 'Google Business Profile' },
-  { id: 'google-listing-primary-category', name: 'GBP primary category is set', channel: 'Google Business Profile' },
-  { id: 'google-listing-opening-times', name: 'GBP opening hours are present', channel: 'Google Business Profile' },
-  { id: 'google-listing-website-matches', name: 'GBP website URL matches the scanned site', channel: 'Google Business Profile' },
-  { id: 'google-listing-phone-number', name: 'GBP phone number matches the site', channel: 'Google Business Profile' },
-  { id: 'google-listing-photos', name: '≥ 3 photos on GBP', channel: 'Google Business Profile' },
-  { id: 'google-listing-reviews', name: 'Google rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
+  { id: 'google-listing', name: 'Profile/listing exists', channel: 'Google Business Profile' },
+  { id: 'google-listing-primary-category', name: 'Primary category is set', channel: 'Google Business Profile' },
+  { id: 'google-listing-opening-times', name: 'Opening hours are present', channel: 'Google Business Profile' },
+  { id: 'google-listing-website-matches', name: 'Has the configured website', channel: 'Google Business Profile' },
+  { id: 'google-listing-phone-number', name: 'Phone number matches your website', channel: 'Google Business Profile' },
+  { id: 'google-listing-photos', name: '≥ 3 photos', channel: 'Google Business Profile' },
+  { id: 'google-listing-reviews', name: 'Rating ≥ 4.0 and ≥ 20 reviews', channel: 'Google Business Profile' },
 
   // Core site hygiene & UX (apply to all businesses)
-  { id: 'website', name: 'Site enforces HTTPS', channel: 'Website' },
-  { id: 'website-200-299', name: 'Site returns 200-299 status codes', channel: 'Website' },
-  { id: 'website-mobile-responsive', name: 'Site is mobile-responsive', channel: 'Website' },
-  { id: 'website-performance', name: 'Median First Contentful Paint ≤ 3s', channel: 'Website' },
+  { id: 'website', name: 'Uses modern security (HTTPS)', channel: 'Website' },
+  { id: 'website-200-299', name: 'Returns an expected status code', channel: 'Website' },
+  { id: 'website-mobile-responsive', name: 'Is mobile friendly', channel: 'Website' },
+  { id: 'website-performance', name: 'Shows content within 3 seconds', channel: 'Website' },
 
   // Structured data & on-page SEO (apply to all businesses)
-  { id: 'website-localbusiness-jsonld', name: 'LocalBusiness JSON-LD detected', channel: 'Website' },
-  { id: 'website-meta-description', name: '<meta description> present (≤ 160 chars)', channel: 'Website' },
-  { id: 'website-canonical', name: '<link rel="canonical"> present on every page', channel: 'Website' },
-  { id: 'website-robots', name: 'robots.txt does not block the homepage', channel: 'Website' },
-  { id: 'website-sitemap', name: 'Sitemap file discoverable', channel: 'Website' },
+  { id: 'website-localbusiness-jsonld', name: 'Has business structured data', channel: 'Website' },
+  { id: 'website-meta-description', name: 'Has an Search Engine optimised description', channel: 'Website' },
+  { id: 'website-canonical', name: 'Has a canonical (preferred) URL', channel: 'Website' },
+  { id: 'website-robots', name: 'Accessible for search engines', channel: 'Website' },
+  { id: 'website-sitemap', name: 'Has a sitemap', channel: 'Website' },
 
   // Social proof & conversion cues (apply to all businesses)
-  { id: 'website-tel-link', name: 'Click-to-call tel: link on site', channel: 'Website' },
-  { id: 'website-og-image', name: 'og:image (Open-Graph preview) present', channel: 'Website' },
+  { id: 'website-tel-link', name: 'Has a click-to-call link', channel: 'Website' },
+  { id: 'website-og-image', name: 'Has a preview image set', channel: 'Website' },
   { id: 'facebook-page', name: 'Has a Facebook page', channel: 'Social Media' },
   { id: 'instagram-profile', name: 'Has an Instagram profile', channel: 'Social Media' },
 
@@ -227,10 +227,10 @@ const allCheckDefinitions = [
   { id: 'website-physical-address', name: 'Physical address printed in header/footer', channel: 'Website' },
 
   // Food-specific checks
-  { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food'] },
-  { id: 'website-menu-jsonld', name: 'Menu JSON-LD detected', channel: 'Website', modes: ['food'] },
-  { id: 'website-title', name: '<title> contains business name + suburb/city', channel: 'Website', modes: ['food'] },
-  { id: 'website-gbp-name-address-phone', name: 'Website name, address & phone match GBP', channel: 'Website', modes: ['food'] },
+  // { id: 'website-menu-page', name: 'Menu page exists', channel: 'Website', modes: ['food'] },
+  { id: 'website-menu-jsonld', name: 'Structured data for menus', channel: 'Website', modes: ['food'] },
+  { id: 'website-title', name: 'Title contains business name and suburb/city', channel: 'Website', modes: ['food'] },
+  { id: 'website-gbp-name-address-phone', name: 'Name, address & phone match your google listing', channel: 'Website', modes: ['food'] },
 
   // Food & Retail-specific checks
   { id: 'website-opening-hours', name: 'Opening hours printed on the website', channel: 'Website', modes: ['food', 'retail'] },
@@ -460,7 +460,7 @@ interface CheckDetail {
 
 const checkDetails = ref<Record<string, CheckDetail>>({
   'google-listing': {
-    what: `<p>Checks if your business is listed and visible on <strong>Google Business Profile</strong> (Google Maps & Search).</p>`,
+    what: `<p>Checks if your business is listed and visible as a <strong>Google Business Profile</strong> (Google Maps & Search).</p>`,
     issues: `<ul>
       <li>Customers can't find your business when searching locally.</li>
       <li>Missing critical info (hours, directions) means lost sales.</li>
@@ -1130,7 +1130,7 @@ const getCheckItemClasses = (check: any) => {
               <template #default="{ item }">
                 <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
                 <UBadge :color="item.passedWeight === item.totalWeight ? 'success' : 'warning'" variant="soft" class="ml-3">
-                    {{ item.passedWeight / item.totalWeight * 100 }}
+                    {{ Math.round(item.passedWeight / item.totalWeight * 100) }}
                   </UBadge>
               </template>
 
