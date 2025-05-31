@@ -1,10 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { execSync } from 'child_process'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-31',
   devtools: { enabled: true },
 
   future: {
     compatibilityVersion: 4,
+  },
+
+  sourcemap: {
+    client: true
   },
 
   modules: [
@@ -40,6 +46,20 @@ export default defineNuxtConfig({
     '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' },
     '/ingest/static/**': { proxy: 'https://us-assets.i.posthog.com/static/**' },
     '/ingest/**': { proxy: 'https://us.i.posthog.com/**' },
+  },
+
+  hooks: {
+    'nitro:build:public-assets': async () => {
+      console.log('Running PostHog sourcemap injection...')
+      try {
+        execSync("posthog-cli sourcemap inject --directory '.output/public'", {
+          stdio: 'inherit',
+        })
+        console.log('PostHog sourcemap injection completed successfully')
+      } catch (error) {
+        console.error('PostHog sourcemap injection failed:', error)
+      }
+    },
   },
 
   hub: {
