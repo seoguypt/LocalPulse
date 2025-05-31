@@ -52,7 +52,7 @@ export default defineNuxtConfig({
     'nitro:build:public-assets': async () => {
       console.log('Running PostHog sourcemap injection...')
       try {
-        execSync("posthog-cli sourcemap inject --directory '.output/public'", {
+        execSync("posthog-cli sourcemap inject --directory 'dist/public'", {
           stdio: 'inherit',
         })
         console.log('PostHog sourcemap injection completed successfully')
