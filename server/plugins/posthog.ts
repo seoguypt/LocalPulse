@@ -1,7 +1,18 @@
 import { PostHog } from 'posthog-node'
 
+// HTTP methods that typically include request bodies
+const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH'])
+
+const hasRequestBody = (method: string) => METHODS_WITH_BODY.has(method)
+
 export default defineNitroPlugin((nitro) => {
   const config = useRuntimeConfig()
+
+  // Skip PostHog initialization in development
+  if (import.meta.dev) {
+    console.log('PostHog disabled in development mode (server)')
+    return
+  }
 
   const client = new PostHog(
     config.public.posthogPublicKey
@@ -14,7 +25,7 @@ export default defineNitroPlugin((nitro) => {
       method: event.method,
       query: getQuery(event),
       headers: getHeaders(event),
-      body: readRawBody(event),
+      body: hasRequestBody(event.method) ? readRawBody(event) : undefined,
     } : undefined)
   })
 

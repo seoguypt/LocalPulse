@@ -10,7 +10,8 @@ export default defineNuxtConfig({
   },
 
   sourcemap: {
-    client: true
+    client: true,
+    server: true
   },
 
   modules: [
@@ -50,9 +51,32 @@ export default defineNuxtConfig({
 
   hooks: {
     'nitro:build:public-assets': async () => {
+      // Skip PostHog sourcemap injection in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Skipping PostHog sourcemap injection in development mode')
+        return
+      }
+
       console.log('Running PostHog sourcemap injection...')
       try {
         execSync("posthog-cli sourcemap inject --directory 'dist/public'", {
+          stdio: 'inherit',
+        })
+        console.log('PostHog sourcemap injection completed successfully')
+      } catch (error) {
+        console.error('PostHog sourcemap injection failed:', error)
+      }
+    },
+    'build:done': async () => {
+      // Skip PostHog sourcemap injection in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Skipping PostHog sourcemap injection in development mode')
+        return
+      }
+
+      console.log('Running PostHog sourcemap injection...')
+      try {
+        execSync("", {
           stdio: 'inherit',
         })
         console.log('PostHog sourcemap injection completed successfully')
