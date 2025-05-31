@@ -32,11 +32,14 @@ export default defineNuxtConfig({
     appleMapKitPrivateKey: process.env.NUXT_APPLE_MAPKIT_PRIVATE_KEY,
     public: {
       googleApiKey: process.env.NUXT_PUBLIC_GOOGLE_API_KEY,
+      posthogPublicKey: 'phc_NnyL6hYZBsre2WNUDrU3Zu6CDN7dpntH7stqhB0dnzu'
     }
   },
 
   routeRules: {
-    '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' }
+    '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' },
+    '/ingest/static/**': { proxy: 'https://us-assets.i.posthog.com/static/**' },
+    '/ingest/**': { proxy: 'https://us.i.posthog.com/**' },
   },
 
   hub: {
