@@ -23,6 +23,10 @@ export default defineNuxtPlugin(nuxtApp => {
     });
   });
 
+  nuxtApp.hook('vue:error', (error) => {
+    posthogClient.captureException(error)
+  })
+
   return {
     provide: {
       posthog: () => posthogClient
