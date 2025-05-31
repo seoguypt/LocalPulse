@@ -23,7 +23,7 @@ export const ApplePlaceSchema = z.object({
     postCode: z.string(),
     subLocality: z.string().optional(),
     thoroughfare: z.string(),
-    subThoroughfare: z.string(),
+    subThoroughfare: z.string().optional(),
     fullThoroughfare: z.string(),
     dependentLocalities: z.array(z.string()).optional(),
   }),
