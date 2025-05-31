@@ -68,12 +68,6 @@ importers:
       nuxt:
         specifier: ^3.17.2
         version: 3.17.2(@libsql/client@0.15.5)(@parcel/watcher@2.5.1)(@types/node@22.15.12)(better-sqlite3@11.10.0)(db0@0.3.2(@libsql/client@0.15.5)(better-sqlite3@11.10.0)(drizzle-orm@0.43.1(@cloudflare/workers-types@4.20250529.0)(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(sqlite3@5.1.7))(drizzle-orm@0.43.1(@cloudflare/workers-types@4.20250529.0)(@libsql/client@0.15.5)(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)(sqlite3@5.1.7))(encoding@0.1.13)(eslint@9.26.0(jiti@2.4.2))(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.40.2)(sqlite3@5.1.7)(terser@5.39.0)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.12)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.0)(yaml@2.7.1))(xml2js@0.6.2)(yaml@2.7.1)
-      pinia:
-        specifier: ^3.0.2
-        version: 3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))
-      pinia-plugin-persistedstate:
-        specifier: ^4.2.0
-        version: 4.2.0(@pinia/nuxt@0.11.0(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))))(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3)))
       posthog-js:
         specifier: ^1.249.0
         version: 1.249.0
@@ -89,9 +83,6 @@ importers:
       robots-parser:
         specifier: ^3.0.1
         version: 3.0.1
-      string-similarity:
-        specifier: ^4.0.4
-        version: 4.0.4
       tailwindcss:
         specifier: ^4.1.5
         version: 4.1.5
@@ -120,15 +111,6 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@4.1.5)
-      '@types/jsonwebtoken':
-        specifier: ^9.0.9
-        version: 9.0.9
-      '@types/lodash.isequal':
-        specifier: ^4.5.8
-        version: 4.5.8
-      '@types/string-similarity':
-        specifier: ^4.0.2
-        version: 4.0.2
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -2010,15 +1992,6 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/jsonwebtoken@9.0.9':
-    resolution: {integrity: sha512-uoe+GxEuHbvy12OUQct2X9JenKM3qAscquYymuQN4fMWG9DBQtykrQEFcAbVACF7qaLw9BePSodUL0kquqBJpQ==}
-
-  '@types/lodash.isequal@4.5.8':
-    resolution: {integrity: sha512-uput6pg4E/tj2LGxCZo9+y27JNyB2OZuuI/T5F+ylVDYuqICLG2/ktjxx0v6GvVntAf8TvEzeQLcV0ffRirXuA==}
-
-  '@types/lodash@4.17.17':
-    resolution: {integrity: sha512-RRVJ+J3J+WmyOTqnz3PiBLA501eKwXl2noseKOrNo/6+XEHjTAxO4xHvxQB6QuNm+s4WRbn6rSiap8+EA+ykFQ==}
-
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
 
@@ -2037,9 +2010,6 @@ packages:
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
-
-  '@types/string-similarity@4.0.2':
-    resolution: {integrity: sha512-LkJQ/jsXtCVMK+sKYAmX/8zEq+/46f1PTQw7YtmQwb74jemS1SlNLmARM2Zml9DgdDTWKAtc5L13WorpHPDjDA==}
 
   '@types/triple-beam@1.3.5':
     resolution: {integrity: sha512-6WaYesThRMCl19iryMYP7/x2OVgCtbIVflDGFpWnb9irXI3UjYE4AzmYuiUKY1AJstGijoY+MgUszMgRxIYTYw==}
@@ -3305,9 +3275,6 @@ packages:
 
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
-
-  deep-pick-omit@1.2.1:
-    resolution: {integrity: sha512-2J6Kc/m3irCeqVG42T+SaUMesaK7oGWaedGnQQK/+O0gYc+2SP5bKh/KKTE7d7SJ+GCA9UUE1GRzh6oDe0EnGw==}
 
   deepmerge@4.3.1:
     resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
@@ -5617,17 +5584,6 @@ packages:
     resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
     engines: {node: '>=12'}
 
-  pinia-plugin-persistedstate@4.2.0:
-    resolution: {integrity: sha512-3buhA7ac+ssbOIx3VRCC8oHkoFwhDM9oHRCjo7nj+O8WUqnW+jRqh7eYT5eS/DNa3H28zp3dYf/nd/Vc8zj8eQ==}
-    peerDependencies:
-      '@pinia/nuxt': '>=0.9.0'
-      pinia: '>=2.3.0'
-    peerDependenciesMeta:
-      '@pinia/nuxt':
-        optional: true
-      pinia:
-        optional: true
-
   pinia@3.0.2:
     resolution: {integrity: sha512-sH2JK3wNY809JOeiiURUR0wehJ9/gd9qFN2Y828jCbxEzKEmEt0pzCXwqiSTfuRsK9vQsOflSdnbdBOGrhtn+g==}
     peerDependencies:
@@ -6441,10 +6397,6 @@ packages:
 
   streamx@2.22.0:
     resolution: {integrity: sha512-sLh1evHOzBy/iWRiR6d1zRcLao4gGZr3C1kzNz4fopCOKJb6xD9ub8Mpi9Mr1R6id5o43S+d93fI48UC5uM9aw==}
-
-  string-similarity@4.0.4:
-    resolution: {integrity: sha512-/q/8Q4Bl4ZKAPjj8WerIBJWALKkaPRfrvhfF8k/B23i4nzrlRj2/go1m90In7nG/3XDSbOo0+pu6RvCTM9RGMQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
@@ -9781,17 +9733,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/jsonwebtoken@9.0.9':
-    dependencies:
-      '@types/ms': 2.1.0
-      '@types/node': 22.15.12
-
-  '@types/lodash.isequal@4.5.8':
-    dependencies:
-      '@types/lodash': 4.17.17
-
-  '@types/lodash@4.17.17': {}
-
   '@types/mdast@4.0.4':
     dependencies:
       '@types/unist': 3.0.3
@@ -9801,6 +9742,7 @@ snapshots:
   '@types/node@22.15.12':
     dependencies:
       undici-types: 6.21.0
+    optional: true
 
   '@types/normalize-package-data@2.4.4': {}
 
@@ -9809,8 +9751,6 @@ snapshots:
       parse-path: 7.1.0
 
   '@types/resolve@1.20.2': {}
-
-  '@types/string-similarity@4.0.2': {}
 
   '@types/triple-beam@1.3.5': {}
 
@@ -11211,8 +11151,6 @@ snapshots:
   deep-extend@0.6.0: {}
 
   deep-is@0.1.4: {}
-
-  deep-pick-omit@1.2.1: {}
 
   deepmerge@4.3.1: {}
 
@@ -14126,18 +14064,6 @@ snapshots:
 
   picomatch@4.0.2: {}
 
-  pinia-plugin-persistedstate@4.2.0(@pinia/nuxt@0.11.0(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))))(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))):
-    dependencies:
-      '@nuxt/kit': 3.17.2(magicast@0.3.5)
-      deep-pick-omit: 1.2.1
-      defu: 6.1.4
-      destr: 2.0.5
-    optionalDependencies:
-      '@pinia/nuxt': 0.11.0(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3)))
-      pinia: 3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))
-    transitivePeerDependencies:
-      - magicast
-
   pinia@3.0.2(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3)):
     dependencies:
       '@vue/devtools-api': 7.7.6
@@ -15166,8 +15092,6 @@ snapshots:
     optionalDependencies:
       bare-events: 2.5.4
 
-  string-similarity@4.0.4: {}
-
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -15462,7 +15386,8 @@ snapshots:
       magic-string: 0.30.17
       unplugin: 2.3.2
 
-  undici-types@6.21.0: {}
+  undici-types@6.21.0:
+    optional: true
 
   undici@5.29.0:
     dependencies:

@@ -1,4 +1,4 @@
-# VisiMate.au: Your AI to improve your business's online visibily
+# VisiMate.au: Tools to improve your business's online visibility
 
 ## Problem Statement
 

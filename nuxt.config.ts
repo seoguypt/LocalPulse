@@ -23,8 +23,6 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/content',
     '@nuxt/test-utils',
-    '@pinia/nuxt',
-    'pinia-plugin-persistedstate/nuxt',
     '@vueuse/nuxt',
     '@nuxthub/core'
   ],

@@ -1,2 +1,0 @@
-- Read README.md to gain understanding of the application MVP goal, idea, flow, etc
-- Read rules in .cursor/rules
