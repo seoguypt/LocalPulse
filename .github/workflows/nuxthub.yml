@@ -41,6 +41,9 @@ jobs:
       - name: Upload sourcemaps to PostHog
         run: |
           posthog-cli sourcemap upload --directory dist/public
+        env:
+          POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
+          POSTHOG_CLI_TOKEN: ${{ vars.POSTHOG_CLI_TOKEN }}
 
       - name: Deploy to NuxtHub
         uses: nuxt-hub/action@v1
