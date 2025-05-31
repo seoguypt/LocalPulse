@@ -33,8 +33,8 @@ export default defineEventHandler(async (event) => {
   const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
   // Check both review count AND rating
-  const count = response[0].userRatingCount || 0;
-  const rating = response[0].rating || 0;
+  const count = response.userRatingCount || 0;
+  const rating = response.rating || 0;
   
   // Check both criteria:
   // 1. Rating ≥ 4.0

@@ -33,12 +33,12 @@ export default defineEventHandler(async (event) => {
   const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
   // Check if types array exists and has at least one entry
-  const hasTypes = !!(response[0]?.types && response[0]?.types.length > 0);
+  const hasTypes = !!(response?.types && response?.types.length > 0);
 
   // If we have types, show the primary one as a label
   let label = null;
-  if (hasTypes && response[0]?.types && response[0]?.types[0]) {
-    label = `Primary category: ${response[0].types[0]}`;
+  if (hasTypes && response?.types && response?.types[0]) {
+    label = `Primary category: ${response.types[0]}`;
   }
 
   return { type: 'check' as const, value: hasTypes, label };

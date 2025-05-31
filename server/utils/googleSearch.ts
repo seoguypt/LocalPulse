@@ -34,15 +34,7 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
     const apiUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleProgrammableSearchEngineId}&q=${encodedQuery}&gl=au`;
     
     // Fetch results from the API
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(`Google API error: ${errorData.error?.message || response.statusText}`);
-      throw new Error(`Google API error: ${errorData.error?.message || response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const data = await $fetch(apiUrl);
     
     // Map API response to our GoogleSearchResult interface
     const results: GoogleSearchResult[] = data.items?.map((item: any) => ({

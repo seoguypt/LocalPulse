@@ -1,5 +1,4 @@
-import jwt from 'jsonwebtoken'
-
+import { SignJWT, importPKCS8 } from 'jose'
 interface TokenCache {
   accessToken: string
   expiresAt: number
@@ -46,26 +45,16 @@ export async function generateAppleMapKitToken(): Promise<string> {
   
   try {
     // Generate JWT authorization token
-    const authorizationToken = jwt.sign(payload, privateKey, { 
-      algorithm: 'ES256',
-      header 
-    })
+    const authorizationToken = await new SignJWT(payload)
+      .setProtectedHeader(header)
+      .sign(await importPKCS8(privateKey, 'ES256'))
     
     // Exchange authorization token for access token
-    const response = await fetch('https://maps-api.apple.com/v1/token', {
+    const tokenData = await $fetch('https://maps-api.apple.com/v1/token', {
       headers: {
         'Authorization': `Bearer ${authorizationToken}`,
       },
     })
-
-    if (!response.ok) {
-      throw createError({
-        statusCode: response.status,
-        statusMessage: `Apple Maps token exchange failed: ${response.status} ${response.statusText}`,
-      })
-    }
-
-    const tokenData = await response.json()
     
     if (!tokenData.accessToken) {
       throw createError({

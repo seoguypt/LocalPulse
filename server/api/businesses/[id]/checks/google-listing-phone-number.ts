@@ -31,5 +31,5 @@ export default defineEventHandler(async (event) => {
   }
 
   const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
-  return { type: 'check' as const, value: !!response[0].nationalPhoneNumber };
+  return { type: 'check' as const, value: !!response.nationalPhoneNumber };
 });

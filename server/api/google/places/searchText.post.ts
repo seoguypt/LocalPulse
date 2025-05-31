@@ -1,4 +1,3 @@
-import { PlacesClient } from '@googlemaps/places';
 import { GooglePlacesSearchTextResponse } from '~~/shared/utils/schema';
 
 export const googlePlacesPlaceSchema = z.object({
@@ -36,28 +35,28 @@ export default defineEventHandler(async (event) => {
   });
 
   const cachedSearchText = defineCachedFunction(async (body) => {
-    return await placesClient.searchText({
-      // Australia
-      includePureServiceAreaBusinesses: true,
-      "locationRestriction": {
-        "rectangle": {
-          "low": {
-            "latitude": -44.0,
-            "longitude": 112.0
-          },
-          "high": {
-            "latitude": -10.0,
-            "longitude": 154.0
+    return await $fetch(`https://places.googleapis.com/v1/places:searchText`, {
+      body: {
+        // Australia
+        includePureServiceAreaBusinesses: true,
+        "locationRestriction": {
+          "rectangle": {
+            "low": {
+              "latitude": -44.0,
+              "longitude": 112.0
+            },
+            "high": {
+              "latitude": -10.0,
+              "longitude": 154.0
+            }
           }
-        }
-      },
-      ...body,
-    }, {
-      otherArgs: {
-        headers: {
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.types,places.id,places.location,places.viewport,places.pureServiceAreaBusiness',
         },
-      }
+        ...body,
+      },
+      headers: {
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.types,places.id,places.location,places.viewport,places.pureServiceAreaBusiness',
+        'X-Goog-Api-Key': googleApiKey,
+      },
     });
   }, {
     maxAge: 60 * 60 * 24, // 24 hours

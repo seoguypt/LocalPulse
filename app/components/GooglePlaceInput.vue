@@ -22,10 +22,8 @@ const place = ref<AutocompletePlace | undefined>(undefined)
 const { data: initialPlace, status: initialPlaceStatus } = await useLazyFetch(() => `/api/google/places/getPlace?id=${modelValue.value}`, {
   transform: (data: unknown) => {
     try {
-      const placeData = z.array(z.any()).parse(data);
-
       // Return null if no data
-      if (!placeData[0]) return null;
+      if (!data) return null;
 
       // Get the first item and explicitly assert its type
       const firstItem = z.object({
@@ -33,7 +31,7 @@ const { data: initialPlace, status: initialPlaceStatus } = await useLazyFetch(()
         displayName: z.object({ text: z.string() }).nullable().optional(),
         types: z.array(z.string()),
         formattedAddress: z.string(),
-      }).parse(placeData[0]);
+      }).parse(data);
 
       return autocompleteSchema.parse({
         id: firstItem.id,

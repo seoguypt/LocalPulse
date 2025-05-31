@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -26,10 +26,10 @@ export default defineEventHandler(async (event) => {
   try {
     // Fetch website content
     const html = await getBrowserHtml(business.websiteUrl);
-    const $ = load(html);
+    const { document } = parseHTML(html) as any;
     
     // Remove all script and style tags to avoid capturing JavaScript or CSS code
-    $('script, style').remove();
+    document.querySelectorAll('script, style').forEach((el: any) => el.remove());
     
     // Common elements that often contain opening hours information
     const hoursSelectors = [
@@ -100,14 +100,15 @@ export default defineEventHandler(async (event) => {
     const potentialHoursElements: any[] = [];
     
     // Find elements that might be related to opening hours
-    $('*').each((_, element) => {
-      const text = $(element).text().trim();
+    const allElements = document.querySelectorAll('*');
+    for (const element of allElements) {
+      const text = element.textContent?.trim() || '';
       
       // Skip if the text is too long (likely not a focused hours section) or too short
-      if (text.length > 500 || text.length < 2) return;
+      if (text.length > 500 || text.length < 2) continue;
       
       // Skip if text looks like code (has too many special characters or code-like patterns)
-      if (isLikelyCode(text)) return;
+      if (isLikelyCode(text)) continue;
       
       // Check if this element contains any of our indicator phrases
       for (const pattern of hoursSectionIndicators) {
@@ -116,14 +117,13 @@ export default defineEventHandler(async (event) => {
           break;
         }
       }
-    });
+    }
     
     // Process potential hours elements and their siblings/children
     for (const element of potentialHoursElements) {
-      const $element = $(element);
       
       // Check the element itself
-      const elementText = $element.text().trim();
+      const elementText = element.textContent?.trim() || '';
       
       // Skip if text looks like code
       if (isLikelyCode(elementText)) continue;
@@ -135,13 +135,13 @@ export default defineEventHandler(async (event) => {
       }
       
       // Check siblings after this element (common pattern is heading followed by hours)
-      let nextSibling = $element.next();
-      for (let i = 0; i < 3 && nextSibling.length > 0; i++) {
-        const siblingText = nextSibling.text().trim();
+      let nextSibling = element.nextElementSibling;
+      for (let i = 0; i < 3 && nextSibling; i++) {
+        const siblingText = nextSibling.textContent?.trim() || '';
         
         // Skip if text looks like code
         if (isLikelyCode(siblingText)) {
-          nextSibling = nextSibling.next();
+          nextSibling = nextSibling.nextElementSibling;
           continue;
         }
         
@@ -152,26 +152,26 @@ export default defineEventHandler(async (event) => {
           break;
         }
         
-        nextSibling = nextSibling.next();
+        nextSibling = nextSibling.nextElementSibling;
       }
       
       if (hoursFound) break;
       
       // Check children elements (for container divs)
-      const children = $element.children();
+      const children = element.children;
       if (children.length > 0) {
-        children.each((_, child) => {
-          const childText = $(child).text().trim();
+        for (const child of children) {
+          const childText = child.textContent?.trim() || '';
           
           // Skip if text looks like code
-          if (isLikelyCode(childText)) return true;
+          if (isLikelyCode(childText)) continue;
           
           if (containsHoursPattern(childText, hoursPatterns)) {
             hoursFound = true;
             hoursText = childText;
-            return false; // Break the each loop
+            break; // Break the for loop
           }
-        });
+        }
       }
       
       if (hoursFound) break;
@@ -191,7 +191,7 @@ export default defineEventHandler(async (event) => {
         // If we found hours in this section, capture the full context
         if (hoursFound) {
           // Get a reasonable chunk of text around the matched element
-          const parentContent = $element.parent().text().trim();
+          const parentContent = element.parentElement?.textContent?.trim() || '';
           
           // Skip if parent content looks like code
           if (!isLikelyCode(parentContent) && parentContent.length > 0 && parentContent.length < 300) {
@@ -207,13 +207,16 @@ export default defineEventHandler(async (event) => {
     // If not found with the above approach, try common selectors
     if (!hoursFound) {
       for (const selector of hoursSelectors) {
-        const elements = $(selector);
+        // Skip selectors that contain :contains() as they're not supported by querySelector
+        if (selector.includes(':contains(')) continue;
+        
+        const elements = document.querySelectorAll(selector);
         if (elements.length > 0) {
-          elements.each((_, element) => {
-            const text = $(element).text().trim();
+          for (const element of elements) {
+            const text = element.textContent?.trim() || '';
             
             // Skip if text looks like code
-            if (isLikelyCode(text)) return true;
+            if (isLikelyCode(text)) continue;
             
             // First check for specific patterns
             for (const pattern of hoursPatterns) {
@@ -221,21 +224,23 @@ export default defineEventHandler(async (event) => {
               if (match) {
                 hoursFound = true;
                 hoursText = extractFullHoursContext(text, match[0]);
-                return false; // Break the each loop
+                break; // Break the pattern loop
               }
             }
+            
+            if (hoursFound) break;
             
             // Check for cases where "OPENING HOURS" is present but no specific pattern matches
             if (!hoursFound && hoursSectionIndicators.some(pattern => pattern.test(text))) {
               // If the section heading exists, but the pattern is split across elements,
               // look at siblings and nearby elements
-              let nextElement = $(element).next();
-              for (let i = 0; i < 3 && nextElement.length > 0; i++) {
-                const nextText = nextElement.text().trim();
+              let nextElement = element.nextElementSibling;
+              for (let i = 0; i < 3 && nextElement; i++) {
+                const nextText = nextElement.textContent?.trim() || '';
                 
                 // Skip if text looks like code
                 if (isLikelyCode(nextText)) {
-                  nextElement = nextElement.next();
+                  nextElement = nextElement.nextElementSibling;
                   continue;
                 }
                 
@@ -246,12 +251,12 @@ export default defineEventHandler(async (event) => {
                   break;
                 }
                 
-                nextElement = nextElement.next();
+                nextElement = nextElement.nextElementSibling;
               }
             }
             
-            if (hoursFound) return false; // Break the each loop if found
-          });
+            if (hoursFound) break; // Break the elements loop if found
+          }
           
           if (hoursFound) break;
         }
@@ -260,12 +265,12 @@ export default defineEventHandler(async (event) => {
     
     // Structured data check is handled separately (it's already looking at JSON-LD)
     if (!hoursFound) {
-      const structuredData = $('script[type="application/ld+json"]');
+      const structuredData = document.querySelectorAll('script[type="application/ld+json"]');
       
       if (structuredData.length > 0) {
-        structuredData.each((_, element) => {
+        for (const element of structuredData) {
           try {
-            const data = JSON.parse($(element).html() || '{}');
+            const data = JSON.parse(element.innerHTML || '{}');
             
             // Look for opening hours in schema.org format
             const openingHours = 
@@ -288,7 +293,7 @@ export default defineEventHandler(async (event) => {
           } catch (e) {
             // JSON parsing error, ignore this structured data block
           }
-        });
+        }
       }
     }
     
@@ -296,7 +301,7 @@ export default defineEventHandler(async (event) => {
     if (!hoursFound) {
       // Scan the entire document for content that looks like hours
       // But strip the HTML first to avoid code
-      const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
+      const bodyText = document.body?.textContent?.replace(/\s+/g, ' ').trim() || '';
       const bodyTextLower = bodyText.toLowerCase();
       
       // First look for a section with "opening hours" or similar
@@ -340,23 +345,24 @@ export default defineEventHandler(async (event) => {
       const seoulBistroDaysPattern = /open\s+7\s+days/i;
       
       // Look for these specific patterns throughout the page
-      $('*').each((_, element) => {
-        const text = $(element).text().trim();
+      const allElements = document.querySelectorAll('*');
+      for (const element of allElements) {
+        const text = element.textContent?.trim() || '';
         
         if (seoulBistroHoursPattern.test(text) || 
             seoulBistroLastOrderPattern.test(text) || 
             seoulBistroDaysPattern.test(text)) {
           
           // Get the parent element for more context
-          const parentText = $(element).parent().text().trim();
+          const parentText = element.parentElement?.textContent?.trim() || '';
           
           if (!isLikelyCode(parentText)) {
             hoursFound = true;
             hoursText = parentText.length < 200 ? parentText : text;
-            return false; // Break the loop
+            break; // Break the loop
           }
         }
-      });
+      }
     }
     
     // Return the result

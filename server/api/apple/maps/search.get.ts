@@ -32,20 +32,12 @@ export default defineCachedEventHandler(async (event) => {
       params.append('userLocation', userLocation)
     }
 
-    const response = await fetch(`${url}?${params}`, {
+    const data = await $fetch(`${url}?${params}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     })
 
-    if (!response.ok) {
-      throw createError({
-        statusCode: response.status,
-        statusMessage: `Apple Maps API error: ${response.status} ${response.statusText}`,
-      })
-    }
-
-    const data = await response.json()
     return responseSchema.parse(data)
   } catch (error) {
     console.error('Apple Maps search error:', error)

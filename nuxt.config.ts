@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: '2025-05-31',
   devtools: { enabled: true },
 
   future: {
@@ -27,7 +27,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
     googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
-    dbPath: process.env.NUXT_DB_PATH,
     appleMapKitTeamId: process.env.NUXT_APPLE_MAPKIT_TEAM_ID,
     appleMapKitKeyId: process.env.NUXT_APPLE_MAPKIT_KEY_ID,
     appleMapKitPrivateKey: process.env.NUXT_APPLE_MAPKIT_PRIVATE_KEY,
@@ -41,6 +40,7 @@ export default defineNuxtConfig({
   },
 
   hub: {
+    workers: true,
     cache: true,
     database: true,
     browser: true

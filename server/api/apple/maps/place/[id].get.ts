@@ -10,13 +10,12 @@ export default defineCachedEventHandler(async (event) => {
       lang: 'en',
     })
 
-    const response = await fetch(`${url}?${params}`, {
+    const data = await $fetch(`${url}?${params}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     })
 
-    const data = await response.json()
     return ApplePlaceSchema.parse(data)
   } catch (error) {
     console.error('Apple Maps place lookup error:', error)

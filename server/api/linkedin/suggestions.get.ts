@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
         query: { id: googlePlaceId }
       });
 
-      if (placeData?.[0]?.websiteUri) {
+      if (placeData?.websiteUri) {
         const websiteUri = placeData[0].websiteUri;
         
         // Check if Google Places websiteUri is actually a LinkedIn URL

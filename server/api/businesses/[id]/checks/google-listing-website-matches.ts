@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
   // Check if the website URL matches
-  const googleWebsite = response[0]?.websiteUri;
+  const googleWebsite = response?.websiteUri;
   const businessWebsite = business.websiteUrl;
   
   const matches = googleWebsite && businessWebsite && googleWebsite === businessWebsite;

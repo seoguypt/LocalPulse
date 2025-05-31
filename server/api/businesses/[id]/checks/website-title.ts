@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -29,9 +29,9 @@ export default defineEventHandler(async (event) => {
     // Fetch the HTML content of the website
     const html = await getBrowserHtml(business.websiteUrl);
     
-    // Use cheerio to parse the HTML and extract the title
-    const $ = load(html);
-    const title = $('title').text().trim();
+    // Use linkedom to parse the HTML and extract the title
+    const { document } = parseHTML(html) as any;
+    const title = document.querySelector('title')?.textContent?.trim() || '';
     
     if (!title) {
       return {
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
       .replace(/\s+/g, " ")                        // Replace multiple spaces with single space
       .trim();
     
-    const titleWords = normalizedTitle.split(' ').filter(w => w.length > 2);
+    const titleWords = normalizedTitle.split(' ').filter((w: string) => w.length > 2);
     
     // Business name check
     const containsName = titleLower.includes(businessName);
@@ -86,10 +86,10 @@ export default defineEventHandler(async (event) => {
       try {
         const placeData = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
         
-        if (placeData[0]) {
+        if (placeData) {
           // Get all location-related information from address components
-          if (placeData[0].addressComponents) {
-            const components = placeData[0].addressComponents as any[];
+          if (placeData.addressComponents) {
+            const components = placeData.addressComponents as any[];
             
             // Extract specific location info
             for (const comp of components) {
@@ -109,8 +109,8 @@ export default defineEventHandler(async (event) => {
           }
           
           // Get all location parts from formatted address as a backup
-          if (placeData[0].formattedAddress) {
-            const addressParts = placeData[0].formattedAddress.split(',').map((part: string) => part.trim());
+          if (placeData.formattedAddress) {
+            const addressParts = placeData.formattedAddress.split(',').map((part: string) => part.trim());
             locationInfo.locationParts = addressParts
               .map((part: string) => part.replace(/\d+/g, '').trim()) // Remove numbers
               .filter((part: string) => part.length > 1 && /[a-zA-Z]/.test(part)); // Keep only parts with letters

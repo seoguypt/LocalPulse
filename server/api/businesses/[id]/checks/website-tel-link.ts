@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -27,9 +27,9 @@ export default defineEventHandler(async (event) => {
     // Fetch the HTML content of the website
     const html = await getBrowserHtml(business.websiteUrl);
     
-    // Use cheerio to parse the HTML and search for tel: links
-    const $ = load(html);
-    const telLinks = $('a[href^="tel:"]');
+    // Use linkedom to parse the HTML and search for tel: links
+    const { document } = parseHTML(html) as any;
+    const telLinks = document.querySelectorAll('a[href^="tel:"]');
     
     // Check if any tel links were found
     const hasTelLinks = telLinks.length > 0;

@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -27,15 +27,15 @@ export default defineEventHandler(async (event) => {
     // Fetch the HTML content of the website
     const html = await getBrowserHtml(business.websiteUrl);
     
-    // Use cheerio to parse the HTML and extract Open Graph image tags
-    const $ = load(html);
+    // Use linkedom to parse the HTML and extract Open Graph image tags
+    const { document } = parseHTML(html) as any;
     
     // Check for og:image meta tag
-    const ogImage = $('meta[property="og:image"]').attr('content');
+    const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
     
     // As a fallback, also check for og:image:url or twitter:image
-    const ogImageUrl = $('meta[property="og:image:url"]').attr('content');
-    const twitterImage = $('meta[name="twitter:image"]').attr('content');
+    const ogImageUrl = document.querySelector('meta[property="og:image:url"]')?.getAttribute('content');
+    const twitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content');
     
     // Get any image found from the above checks
     const imageUrl = ogImage || ogImageUrl || twitterImage;

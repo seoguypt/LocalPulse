@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -27,9 +27,9 @@ export default defineEventHandler(async (event) => {
     // Fetch the HTML content of the website
     const html = await getBrowserHtml(business.websiteUrl);
     
-    // Use cheerio to parse the HTML and extract the canonical link
-    const $ = load(html);
-    const canonicalLink = $('link[rel="canonical"]').attr('href');
+    // Use linkedom to parse the HTML and extract the canonical link
+    const { document } = parseHTML(html) as any;
+    const canonicalLink = document.querySelector('link[rel="canonical"]')?.getAttribute('href');
     
     if (!canonicalLink) {
       return {

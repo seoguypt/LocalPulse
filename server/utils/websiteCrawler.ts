@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 interface ExtractedSocialLink {
   url: string;
@@ -12,18 +12,16 @@ interface ExtractedSocialLink {
  */
 export const extractSocialMediaLinks = defineCachedFunction(async (websiteUrl: string): Promise<ExtractedSocialLink[]> => {
   try {
-    const { page } = await hubBrowser()
-    await page.goto(websiteUrl, { waitUntil: 'networkidle0' })
-    const html = await page.content();
+    const html = await getBrowserHtml(websiteUrl);
     
-    const $ = load(html);
+    const { document } = parseHTML(html) as any;
     const links: ExtractedSocialLink[] = [];
 
     // Find all links
-    const allLinks = $('a[href]').toArray();
+    const allLinks = Array.from(document.querySelectorAll('a[href]'));
     
     for (const link of allLinks) {
-      const href = $(link).attr('href');
+      const href = (link as any).getAttribute('href');
       if (!href) continue;
 
       // Check if it's a social media URL
@@ -31,8 +29,8 @@ export const extractSocialMediaLinks = defineCachedFunction(async (websiteUrl: s
       if (!socialLink) continue;
 
       // Determine the source and confidence based on location in DOM
-      const confidence = calculateLinkConfidence($, link, socialLink.platform);
-      const source = determineLinkSource($, link);
+      const confidence = calculateLinkConfidence(document, link as any, socialLink.platform);
+      const source = determineLinkSource(document, link as any);
 
       links.push({
         url: socialLink.url,
@@ -112,17 +110,15 @@ function analyzeSocialMediaUrl(url: string): { url: string; platform: ExtractedS
 /**
  * Calculates confidence score based on where the link appears
  */
-function calculateLinkConfidence($: any, linkElement: any, platform: string): number {
-  const $link = $(linkElement);
-  
+function calculateLinkConfidence(document: any, linkElement: any, platform: string): number {
   // High confidence: footer or header (official placement)
-  if ($link.closest('footer').length > 0 || $link.closest('header, nav').length > 0) {
+  if (linkElement.closest('footer') || linkElement.closest('header') || linkElement.closest('nav')) {
     return 0.9;
   }
 
   // Medium confidence: social media section
-  const $parent = $link.parent();
-  const parentText = $parent.text().toLowerCase();
+  const parent = linkElement.parentElement;
+  const parentText = parent?.textContent?.toLowerCase() || '';
   
   if (parentText.includes('social') || parentText.includes('follow')) {
     return 0.7;
@@ -135,20 +131,18 @@ function calculateLinkConfidence($: any, linkElement: any, platform: string): nu
 /**
  * Determines the source section of the website where the link was found
  */
-function determineLinkSource($: any, linkElement: any): ExtractedSocialLink['source'] {
-  const $link = $(linkElement);
-
-  if ($link.closest('footer').length > 0) {
+function determineLinkSource(document: any, linkElement: any): ExtractedSocialLink['source'] {
+  if (linkElement.closest('footer')) {
     return 'footer';
   }
 
-  if ($link.closest('header, nav').length > 0) {
+  if (linkElement.closest('header') || linkElement.closest('nav')) {
     return 'header';
   }
 
   // Check for social media section
-  const $parent = $link.parent();
-  const parentText = $parent.text().toLowerCase();
+  const parent = linkElement.parentElement;
+  const parentText = parent?.textContent?.toLowerCase() || '';
   
   if (parentText.includes('social') || parentText.includes('follow')) {
     return 'social-section';

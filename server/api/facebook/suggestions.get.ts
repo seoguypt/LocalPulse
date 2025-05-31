@@ -59,8 +59,8 @@ export default defineEventHandler(async (event) => {
         query: { id: googlePlaceId }
       });
 
-      if (placeData?.[0]?.websiteUri) {
-        const websiteUri = placeData[0].websiteUri;
+      if (placeData?.websiteUri) {
+        const websiteUri = placeData.websiteUri;
         
         // Check if Google Places websiteUri is actually a Facebook URL
         if (websiteUri.includes('facebook.com')) {

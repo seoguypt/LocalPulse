@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const placeData = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
     
     // Google Places API might return an array or a single object
-    const place = Array.isArray(placeData) ? placeData[0] : placeData;
+    const place = placeData;
     
     if (!place) {
       return {
@@ -72,10 +72,10 @@ export default defineEventHandler(async (event) => {
 
     // Fetch website content
     const html = await getBrowserHtml(business.websiteUrl);
-    const $ = load(html);
+    const { document } = parseHTML(html) as any;
     
     // Extract all text content from the website
-    const pageText = $('body').text().toLowerCase().replace(/\s+/g, ' ').trim();
+    const pageText = document.body?.textContent?.toLowerCase().replace(/\s+/g, ' ').trim() || '';
     
     // Initialize checks
     let nameFound = false;

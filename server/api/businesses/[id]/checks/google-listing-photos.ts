@@ -33,12 +33,12 @@ export default defineEventHandler(async (event) => {
   const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`);
   
   // Check if photos array exists and has at least one entry
-  const hasPhotos = !!(response[0]?.photos && response[0]?.photos.length > 0);
+  const hasPhotos = !!(response?.photos && response?.photos.length > 0);
 
   // If we have photos, show the count as a label
   let label = null;
-  if (hasPhotos && response[0]?.photos) {
-    const photoCount = response[0].photos.length;
+  if (hasPhotos && response?.photos) {
+    const photoCount = response.photos.length;
     label = `${photoCount} photo${photoCount !== 1 ? 's' : ''} found`;
   } else {
     label = 'No photos found on Google listing';

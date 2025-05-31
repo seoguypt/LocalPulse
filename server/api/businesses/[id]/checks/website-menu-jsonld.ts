@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -27,9 +27,9 @@ export default defineEventHandler(async (event) => {
     // Fetch the HTML content of the website
     const html = await getBrowserHtml(business.websiteUrl);
     
-    // Use cheerio to parse the HTML and extract JSON-LD scripts
-    const $ = load(html);
-    const jsonLdScripts = $('script[type="application/ld+json"]');
+    // Use linkedom to parse the HTML and extract JSON-LD scripts
+    const { document } = parseHTML(html) as any;
+    const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
     
     if (jsonLdScripts.length === 0) {
       return {
@@ -43,9 +43,9 @@ export default defineEventHandler(async (event) => {
     let hasMenuData = false;
     let details = '';
     
-    jsonLdScripts.each((_, script) => {
+    for (const script of jsonLdScripts) {
       try {
-        const jsonContent = JSON.parse($(script).html() || '{}');
+        const jsonContent = JSON.parse(script.textContent || '{}');
         
         // Direct check for Menu schema
         if (jsonContent['@type'] === 'Menu' || jsonContent['@type']?.includes?.('Menu')) {
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
         console.error('Error parsing JSON-LD:', e);
         // Continue checking other scripts
       }
-    });
+    }
     
     return {
       type: 'check' as const,

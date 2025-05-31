@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { parseHTML } from 'linkedom/worker';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   try {
     // Fetch website content
     const html = await getBrowserHtml(business.websiteUrl);
-    const $ = load(html);
+    const { document } = parseHTML(html) as any;
     
     // Common elements that often contain address information
     const addressSelectors = [
@@ -68,9 +68,9 @@ export default defineEventHandler(async (event) => {
 
     // Check in common elements that might contain address information
     for (const selector of addressSelectors) {
-      const elements = $(selector);
+      const elements = document.querySelectorAll(selector);
       if (elements.length > 0) {
-        const text = elements.text().trim();
+        const text = Array.from(elements).map((el: any) => el.textContent || '').join(' ').trim();
         
         for (const pattern of addressPatterns) {
           const match = text.match(pattern);
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
 
     // If not found in specific sections, check the entire page content
     if (!addressFound) {
-      const bodyText = $('body').text();
+      const bodyText = document.body?.textContent || '';
       
       for (const pattern of addressPatterns) {
         const match = bodyText.match(pattern);
@@ -100,11 +100,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // Also check for structured data (often used for business addresses)
-    const structuredData = $('script[type="application/ld+json"]');
+    const structuredData = document.querySelectorAll('script[type="application/ld+json"]');
     if (!addressFound && structuredData.length > 0) {
-      structuredData.each((_, element) => {
+      for (const element of structuredData) {
         try {
-          const data = JSON.parse($(element).html() || '{}');
+          const data = JSON.parse(element.textContent || '{}');
           const address = data.address || 
                         (data.location && data.location.address) || 
                         (data.mainEntity && data.mainEntity.address) ||
@@ -129,7 +129,7 @@ export default defineEventHandler(async (event) => {
         } catch (e) {
           // JSON parsing error, ignore this structured data block
         }
-      });
+      }
     }
 
     // Return the result

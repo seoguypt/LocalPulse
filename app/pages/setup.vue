@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { useRouteQuery } from '@vueuse/router';
 import { z } from 'zod';
 
 definePageMeta({
   layout: 'empty',
 });
 
-const businessName = useRouteQuery('businessName', '');
-const categoryId = useRouteQuery<CategoryId>('categoryId', 'other', {
-  transform: (value) => categoryIdSchema.parse(value),
-});
-const step = useRouteQuery<'start' | 'discovery' | 'review'>('step', 'start');
+const businessName = ref();
+const categoryId = ref<CategoryId>('other');
+const step = ref('start');
 
 const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]> = ref([])
 
@@ -497,6 +494,7 @@ const mapProfilesToBusinessData = () => {
   return { businessData, locations }
 }
 
+const router = useRouter()
 // Function to save business and navigate to report
 const saveBusinessAndGetReport = async () => {
   if (isSaving.value) return
@@ -522,7 +520,7 @@ const saveBusinessAndGetReport = async () => {
       // Store the business ID in localStorage
       addBusinessId(business.id)
       
-      await navigateTo(`/${business.id}`)
+      router.push(`/${business.id}`)
     }
   } catch (error) {
     console.error('Error saving business:', error)
