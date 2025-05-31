@@ -10,7 +10,7 @@ const responseSchema = z.object({
 })
 
 export default defineCachedEventHandler(async (event) => {
-  const token = await generateAppleMapKitToken()
+  const token = await generateAppleMapKitToken(event)
   const { query, userLocation } = await getValidatedQuery(event, querySchema.parse)
 
   if (!query || query.length < 2) {

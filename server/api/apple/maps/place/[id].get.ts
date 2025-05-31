@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export default defineCachedEventHandler(async (event) => {
-  const token = await generateAppleMapKitToken()
+  const token = await generateAppleMapKitToken(event)
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse)
 
   try {

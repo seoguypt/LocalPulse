@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     query: z.string().min(3),
   }).parse);
 
-  const googleResults = (await googleSearch(`${query} site:facebook.com`));
+  const googleResults = (await googleSearch(event, `${query} site:facebook.com`));
 
   // These results contain facebook pages, posts, users, groups, and other content.
   // We want to find BUSINESS PAGES that most match the query and return them and their titles.

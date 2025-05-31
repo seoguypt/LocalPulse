@@ -3,5 +3,5 @@ export default defineEventHandler(async (event) => {
     query: z.string().min(3),
   }).parse);
 
-  return await googleSearch(query);
+  return await googleSearch(event, query);
 });

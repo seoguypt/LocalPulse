@@ -1,4 +1,6 @@
 import { SignJWT, importPKCS8 } from 'jose'
+import type { H3Event } from 'h3'
+
 interface TokenCache {
   accessToken: string
   expiresAt: number
@@ -13,8 +15,8 @@ function base64ToUtf8(base64: string) {
   return decoder.decode(bytes);
 }
 
-export async function generateAppleMapKitToken(): Promise<string> {
-  const config = useRuntimeConfig()
+export async function generateAppleMapKitToken(event: H3Event): Promise<string> {
+  const config = useRuntimeConfig(event)
   
   // Check if we have environment variables for generating tokens
   const teamId = config.appleMapkitTeamId

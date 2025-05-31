@@ -1,7 +1,7 @@
 export default defineCachedEventHandler(async (event) => {
   const { id } = await getValidatedQuery(event, z.object({ id: z.string() }).parse);
 
-  const { googleApiKey } = useRuntimeConfig();
+  const { googleApiKey } = useRuntimeConfig(event);
 
   return await $fetch(`https://places.googleapis.com/v1/places/${id}`, {
       headers: {

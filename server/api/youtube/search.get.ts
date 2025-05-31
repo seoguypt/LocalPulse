@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   }).parse);
 
   // Search for YouTube channels, excluding individual videos and playlists
-  const googleResults = (await googleSearch(`${query} site:youtube.com -inurl:watch -inurl:playlist`));
+  const googleResults = (await googleSearch(event, `${query} site:youtube.com -inurl:watch -inurl:playlist`));
 
   // These results contain YouTube channels, videos, playlists, and other content.
   // We want to find actual business channels that most match the query.

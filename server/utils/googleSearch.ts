@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { useRuntimeConfig } from '#imports';
+import type { H3Event } from 'h3';
 
 // Define the search result interface
 export interface GoogleSearchResult {
@@ -16,13 +16,13 @@ const SearchQuerySchema = z.string().min(3);
  * @param query Search query string
  * @returns Array of search results with title, link, and description
  */
-export const googleSearch = defineCachedFunction(async (query: string): Promise<GoogleSearchResult[]> => {
+export const googleSearch = defineCachedFunction(async (event: H3Event, query: string): Promise<GoogleSearchResult[]> => {
   try {
     // Validate query
     const validQuery = SearchQuerySchema.parse(query);
     
     // Get API key and search engine ID from runtime config
-    const {googleApiKey, googleProgrammableSearchEngineId } = useRuntimeConfig();
+    const {googleApiKey, googleProgrammableSearchEngineId } = useRuntimeConfig(event);
     
     if (!googleApiKey || !googleProgrammableSearchEngineId) {
       console.error('Missing Google API key or Search Engine ID');

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     query: z.string().min(3),
   }).parse);
 
-  const googleResults = (await googleSearch(`${query} site:instagram.com`));
+  const googleResults = (await googleSearch(event, `${query} site:instagram.com`));
 
   // These results contain Instagram profiles, posts, reels, and other content.
   // We want to find profiles that most match the query and return them with their titles.

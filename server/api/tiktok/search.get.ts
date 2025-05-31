@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   }).parse);
 
   // Use improved search pattern: site:tiktok.com -inurl:video
-  const googleResults = (await googleSearch(`${query} site:tiktok.com -inurl:video`));
+  const googleResults = (await googleSearch(event, `${query} site:tiktok.com -inurl:video`));
 
   // These results contain TikTok profiles and other content.
   // We want to find actual business profiles that most match the query.
