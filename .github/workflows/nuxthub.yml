@@ -26,12 +26,21 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+      
+      - name: Download and install PostHog CLI
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/PostHog/posthog/releases/download/posthog-cli-v0.0.5/posthog-cli-installer.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Ensure NuxtHub module is installed
         run: pnpx nuxthub@latest ensure
 
       - name: Build application
         run: pnpm build
+
+      - name: Upload sourcemaps to PostHog
+        run: |
+          posthog-cli sourcemap upload --directory dist/public
 
       - name: Deploy to NuxtHub
         uses: nuxt-hub/action@v1
