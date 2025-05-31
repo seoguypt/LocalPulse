@@ -38,16 +38,10 @@ jobs:
       - name: Build application
         run: pnpm build
 
-      - name: Upload client sourcemaps to PostHog
+      - name: Inject and upload sourcemaps to PostHog
         run: |
-          posthog-cli sourcemap upload --directory dist/public
-        env:
-          POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
-          POSTHOG_CLI_TOKEN: ${{ vars.POSTHOG_CLI_TOKEN }}
-
-      - name: Upload server sourcemaps to PostHog
-        run: |
-          posthog-cli sourcemap upload --directory dist/server
+          posthog-cli sourcemap inject --directory dist
+          posthog-cli sourcemap upload --directory dist
         env:
           POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
           POSTHOG_CLI_TOKEN: ${{ vars.POSTHOG_CLI_TOKEN }}
