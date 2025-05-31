@@ -20,7 +20,6 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
   try {
     // Validate query
     const validQuery = SearchQuerySchema.parse(query);
-    console.log(`Google search: "${validQuery}"`);
     
     // Get API key and search engine ID from runtime config
     const {googleApiKey, googleProgrammableSearchEngineId } = useRuntimeConfig();
@@ -51,8 +50,7 @@ export const googleSearch = defineCachedFunction(async (query: string): Promise<
       link: item.link || '',
       description: item.snippet || ''
     })) || [];
-    
-    console.log(`Found ${results.length} results`);
+  
     return results;
   } catch (error) {
     console.error(`Error performing Google search: ${(error as Error).message}`);

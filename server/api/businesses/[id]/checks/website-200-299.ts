@@ -17,10 +17,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Use bypassCache option to ensure we get a fresh response
-  const response = await stealthFetch(business.websiteUrl, { bypassCache: true });
+  const response = await getBrowserResponse(business.websiteUrl);
   
-  // 304 Not Modified is also considered a success status
-  // We already set response.ok to true for 304 in the stealthFetch function
   return { 
     type: 'check' as const, 
     value: response.ok, 

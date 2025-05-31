@@ -18,7 +18,8 @@ export default defineNuxtConfig({
     '@nuxt/test-utils',
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    '@nuxthub/core'
   ],
 
   css: ['~/assets/css/main.css'],
@@ -37,5 +38,11 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' }
+  },
+
+  hub: {
+    cache: true,
+    database: true,
+    browser: true
   }
 })

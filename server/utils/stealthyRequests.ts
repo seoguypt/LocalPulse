@@ -21,7 +21,7 @@ async function getBrowser() {
  * @returns A Promise that resolves to the HTML content as a string
  * @throws Error if the page cannot be fetched
  */
-export const stealthGetHtml = defineCachedFunction(async (url: string): Promise<string> => {
+export const stealthgetBrowserHtml = defineCachedFunction(async (url: string): Promise<string> => {
   console.log(`Fetching ${url} with stealth techniques`);
   
   const browser = await getBrowser();
@@ -37,7 +37,7 @@ export const stealthGetHtml = defineCachedFunction(async (url: string): Promise<
 
   return html;
 }, {
-  name: 'stealthGetHtml',
+  name: 'stealthgetBrowserHtml',
   maxAge: 1000 * 60 * 60, // 1 hour
 });
 

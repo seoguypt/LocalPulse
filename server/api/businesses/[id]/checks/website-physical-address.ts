@@ -1,5 +1,4 @@
 import { load } from 'cheerio';
-import { stealthGetHtml } from '../../../../utils/stealthyRequests';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Fetch website content
-    const html = await stealthGetHtml(business.websiteUrl);
+    const html = await getBrowserHtml(business.websiteUrl);
     const $ = load(html);
     
     // Common elements that often contain address information

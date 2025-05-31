@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { drizzle } from 'drizzle-orm/d1';
 export { sql, eq, and, or, isNotNull } from 'drizzle-orm'
 
 import * as schema from '../database/schema';
@@ -6,7 +6,6 @@ import * as schema from '../database/schema';
 export const tables = schema;
 
 export function useDrizzle() {
-  const { dbPath } = useRuntimeConfig();
-
-  return drizzle(dbPath, { schema });
+  return drizzle(hubDatabase(), { schema })
 }
+

@@ -1,4 +1,3 @@
-import { stealthFetch } from '../../../../utils/stealthyRequests';
 import robotsParser from 'robots-parser';
 
 export default defineEventHandler(async (event) => {
@@ -30,36 +29,37 @@ export default defineEventHandler(async (event) => {
     const robotsUrl = `${websiteUrl.protocol}//${websiteUrl.host}/robots.txt`;
     const baseUrl = `${websiteUrl.protocol}//${websiteUrl.host}`;
     
-    // Fetch robots.txt content with cache busting to ensure we get fresh content
-    const response = await stealthFetch(robotsUrl, { bypassCache: true });
-    
-    // If robots.txt doesn't exist (404), that's actually good - nothing is blocked
-    if (response.status === 404) {
-      return {
-        type: 'check' as const,
-        value: true,
-        label: 'No robots.txt file found (homepage not blocked)'
-      };
-    }
-    
-    // If other error status, we can't determine
-    if (!response.ok) {
+    // Fetch robots.txt content
+    let robotsContent: string;
+    try {
+      robotsContent = await $fetch(robotsUrl, {
+        method: 'GET',
+        responseType: 'text',
+      });
+    } catch (error: any) {
+      // If robots.txt doesn't exist (404), that's actually good - nothing is blocked
+      if (error?.status === 404 || error?.statusCode === 404) {
+        return {
+          type: 'check' as const,
+          value: true,
+          label: 'No robots.txt file found (homepage not blocked)'
+        };
+      }
+      
+      // Other errors mean we can't determine
       return {
         type: 'check' as const,
         value: null,
-        label: `Could not access robots.txt: ${response.status} ${response.statusText}`
+        label: `Could not access robots.txt: ${error?.status || error?.statusCode || 'Unknown error'}`
       };
     }
-    
-    // Check robots.txt content for homepage blocking rules
-    const robotsContent = response.body;
     
     // If we couldn't get content for some reason, report it
-    if (!robotsContent) {
+    if (!robotsContent || typeof robotsContent !== 'string') {
       return {
         type: 'check' as const,
         value: null,
-        label: `Could not read robots.txt content (${response.status} ${response.statusText})`
+        label: 'Could not read robots.txt content'
       };
     }
     

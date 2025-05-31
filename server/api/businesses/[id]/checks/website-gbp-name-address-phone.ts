@@ -1,5 +1,4 @@
 import { load } from 'cheerio';
-import { stealthGetHtml } from '../../../../utils/stealthyRequests';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -72,7 +71,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Fetch website content
-    const html = await stealthGetHtml(business.websiteUrl);
+    const html = await getBrowserHtml(business.websiteUrl);
     const $ = load(html);
     
     // Extract all text content from the website

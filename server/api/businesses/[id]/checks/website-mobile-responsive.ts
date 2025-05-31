@@ -1,5 +1,4 @@
 import { load } from 'cheerio';
-import { stealthGetHtml } from '../../../../utils/stealthyRequests';
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, z.object({ id: z.string() }).parse);
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Fetch the HTML content of the website
-    const html = await stealthGetHtml(business.websiteUrl);
+    const html = await getBrowserHtml(business.websiteUrl);
     
     // Use cheerio to parse the HTML and check for viewport meta tag
     const $ = load(html);

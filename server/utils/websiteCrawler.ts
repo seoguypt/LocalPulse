@@ -1,5 +1,4 @@
 import { load } from 'cheerio';
-import { stealthGetHtml } from './stealthyRequests';
 
 interface ExtractedSocialLink {
   url: string;
@@ -13,7 +12,10 @@ interface ExtractedSocialLink {
  */
 export const extractSocialMediaLinks = defineCachedFunction(async (websiteUrl: string): Promise<ExtractedSocialLink[]> => {
   try {
-    const html = await stealthGetHtml(websiteUrl);
+    const { page } = await hubBrowser()
+    await page.goto(websiteUrl, { waitUntil: 'networkidle0' })
+    const html = await page.content();
+    
     const $ = load(html);
     const links: ExtractedSocialLink[] = [];
 
