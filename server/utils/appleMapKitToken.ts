@@ -17,9 +17,9 @@ export async function generateAppleMapKitToken(): Promise<string> {
   const config = useRuntimeConfig()
   
   // Check if we have environment variables for generating tokens
-  const teamId = config.appleMapKitTeamId
-  const keyId = config.appleMapKitKeyId
-  const privateKey = config.appleMapKitPrivateKey ? base64ToUtf8(config.appleMapKitPrivateKey) : undefined
+  const teamId = config.appleMapkitTeamId
+  const keyId = config.appleMapkitKeyId
+  const privateKey = config.appleMapkitPrivateKey ? base64ToUtf8(config.appleMapkitPrivateKey) : undefined
   
   if (!teamId || !keyId || !privateKey) {
     throw createError({
