@@ -6,13 +6,20 @@ interface TokenCache {
 
 let tokenCache: TokenCache | null = null
 
+function base64ToUtf8(base64: string) {
+  const binaryString = atob(base64);
+  const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(bytes);
+}
+
 export async function generateAppleMapKitToken(): Promise<string> {
   const config = useRuntimeConfig()
   
   // Check if we have environment variables for generating tokens
   const teamId = config.appleMapKitTeamId
   const keyId = config.appleMapKitKeyId
-  const privateKey = config.appleMapKitPrivateKey ? Buffer.from(config.appleMapKitPrivateKey, 'base64').toString('utf-8') : undefined
+  const privateKey = config.appleMapKitPrivateKey ? base64ToUtf8(config.appleMapKitPrivateKey) : undefined
   
   if (!teamId || !keyId || !privateKey) {
     throw createError({
