@@ -54,5 +54,11 @@ export default defineNuxtConfig({
     cache: true,
     database: true,
     browser: true
+  },
+
+  nitro: {
+    experimental: {
+      openAPI: true
+    }
   }
 })
