@@ -39,7 +39,7 @@ export default defineAppConfig({
       }
     },
     colors: {
-      primary: 'cyan',
+      primary: 'violet',
       neutral: 'gray'
     }
   }
