@@ -62,10 +62,9 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: 'https://visimate.drevan.workers.dev/',
+    url: 'https://visimate.au/',
     name: 'VisiMate.au — Get seen online',
     description: 'Get free, step-by-step fixes in under 2 minutes to improve your online visibility.',
-    indexable: false,
     defaultLocale: 'en-au',
   },
 
@@ -75,7 +74,34 @@ export default defineNuxtConfig({
       alternateName: 'VisiMate',
       description: 'A free online visibility tool to help you get seen online.',
       logo: '/logo.png',
-      url: 'https://visimate.drevan.workers.dev/',
+      url: 'https://visimate.au/',
     })
+  },
+
+  fonts: {
+    adobe: {
+      id: ['gov0eiq'],
+    },
+    
+    families: [
+      {
+        name: 'ArponaSans',
+        provider: 'adobe',
+        weights: [700],
+        styles: ['normal'],
+      },
+      {
+        name: 'Darkmode Off',
+        provider: 'adobe',
+        weights: [400, 500, 700],
+        styles: ['normal', 'italic'],
+      },
+      {
+        name: 'Darkmode On',
+        provider: 'adobe',
+        weights: [400, 500, 700],
+        styles: ['normal', 'italic'],
+      },
+    ]
   }
 })

@@ -15,9 +15,9 @@ if (!business.value) {
 
 const { data: checkContent } = await useAsyncData('checkContent', async () => {
   const checkContent = await queryCollection('checks')
-      .all()
+    .all()
 
-  return checkContent.filter(check => check.businessCategories?.includes(business.value!.category) || check.businessCategories === null) 
+  return checkContent.filter(check => check.businessCategories?.includes(business.value!.category) || check.businessCategories === null)
 })
 
 const resultSchema = z.discriminatedUnion('type', [
@@ -317,21 +317,13 @@ const getCheckItemClasses = (check: any) => {
 }
 
 const checksAsSelectItems = computed(() => {
-  // return checks.value.map(check => ({
-  //   label: check.title,
-  //   value: check.id,
-  //   icon: getCheckIcon(check.status),
-  //   ui: {
-  //     itemLeadingIcon: getCheckIconColor(check.status),
-  //   }
-  // }))
   if (!channelChecks.value) return []
 
-  return Object.entries(channelChecks.value).flatMap(([categoryName, channels]) => 
+  return Object.entries(channelChecks.value).flatMap(([categoryName, channels]) =>
     [{
       type: 'label' as const,
       label: categoryName,
-    },...channels.map(check => ({
+    }, ...channels.map(check => ({
       label: check.title,
       value: check.id,
       icon: getCheckIcon(check.status),
@@ -340,8 +332,8 @@ const checksAsSelectItems = computed(() => {
         itemLeadingIcon: getCheckIconColor(check.status),
       }
     })), {
-    type: 'separator' as const
-  }]
+      type: 'separator' as const
+    }]
   )
 })
 </script>
@@ -352,11 +344,12 @@ const checksAsSelectItems = computed(() => {
     <div class="hidden print:block">
       <!-- Print header -->
       <div class="mb-8 border-b pb-4">
-        <h1 class="text-2xl font-bold">{{ business.name }} - Complete Analysis</h1>
+        <h1 class="text-2xl font-bold font-display tracking-tight">{{ business.name }} - Complete Analysis</h1>
         <p class="text-sm text-gray-600">Generated on {{ todayDate }}</p>
         <div class="mt-2">
           <span class="font-semibold">Overall Score: {{ totalImplementationScore.percentage }}%</span>
-          <span class="ml-4 text-sm">({{ totalImplementationScore.score }}/{{ totalImplementationScore.total }} points)</span>
+          <span class="ml-4 text-sm">({{ totalImplementationScore.score }}/{{ totalImplementationScore.total }}
+            points)</span>
         </div>
       </div>
 
@@ -378,7 +371,8 @@ const checksAsSelectItems = computed(() => {
           <div v-if="channelChecks.some(c => c.status === 'fail' || c.status === 'error')">
             <h3 class="font-semibold text-red-600 mb-2">{{ channelName }}</h3>
             <ul class="list-disc list-inside text-sm space-y-1">
-              <li v-for="check in channelChecks.filter(c => c.status === 'fail' || c.status === 'error')" :key="check.id">
+              <li v-for="check in channelChecks.filter(c => c.status === 'fail' || c.status === 'error')"
+                :key="check.id">
                 <span class="font-medium">{{ check.title }}</span> ({{ check.points }} points)
                 <span v-if="check.result?.label" class="italic text-gray-600"> - {{ check.result.label }}</span>
               </li>
@@ -391,9 +385,10 @@ const checksAsSelectItems = computed(() => {
       <div class="page-break"></div>
 
       <!-- All checks expanded for print -->
-      <div v-for="[channelName, channelChecks] in Object.entries(channelChecks)" :key="channelName" class="mb-8 break-inside-avoid">
+      <div v-for="[channelName, channelChecks] in Object.entries(channelChecks)" :key="channelName"
+        class="mb-8 break-inside-avoid">
         <h2 class="text-lg font-bold mb-4 border-b pb-2">{{ channelName }}</h2>
-        
+
         <div v-for="check in channelChecks" :key="check.id" class="mb-6 break-inside-avoid">
           <div class="flex items-center gap-2 mb-2">
             <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
@@ -403,18 +398,13 @@ const checksAsSelectItems = computed(() => {
             </UBadge>
             <span class="text-xs text-gray-500">({{ check.points }} points)</span>
           </div>
-          
+
           <div v-if="check.result?.label" class="text-sm italic text-gray-600 mb-2">
             {{ check.result.label }}
           </div>
-          
-          <ContentRenderer 
-            v-if="check.content"
-            :value="check.content" 
-            tag="article" 
-            class="prose prose-xs max-w-none print-content" 
-            :prose="false" 
-          />
+
+          <ContentRenderer v-if="check.content" :value="check.content" tag="article"
+            class="prose prose-xs max-w-none print-content" :prose="false" />
         </div>
       </div>
     </div>
@@ -434,182 +424,178 @@ const checksAsSelectItems = computed(() => {
         }
       ]" />
 
-    <div class="flex max-md:flex-col md:items-center justify-between mt-2 gap-3">
-      <h1 class="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">{{ business.name }}</h1>
+      <div class="flex max-md:flex-col md:items-center justify-between mt-2 gap-3">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white font-display tracking-tight">{{ business.name }}</h1>
 
-      <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-download" color="neutral" variant="ghost" aria-label="Download PDF" @click="print()">
-          Download / Print
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UButton icon="i-lucide-download" color="neutral" variant="ghost" aria-label="Download PDF" @click="print()">
+            Download / Print
+          </UButton>
 
-        <UButton icon="i-lucide-pencil" color="neutral" variant="soft"
-          :to="`/${business.id}/edit/`">
-          Edit
-        </UButton>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-      <UCard variant="subtle" class="col-span-1 max-md:row-start-3">
-        <div class="flex items-center justify-between gap-2">
-          <h2 class="text-xl font-bold">{{ business.name }}</h2>
-
-          <UButton icon="i-lucide-pencil" color="neutral" variant="link"
-            :to="`/${business.id}/edit/`">
+          <UButton icon="i-lucide-pencil" color="neutral" variant="soft" :to="`/${business.id}/edit/`">
             Edit
           </UButton>
         </div>
-
-        <BusinessChannels :business="business" class="mt-4">
-          <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">
-            {{ business.category }}
-          </UBadge>
-        </BusinessChannels>
-      </UCard>
-
-      <div
-        class="col-span-1 row-start-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/50 ring ring-primary-300/50 dark:ring-primary-900/50 p-6 flex flex-col items-start">
-        <div class="text-xl font-bold">Need a hand?</div>
-
-        <p class="dark:text-gray-100 text-gray-700 mt-2 text-sm">
-          We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
-          expert who can guide you.
-        </p>
-
-        <div class="mt-auto pt-4 flex items-center gap-3">
-          <UButton color="primary" variant="soft" size="lg" to="/chat" icon="i-lucide-headset"
-            trailing-icon="i-lucide-arrow-right">
-            <span>Schedule a <strong><em>free</em></strong> chat</span>
-          </UButton>
-          <NuxtLink to="https://visimate.au/chat" external class="hidden print:block">
-            <QR to="https://visimate.au/chat" :size="56" />
-          </NuxtLink>
-          <ULink to="https://visimate.au/chat" external class="hidden print:block">
-            visimate.au/chat
-          </ULink>
-        </div>
       </div>
 
-      <UCard variant="subtle" class="col-span-1 md:col-span-2 md:row-span-2">
-        <h2 class="sr-only">Summary</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+        <UCard variant="subtle" class="col-span-1 max-md:row-start-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-xl font-bold">{{ business.name }}</h2>
 
-        <div class="flex flex-col items-center gap-8">
-          <div class="flex flex-col items-center gap-4">
-            <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
-
-            <div class="text-xl font-bold">Overall Score</div>
+            <UButton icon="i-lucide-pencil" color="neutral" variant="link" :to="`/${business.id}/edit/`">
+              Edit
+            </UButton>
           </div>
 
-          <div class="grid gap-4" :class="business.category === 'food' ? 'grid-cols-2 md:grid-cols-4' : 'md:grid-cols-3'">
-            <div class="flex flex-col items-center gap-2">
-              <CircularProgress
-                :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
-                class="size-20" />
-              <div class="text-base font-bold">Google Business Profile</div>
-            </div>
+          <BusinessChannels :business="business" class="mt-4">
+            <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">
+              {{ business.category }}
+            </UBadge>
+          </BusinessChannels>
+        </UCard>
 
-            <div class="flex flex-col items-center gap-2">
-              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Website')?.percentage || 0"
-                class="size-20" />
-              <div class="text-base font-bold">Website</div>
-            </div>
+        <div
+          class="col-span-1 row-start-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/50 ring ring-primary-300/50 dark:ring-primary-900/50 p-6 flex flex-col items-start">
+          <div class="text-xl font-bold">Need a hand?</div>
 
-            <div class="flex flex-col items-center gap-2">
-              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Social Media')?.percentage || 0"
-                class="size-20" />
-              <div class="text-base font-bold">Social Media</div>
-            </div>
+          <p class="dark:text-gray-100 text-gray-700 mt-2 text-sm">
+            We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
+            expert who can guide you.
+          </p>
 
-            <!-- Food Delivery channel only for food businesses -->
-            <div class="flex flex-col items-center gap-2" v-if="business.category === 'food'">
-              <CircularProgress :percentage="channelStatus.find(s => s.name === 'Food Delivery')?.percentage || 0"
-                class="size-20" />
-              <div class="text-base font-bold">Food Delivery</div>
-            </div>
+          <div class="mt-auto pt-4 flex items-center gap-3">
+            <UButton color="primary" variant="soft" size="lg" to="/chat" icon="i-lucide-headset"
+              trailing-icon="i-lucide-arrow-right">
+              <span>Schedule a <strong><em>free</em></strong> chat</span>
+            </UButton>
+            <NuxtLink to="https://visimate.au/chat" external class="hidden print:block">
+              <QR to="https://visimate.au/chat" :size="56" />
+            </NuxtLink>
+            <ULink to="https://visimate.au/chat" external class="hidden print:block">
+              visimate.au/chat
+            </ULink>
           </div>
         </div>
-      </UCard>
 
-      <UCard variant="subtle" class="md:col-span-3">
-        <div class="flex max-md:flex-col gap-12">
-          <!-- Left Column: Tree View -->
-          <div class="md:shrink-0 md:w-sm flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold">Checks</h3>
-              <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="subtle" size="sm" @click="refreshChecks"
-                aria-label="Refresh checks">
-                Refresh
-              </UButton>
+        <UCard variant="subtle" class="col-span-1 md:col-span-2 md:row-span-2">
+          <h2 class="sr-only">Summary</h2>
+
+          <div class="flex flex-col items-center gap-8">
+            <div class="flex flex-col items-center gap-4">
+              <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
+
+              <div class="text-xl font-bold">Overall Score</div>
             </div>
 
-            <UAccordion type="multiple" :default-value="channelChecks ? Object.keys(channelChecks) : []"
-              :items="treeData" class="max-md:hidden">
-              <template #default="{ item }">
-                <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
-                <UBadge :color="item.passedPoints === item.totalPoints ? 'success' : 'warning'" variant="soft"
-                  class="ml-3">
-                  {{ Math.round(item.passedPoints / item.totalPoints * 100) }}
-                </UBadge>
-              </template>
+            <div class="grid gap-4"
+              :class="business.category === 'food' ? 'grid-cols-2 md:grid-cols-4' : 'md:grid-cols-3'">
+              <div class="flex flex-col items-center gap-2">
+                <CircularProgress
+                  :percentage="channelStatus.find(s => s.name === 'Google Business Profile')?.percentage || 0"
+                  class="size-20" />
+                <div class="text-base font-bold">Google Business Profile</div>
+              </div>
 
-              <template #content="{ item }">
-                <div class="flex flex-col">
-                  <button type="button" v-for="check in item.checks" :key="check.id"
-                    class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated w-full"
-                    @click="selectedCheckId = check.id" :class="[getCheckItemClasses(check)]">
-                    <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
-                    <span class="truncate">{{ check.title }}</span>
-                  </button>
-                </div>
-              </template>
-            </UAccordion>
-          </div>
+              <div class="flex flex-col items-center gap-2">
+                <CircularProgress :percentage="channelStatus.find(s => s.name === 'Website')?.percentage || 0"
+                  class="size-20" />
+                <div class="text-base font-bold">Website</div>
+              </div>
 
-          <USelect v-model="selectedCheckId" :items="checksAsSelectItems" placeholder="Select a check" class="md:hidden sticky top-3" size="xl" :clearable="false" />
+              <div class="flex flex-col items-center gap-2">
+                <CircularProgress :percentage="channelStatus.find(s => s.name === 'Social Media')?.percentage || 0"
+                  class="size-20" />
+                <div class="text-base font-bold">Social Media</div>
+              </div>
 
-          <!-- Right Column: Details Panel -->
-          <div class="w-full">
-            <div v-if="!selectedCheck" class="flex items-center justify-center h-full text-center">
-              <div class="text-gray-500 dark:text-gray-400">
-                <UIcon name="i-lucide-mouse-pointer-click" class="size-8 mx-auto mb-2" />
-                <p class="text-sm">Select a check from the <span class="max-md:hidden">tree</span><span class="md:hidden">dropdown</span> to view details</p>
+              <!-- Food Delivery channel only for food businesses -->
+              <div class="flex flex-col items-center gap-2" v-if="business.category === 'food'">
+                <CircularProgress :percentage="channelStatus.find(s => s.name === 'Food Delivery')?.percentage || 0"
+                  class="size-20" />
+                <div class="text-base font-bold">Food Delivery</div>
               </div>
             </div>
+          </div>
+        </UCard>
 
-            <div v-else class="space-y-4">
-              <!-- Check Header -->
-              <div class="border-b border-gray-100 dark:border-gray-800 pb-4">
-                <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <span>{{ selectedCheck.channelCategory }}</span>
-                  <span>{{ selectedCheck.points }} points</span>
-                  <UBadge :color="getStatusColor(selectedCheck.status)" variant="soft" class="capitalize">
-                    {{ getStatusLabel(selectedCheck.status) }}
+        <UCard variant="subtle" class="md:col-span-3">
+          <div class="flex max-md:flex-col gap-12">
+            <!-- Left Column: Tree View -->
+            <div class="md:shrink-0 md:w-sm flex flex-col gap-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Checks</h3>
+                <UButton icon="i-lucide-refresh-ccw" color="neutral" variant="subtle" size="sm" @click="refreshChecks"
+                  aria-label="Refresh checks">
+                  Refresh
+                </UButton>
+              </div>
+
+              <UAccordion type="multiple" :default-value="channelChecks ? Object.keys(channelChecks) : []"
+                :items="treeData" class="max-md:hidden">
+                <template #default="{ item }">
+                  <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">{{ item.label }}</span>
+                  <UBadge :color="item.passedPoints === item.totalPoints ? 'success' : 'warning'" variant="soft"
+                    class="ml-3">
+                    {{ Math.round(item.passedPoints / item.totalPoints * 100) }}
                   </UBadge>
-                  <span v-if="selectedCheck.duration">{{ formatTime(selectedCheck.duration) }}</span>
-                </div>
+                </template>
 
-                <div v-if="selectedCheck.result?.label" class="mt-2 text-sm italic text-gray-600 dark:text-gray-400">
-                  {{ selectedCheck.result.label }}
+                <template #content="{ item }">
+                  <div class="flex flex-col">
+                    <button type="button" v-for="check in item.checks" :key="check.id"
+                      class="flex items-center gap-1.5 py-1.5 px-2 text-sm font-semibold rounded-lg hover:bg-elevated w-full"
+                      @click="selectedCheckId = check.id" :class="[getCheckItemClasses(check)]">
+                      <UIcon :name="getCheckIcon(check.status)" :class="getCheckIconColor(check.status)" />
+                      <span class="truncate">{{ check.title }}</span>
+                    </button>
+                  </div>
+                </template>
+              </UAccordion>
+            </div>
+
+            <USelect v-model="selectedCheckId" :items="checksAsSelectItems" placeholder="Select a check"
+              class="md:hidden sticky top-3" size="xl" :clearable="false" />
+
+            <!-- Right Column: Details Panel -->
+            <div class="w-full">
+              <div v-if="!selectedCheck" class="flex items-center justify-center h-full text-center">
+                <div class="text-gray-500 dark:text-gray-400">
+                  <UIcon name="i-lucide-mouse-pointer-click" class="size-8 mx-auto mb-2" />
+                  <p class="text-sm">Select a check from the <span class="max-md:hidden">tree</span><span
+                      class="md:hidden">dropdown</span> to view details</p>
                 </div>
               </div>
 
-              <ContentRenderer v-if="selectedCheck" :value="selectedCheck.content" tag="article" class="prose prose-sm dark:prose-invert" :prose="false" />
+              <div v-else class="space-y-4">
+                <!-- Check Header -->
+                <div class="border-b border-gray-100 dark:border-gray-800 pb-4">
+                  <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    <span>{{ selectedCheck.channelCategory }}</span>
+                    <span>{{ selectedCheck.points }} points</span>
+                    <UBadge :color="getStatusColor(selectedCheck.status)" variant="soft" class="capitalize">
+                      {{ getStatusLabel(selectedCheck.status) }}
+                    </UBadge>
+                    <span v-if="selectedCheck.duration">{{ formatTime(selectedCheck.duration) }}</span>
+                  </div>
 
-              <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
-                No additional information available for this check.
+                  <div v-if="selectedCheck.result?.label" class="mt-2 text-sm italic text-gray-600 dark:text-gray-400">
+                    {{ selectedCheck.result.label }}
+                  </div>
+                </div>
+
+                <ContentRenderer v-if="selectedCheck" :value="selectedCheck.content" tag="article"
+                  class="prose prose-sm dark:prose-invert" :prose="false" />
+
+                <div v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
+                  No additional information available for this check.
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
-
-    </div>
-    <!-- Footer -->
-    <footer class="mt-6 py-4 text-center text-xs text-slate-500">
-      <p>© {{ new Date().getFullYear() }} VisiMate | {{ (totalCheckTime / 1000).toFixed(1) }} seconds | Generated on {{
-        todayDate }}</p>
-    </footer>
   </UContainer>
 </template>
 
@@ -623,31 +609,31 @@ const checksAsSelectItems = computed(() => {
   .page-break {
     page-break-before: always;
   }
-  
+
   .break-inside-avoid {
     break-inside: avoid;
   }
-  
-  .print-content h1, 
-  .print-content h2, 
+
+  .print-content h1,
+  .print-content h2,
   .print-content h3 {
     break-after: avoid;
   }
-  
+
   .print-content {
     font-size: 11px;
     line-height: 1.4;
   }
-  
+
   .print-content p {
     margin-bottom: 0.5rem;
   }
-  
-  .print-content ul, 
+
+  .print-content ul,
   .print-content ol {
     margin-bottom: 0.5rem;
   }
-  
+
   .print-content li {
     margin-bottom: 0.25rem;
   }

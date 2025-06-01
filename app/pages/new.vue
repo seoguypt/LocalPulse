@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
-import type { BusinessWithLocations } from '../../../shared/utils/schema'
+import { z } from 'zod';
 
-const route = useRoute();
-const id = route.params.id as string;
-
-const { data: business } = await useFetch<BusinessWithLocations>(`/api/businesses/${id}`);
-
-if (!business.value) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Business not found',
-  });
-}
-
-// Convert business data to profiles format
-const businessProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]> = ref([])
+const businessName = useRouteQuery('businessName', '');
+const categoryId = useRouteQuery<string, CategoryId>('categoryId', 'other', {
+  transform: {
+    get: (value) => categoryIdSchema.parse(value),
+    set: (value) => value,
+  }
+});
+const route = useRoute()
+const discoveredProfiles = ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]>(route.query.discoveredProfiles ? JSON.parse(route.query.discoveredProfiles as string) : [])
 
 // Add missing profile functionality
 const showAddForm = ref(false)
@@ -31,122 +24,6 @@ const categoryItems = Object.values(CATEGORY_CONFIG).map(category => ({
   label: category.label,
   value: category.id,
 }));
-
-// Business name and category
-const businessName = ref(business.value.name)
-const categoryId = ref<CategoryId>(business.value.category as CategoryId)
-
-// Convert business data to profiles
-const convertBusinessToProfiles = () => {
-  const profiles: { type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[] = []
-  
-  if (!business.value) return profiles
-  
-  if (business.value.websiteUrl) {
-    profiles.push({
-      type: 'website',
-      title: business.value.websiteUrl,
-    })
-  }
-  
-  if (business.value.facebookUsername) {
-    profiles.push({
-      type: 'facebook',
-      title: business.value.facebookUsername,
-    })
-  }
-  
-  if (business.value.instagramUsername) {
-    profiles.push({
-      type: 'instagram',
-      title: business.value.instagramUsername,
-    })
-  }
-  
-  if (business.value.tiktokUsername) {
-    profiles.push({
-      type: 'tiktok',
-      title: business.value.tiktokUsername,
-    })
-  }
-  
-  if (business.value.xUsername) {
-    profiles.push({
-      type: 'x',
-      title: business.value.xUsername,
-    })
-  }
-  
-  if (business.value.linkedinUrl) {
-    profiles.push({
-      type: 'linkedin',
-      title: business.value.linkedinUrl,
-    })
-  }
-  
-  if (business.value.youtubeUrl) {
-    profiles.push({
-      type: 'youtube',
-      title: business.value.youtubeUrl,
-    })
-  }
-  
-  if (business.value.uberEatsUrl) {
-    profiles.push({
-      type: 'uber-eats',
-      title: business.value.uberEatsUrl,
-    })
-  }
-  
-  if (business.value.deliverooUrl) {
-    profiles.push({
-      type: 'deliveroo',
-      title: business.value.deliverooUrl,
-    })
-  }
-  
-  if (business.value.doorDashUrl) {
-    profiles.push({
-      type: 'doordash',
-      title: business.value.doorDashUrl,
-    })
-  }
-  
-  if (business.value.menulogUrl) {
-    profiles.push({
-      type: 'menulog',
-      title: business.value.menulogUrl,
-    })
-  }
-  
-  // Add location profiles
-  if (business.value.locations) {
-    for (const location of business.value.locations) {
-      if (location.googlePlaceId) {
-        profiles.push({
-          type: 'google-maps',
-          title: location.name || 'Google Maps Listing',
-          subtitle: location.address || undefined,
-          googlePlaceId: location.googlePlaceId,
-        })
-      }
-      
-      if (location.appleMapsId) {
-        profiles.push({
-          type: 'apple-maps',
-          title: location.name || 'Apple Maps Listing',
-          subtitle: location.address || undefined,
-          appleMapsId: location.appleMapsId,
-        })
-      }
-    }
-  }
-  
-  return profiles
-}
-
-// Initialize profiles from business data
-businessProfiles.value = convertBusinessToProfiles()
 
 const availableChannelOptions = computed(() => {
   return Object.values(CHANNEL_CONFIG)
@@ -167,16 +44,16 @@ const addProfileSchema = computed(() => {
       value: z.string().min(1, 'Please enter a value')
     })
   }
-  
+
   const channelId = selectedChannelId.value
-  
+
   // Define validation based on channel type and database schema
   const validationMap: Record<ChannelId, z.ZodType<string>> = {
     // Username fields (from schema: instagramUsername, tiktokUsername, xUsername)
     'instagram': z.string().min(1, 'Instagram username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
     'tiktok': z.string().min(1, 'TikTok username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
     'x': z.string().min(1, 'X username is required').regex(/^[a-zA-Z0-9._]+$/, 'Invalid username format (letters, numbers, dots, underscores only)'),
-    
+
     // URL fields (from schema: websiteUrl, facebookUsername (actually URL), linkedinUrl, youtubeUrl, etc.)
     'website': z.string().url('Please enter a valid URL').min(1, 'Website URL is required'),
     'facebook': z.string().url('Please enter a valid URL').refine(url => url.includes('facebook.com'), 'Must be a Facebook URL'),
@@ -186,12 +63,12 @@ const addProfileSchema = computed(() => {
     'deliveroo': z.string().url('Please enter a valid URL').refine(url => url.includes('deliveroo.com'), 'Must be a Deliveroo URL'),
     'doordash': z.string().url('Please enter a valid URL').refine(url => url.includes('doordash.com'), 'Must be a DoorDash URL'),
     'menulog': z.string().url('Please enter a valid URL').refine(url => url.includes('menulog.com'), 'Must be a Menulog URL'),
-    
+
     // Place IDs (handled by special components)
     'google-maps': z.string().min(1, 'Please select a Google Maps place'),
     'apple-maps': z.string().min(1, 'Please select an Apple Maps place'),
   }
-  
+
   return z.object({
     value: validationMap[channelId] || z.string().min(1, 'Please enter a value')
   })
@@ -244,10 +121,10 @@ const getInputType = (channelId: ChannelId): string => {
 // Add profile functionality
 const addProfile = (event: any) => {
   if (!selectedChannelId.value || !newProfileValue.value) return
-  
+
   let profileTitle = newProfileValue.value
   let profileSubtitle: string | undefined = undefined
-  
+
   // Handle place inputs specially to show names instead of IDs
   if (selectedChannelId.value === 'google-maps' || selectedChannelId.value === 'apple-maps') {
     if (selectedPlaceDetails.value) {
@@ -260,16 +137,16 @@ const addProfile = (event: any) => {
       }
     }
   }
-  
-  // Add the new profile to business profiles
-  businessProfiles.value.push({
+
+  // Add the new profile to discovered profiles
+  discoveredProfiles.value.push({
     type: selectedChannelId.value,
     title: profileTitle,
     subtitle: profileSubtitle,
     googlePlaceId: selectedChannelId.value === 'google-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
     appleMapsId: selectedChannelId.value === 'apple-maps' ? selectedPlaceDetails.value?.id || selectedPlaceDetails.value?.name : undefined,
   })
-  
+
   // Reset form
   resetAddForm()
 }
@@ -286,15 +163,14 @@ const handlePlaceDetailsUpdate = (placeDetails: any) => {
 }
 
 const removeProfile = (profileToRemove: { type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }) => {
-  const index = businessProfiles.value.findIndex(p => 
+  const index = discoveredProfiles.value.findIndex(p =>
     p.type === profileToRemove.type && p.title === profileToRemove.title
   )
   if (index > -1) {
-    businessProfiles.value.splice(index, 1)
+    discoveredProfiles.value.splice(index, 1)
   }
 }
 
-// Function to map profiles to business data
 const mapProfilesToBusinessData = () => {
   const businessData: any = {
     name: businessName.value,
@@ -303,8 +179,8 @@ const mapProfilesToBusinessData = () => {
 
   const locations: any[] = []
 
-  // Map each profile to the appropriate database field
-  for (const profile of businessProfiles.value) {
+  // Map each discovered profile to the appropriate database field
+  for (const profile of discoveredProfiles.value) {
     switch (profile.type) {
       case 'website':
         businessData.websiteUrl = profile.title
@@ -384,26 +260,36 @@ const mapProfilesToBusinessData = () => {
   return { businessData, locations }
 }
 
-// Function to save business
-const saveBusinessChanges = async () => {
+const router = useRouter()
+// Function to save business and navigate to report
+const saveBusinessAndGetReport = async () => {
   if (isSaving.value) return
-  
+
   try {
     isSaving.value = true
-    
+
     const { businessData, locations } = mapProfilesToBusinessData()
-    
-    await $fetch(`/api/businesses/${id}`, {
-      method: 'PUT',
+
+    // Generate UUID for the new business
+    const businessId = generateUUID()
+
+    const business = await $fetch('/api/businesses', {
+      method: 'POST',
       body: {
+        id: businessId,
         ...businessData,
         locations,
       },
     })
 
-    await navigateTo(`/${id}`)
+    if (business) {
+      // Store the business ID in localStorage
+      addBusinessId(business.id)
+
+      router.push(`/${business.id}`)
+    }
   } catch (error) {
-    console.error('Error updating business:', error)
+    console.error('Error saving business:', error)
     // You might want to show a toast notification here
   } finally {
     isSaving.value = false
@@ -412,174 +298,93 @@ const saveBusinessChanges = async () => {
 </script>
 
 <template>
-  <UContainer v-if="business" as="main" class="py-8">
-    <UBreadcrumb :items="[
-      {
-        label: 'Home',
-        icon: 'i-lucide-house',
-        to: '/'
-      },
-      {
-        label: business.name,
-        icon: 'i-lucide-building',
-        to: `/${business.id}/`
-      },
-      {
-        label: 'Edit',
-        icon: 'i-lucide-pencil',
-        to: `/${business.id}/edit/`
-      }
-    ]" />
-    
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mt-4 font-display">Edit {{ business.name }}</h1>
+  <UContainer as="main" class="my-auto flex flex-col items-stretch">
+    <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Here's What We Found</h2>
 
-    <div class="mt-6 space-y-6">
-      <!-- Business Name -->
-      <UFormField label="Business Name">
-        <UInput v-model="businessName" class="w-full" />
-      </UFormField>
+    <h3 class="text-2xl font-extrabold tracking-tight">{{ businessName }}</h3>
 
-      <!-- Business Category -->
-      <UFormField label="Business Category">
-        <USelect v-model="categoryId" :items="categoryItems" class="min-w-32" />
-      </UFormField>
+    <UFormField label="Business Category" class="mt-4">
+      <USelect v-model="categoryId" :items="categoryItems" class="min-w-32" />
+    </UFormField>
 
-      <!-- Profiles Section -->
-      <div>
-        <h2 class="text-xl font-semibold mb-4">Your Profiles</h2>
-        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Manage your business profiles across different platforms. Add any we missed below and remove any that aren't yours.
-        </div>
+    <div class="mt-2">These are your discovered profiles. Add any we missed below and remove any that aren't yours.
+    </div>
 
-        <div class="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
-          <div v-for="profile in businessProfiles" :key="profile.title"
-            class="flex items-center justify-between gap-3 py-4">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <UIcon :name="CHANNEL_CONFIG[profile.type].icon" :class="CHANNEL_CONFIG[profile.type].iconColor"
-                  size="12" />
-                <span class="text-sm font-semibold text-gray-400">{{ CHANNEL_CONFIG[profile.type].name }}</span>
-              </div>
-
-              <div class="font-medium">{{ profile.title }}</div>
-              <div v-if="profile.subtitle" class="text-sm text-gray-500">{{ profile.subtitle }}</div>
-            </div>
-
-            <UButton icon="lucide-x" size="xs" variant="link" color="neutral" @click="removeProfile(profile)">Remove</UButton>
+    <div class="flex flex-col divide-y divide-gray-800 mt-4">
+      <div v-for="profile in discoveredProfiles" :key="profile.title"
+        class="flex items-center justify-between gap-3 py-4">
+        <div>
+          <div class="flex items-center gap-1.5">
+            <UIcon :name="CHANNEL_CONFIG[profile.type].icon" :class="CHANNEL_CONFIG[profile.type].iconColor"
+              size="12" />
+            <span class="text-sm font-semibold text-gray-400">{{ CHANNEL_CONFIG[profile.type].name }}</span>
           </div>
+
+          <div class="font-medium">{{ profile.title }}</div>
+          <div v-if="profile.subtitle" class="text-sm text-gray-500">{{ profile.subtitle }}</div>
         </div>
 
-        <!-- Add missing button or form -->
-        <div class="mt-4">
-          <UButton 
-            v-if="!showAddForm && availableChannelOptions.length > 0" 
-            color="neutral" 
-            size="sm" 
-            variant="link" 
-            icon="lucide-plus"
-            @click="showAddForm = true"
-          >
-            Add missing profile
+        <UButton icon="lucide-x" size="xs" variant="link" color="neutral" @click="removeProfile(profile)">Not mine
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Add missing button or form -->
+    <div class="mt-3">
+      <UButton v-if="!showAddForm && availableChannelOptions.length > 0" color="neutral" size="sm" class="mx-auto"
+        variant="link" icon="lucide-plus" @click="showAddForm = true">
+        Add missing
+      </UButton>
+
+      <!-- Add form -->
+      <UForm v-if="showAddForm" :schema="addProfileSchema" :state="{ value: newProfileValue }" @submit="addProfile"
+        class="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+        <div class="flex items-center justify-between">
+          <h4 class="font-medium">Add Missing Profile</h4>
+          <UButton icon="lucide-x" size="xs" variant="ghost" color="neutral" @click="resetAddForm"
+            aria-label="Close add form" />
+        </div>
+
+        <!-- Channel selector -->
+        <UFormField label="Channel Type" name="channelType">
+          <USelect v-model="selectedChannelId" :items="availableChannelOptions" placeholder="Select a channel..." />
+        </UFormField>
+
+        <!-- Dynamic input based on channel type -->
+        <FormFieldWithIcon v-if="selectedChannelId" :label="getChannelLabel(selectedChannelId)"
+          :icon="CHANNEL_CONFIG[selectedChannelId].icon" :icon-color="CHANNEL_CONFIG[selectedChannelId].iconColor"
+          name="value">
+          <!-- Use appropriate input component -->
+          <GooglePlaceInput v-if="selectedChannelId === 'google-maps'" v-model="newProfileValue"
+            :placeholder="getPlaceholder(selectedChannelId)" @update:place-details="handlePlaceDetailsUpdate" />
+          <ApplePlaceInput v-else-if="selectedChannelId === 'apple-maps'" v-model="newProfileValue"
+            :placeholder="getPlaceholder(selectedChannelId)" @update:place-details="handlePlaceDetailsUpdate" />
+          <UInput v-else v-model="newProfileValue" :placeholder="getPlaceholder(selectedChannelId)"
+            :type="getInputType(selectedChannelId)" />
+        </FormFieldWithIcon>
+
+        <!-- Action buttons -->
+        <div class="flex gap-2 pt-2">
+          <UButton type="submit" size="sm" :disabled="!selectedChannelId || !newProfileValue">
+            Add Profile
           </UButton>
-
-          <!-- Add form -->
-          <UForm 
-            v-if="showAddForm" 
-            :schema="addProfileSchema" 
-            :state="{ value: newProfileValue }" 
-            @submit="addProfile"
-            class="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50"
-          >
-            <div class="flex items-center justify-between">
-              <h4 class="font-medium">Add Missing Profile</h4>
-              <UButton 
-                icon="lucide-x" 
-                size="xs" 
-                variant="ghost" 
-                color="neutral"
-                @click="resetAddForm"
-                aria-label="Close add form"
-              />
-            </div>
-
-            <!-- Channel selector -->
-            <UFormField label="Channel Type" name="channelType">
-              <USelect 
-                v-model="selectedChannelId" 
-                :items="availableChannelOptions"
-                placeholder="Select a channel..."
-              />
-            </UFormField>
-
-            <!-- Dynamic input based on channel type -->
-            <FormFieldWithIcon 
-              v-if="selectedChannelId"
-              :label="getChannelLabel(selectedChannelId)"
-              :icon="CHANNEL_CONFIG[selectedChannelId].icon"
-              :icon-color="CHANNEL_CONFIG[selectedChannelId].iconColor"
-              name="value"
-            >
-              <!-- Use appropriate input component -->
-              <GooglePlaceInput 
-                v-if="selectedChannelId === 'google-maps'" 
-                v-model="newProfileValue" 
-                :placeholder="getPlaceholder(selectedChannelId)"
-                @update:place-details="handlePlaceDetailsUpdate"
-              />
-              <ApplePlaceInput 
-                v-else-if="selectedChannelId === 'apple-maps'" 
-                v-model="newProfileValue" 
-                :placeholder="getPlaceholder(selectedChannelId)"
-                @update:place-details="handlePlaceDetailsUpdate"
-              />
-              <UInput 
-                v-else
-                v-model="newProfileValue" 
-                :placeholder="getPlaceholder(selectedChannelId)"
-                :type="getInputType(selectedChannelId)"
-              />
-            </FormFieldWithIcon>
-
-            <!-- Action buttons -->
-            <div class="flex gap-2 pt-2">
-              <UButton 
-                type="submit" 
-                size="sm"
-                :disabled="!selectedChannelId || !newProfileValue"
-              >
-                Add Profile
-              </UButton>
-              <UButton 
-                variant="ghost" 
-                size="sm"
-                @click="resetAddForm"
-              >
-                Cancel
-              </UButton>
-            </div>
-          </UForm>
-
-          <!-- Show message when no more channels available -->
-          <div 
-            v-if="!showAddForm && availableChannelOptions.length === 0"
-            class="text-center text-sm text-gray-500 mt-3"
-          >
-            All available channels have been added
-          </div>
+          <UButton variant="ghost" size="sm" @click="resetAddForm">
+            Cancel
+          </UButton>
         </div>
-      </div>
+      </UForm>
 
-      <!-- Action buttons -->
-      <div class="flex justify-between gap-3 pt-6">
-        <UButton label="Cancel" color="neutral" variant="ghost" :to="`/${id}`" />
-        <UButton 
-          @click="saveBusinessChanges" 
-          label="Save Changes" 
-          color="primary" 
-          :loading="isSaving" 
-          :disabled="isSaving"
-        />
+      <!-- Show message when no more channels available -->
+      <div v-if="!showAddForm && availableChannelOptions.length === 0" class="text-center text-sm text-gray-500 mt-3">
+        All available channels have been added
       </div>
+    </div>
+
+    <div class="flex items-center justify-end mt-12">
+      <UButton color="primary" trailing-icon="lucide-arrow-right" @click="saveBusinessAndGetReport" :loading="isSaving"
+        :disabled="isSaving">
+        Get report
+      </UButton>
     </div>
   </UContainer>
 </template>
