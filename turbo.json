@@ -2,12 +2,7 @@
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
   "globalDependencies": [
-    ".env*",
-    "nuxt.config.ts",
-    "tailwind.config.*",
-    "drizzle.config.ts",
-    "tsconfig.json",
-    "vitest.config.ts"
+    ".env*"
   ],
   "globalEnv": [
     "NODE_ENV",
