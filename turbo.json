@@ -12,7 +12,9 @@
   "globalEnv": [
     "NODE_ENV",
     "NUXT_*",
-    "NITRO_*"
+    "NITRO_*",
+    "POSTHOG_CLI_ENV_ID",
+    "POSTHOG_CLI_TOKEN"
   ],
   "tasks": {
     "build": {
@@ -27,10 +29,39 @@
       ],
       "outputs": [
         ".nuxt/**",
-        ".output/**",
         "dist/**"
       ],
       "outputLogs": "new-only"
+    },
+    "sourcemap:inject": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "dist/**"
+      ],
+      "outputs": [
+        "dist/**"
+      ],
+      "env": [
+        "POSTHOG_CLI_ENV_ID",
+        "POSTHOG_CLI_TOKEN"
+      ],
+      "outputLogs": "new-only"
+    },
+    "sourcemap:upload": {
+      "dependsOn": ["sourcemap:inject"],
+      "inputs": [
+        "dist/**"
+      ],
+      "env": [
+        "POSTHOG_CLI_ENV_ID",
+        "POSTHOG_CLI_TOKEN"
+      ],
+      "cache": false,
+      "outputLogs": "new-only"
+    },
+    "deploy:prepare": {
+      "dependsOn": ["sourcemap:upload"],
+      "cache": false
     },
     "dev": {
       "dependsOn": ["db:generate"],
@@ -50,7 +81,6 @@
       ],
       "outputs": [
         ".nuxt/**",
-        ".output/**",
         "dist/**"
       ],
       "outputLogs": "new-only"

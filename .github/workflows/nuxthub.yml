@@ -38,13 +38,8 @@ jobs:
       - name: Ensure NuxtHub module is installed
         run: pnpx nuxthub@latest ensure
 
-      - name: Build application
-        run: pnpm turbo build
-
-      - name: Inject and upload sourcemaps to PostHog
-        run: |
-          posthog-cli sourcemap inject --directory dist
-          posthog-cli sourcemap upload --directory dist
+      - name: Build and prepare for deployment
+        run: pnpm turbo deploy:prepare
         env:
           POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
           POSTHOG_CLI_TOKEN: ${{ vars.POSTHOG_CLI_TOKEN }}

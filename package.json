@@ -12,9 +12,13 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
+    "sourcemap:inject": "posthog-cli sourcemap inject --directory dist",
+    "sourcemap:upload": "posthog-cli sourcemap upload --directory dist",
+    "deploy:prepare": "echo 'Sourcemaps processed and ready for deployment'",
     "turbo:build": "turbo build",
     "turbo:test": "turbo test test:coverage",
-    "turbo:dev": "turbo dev"
+    "turbo:dev": "turbo dev",
+    "turbo:deploy": "turbo deploy:prepare"
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.0.2",
