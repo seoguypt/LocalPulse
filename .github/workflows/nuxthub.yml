@@ -11,6 +11,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +39,7 @@ jobs:
         run: pnpx nuxthub@latest ensure
 
       - name: Build application
-        run: pnpm build
+        run: pnpm turbo build
 
       - name: Inject and upload sourcemaps to PostHog
         run: |

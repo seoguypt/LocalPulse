@@ -1,0 +1,118 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "globalDependencies": [
+    ".env*",
+    "nuxt.config.ts",
+    "tailwind.config.*",
+    "drizzle.config.ts",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "NUXT_*",
+    "NITRO_*"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["db:generate"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.{ts,js,vue}",
+        "!**/*.spec.{ts,js,vue}",
+        "!test/**",
+        "!tests/**",
+        "!coverage/**"
+      ],
+      "outputs": [
+        ".nuxt/**",
+        ".output/**",
+        "dist/**"
+      ],
+      "outputLogs": "new-only"
+    },
+    "dev": {
+      "dependsOn": ["db:generate"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "generate": {
+      "dependsOn": ["db:generate"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.{ts,js,vue}",
+        "!**/*.spec.{ts,js,vue}",
+        "!test/**",
+        "!tests/**",
+        "!coverage/**"
+      ],
+      "outputs": [
+        ".nuxt/**",
+        ".output/**",
+        "dist/**"
+      ],
+      "outputLogs": "new-only"
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "postinstall": {
+      "inputs": [
+        "$TURBO_ROOT$/package.json",
+        "$TURBO_ROOT$/pnpm-lock.yaml"
+      ],
+      "cache": false
+    },
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.test.{ts,js,vue}",
+        "**/*.spec.{ts,js,vue}",
+        "test/**",
+        "tests/**",
+        "$TURBO_ROOT$/vitest.config.ts"
+      ],
+      "outputs": [
+        "coverage/**"
+      ],
+      "outputLogs": "errors-only"
+    },
+    "test:coverage": {
+      "dependsOn": ["test"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/*.test.{ts,js,vue}",
+        "**/*.spec.{ts,js,vue}",
+        "test/**",
+        "tests/**",
+        "$TURBO_ROOT$/vitest.config.ts"
+      ],
+      "outputs": [
+        "coverage/**"
+      ],
+      "outputLogs": "errors-only"
+    },
+    "db:generate": {
+      "inputs": [
+        "server/database/schema.ts",
+        "server/database/schema/**/*.ts",
+        "$TURBO_ROOT$/drizzle.config.ts"
+      ],
+      "outputs": [
+        "server/database/migrations/**"
+      ],
+      "outputLogs": "new-only"
+    },
+    "db:studio": {
+      "dependsOn": ["db:generate"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    }
+  }
+} 
