@@ -30,8 +30,7 @@
       "outputs": [
         ".nuxt/**",
         "dist/**"
-      ],
-      "outputLogs": "new-only"
+      ]
     },
     "sourcemap:inject": {
       "dependsOn": ["build"],
@@ -44,8 +43,7 @@
       "env": [
         "POSTHOG_CLI_ENV_ID",
         "POSTHOG_CLI_TOKEN"
-      ],
-      "outputLogs": "new-only"
+      ]
     },
     "sourcemap:upload": {
       "dependsOn": ["sourcemap:inject"],
@@ -56,8 +54,7 @@
         "POSTHOG_CLI_ENV_ID",
         "POSTHOG_CLI_TOKEN"
       ],
-      "cache": false,
-      "outputLogs": "new-only"
+      "cache": false
     },
     "deploy:prepare": {
       "dependsOn": ["sourcemap:upload"],
@@ -119,8 +116,7 @@
       ],
       "outputs": [
         "server/database/migrations/**"
-      ],
-      "outputLogs": "new-only"
+      ]
     },
     "db:studio": {
       "dependsOn": ["db:generate"],
