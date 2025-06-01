@@ -69,22 +69,6 @@
       "persistent": true,
       "interactive": true
     },
-    "generate": {
-      "dependsOn": ["db:generate"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "!**/*.test.{ts,js,vue}",
-        "!**/*.spec.{ts,js,vue}",
-        "!test/**",
-        "!tests/**",
-        "!coverage/**"
-      ],
-      "outputs": [
-        ".nuxt/**",
-        "dist/**"
-      ],
-      "outputLogs": "new-only"
-    },
     "preview": {
       "dependsOn": ["build"],
       "cache": false,
