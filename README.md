@@ -1,4 +1,4 @@
-# VisiMate.au: Tools to improve your business's online visibility
+# VisiMate.au: Get seen online
 
 ## Problem Statement
 

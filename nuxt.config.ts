@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { execSync } from 'child_process'
+import { defineOrganization } from 'nuxt-schema-org/schema'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-31',
@@ -24,7 +24,8 @@ export default defineNuxtConfig({
     '@nuxt/content',
     '@nuxt/test-utils',
     '@vueuse/nuxt',
-    '@nuxthub/core'
+    '@nuxthub/core',
+    '@nuxtjs/seo'
   ],
 
   css: ['~/assets/css/main.css'],
@@ -58,5 +59,23 @@ export default defineNuxtConfig({
     experimental: {
       openAPI: true
     }
+  },
+
+  site: {
+    url: 'https://visimate.drevan.workers.dev/',
+    name: 'VisiMate.au — Get seen online',
+    description: 'Get free, step-by-step fixes in under 2 minutes to improve your online visibility.',
+    indexable: false,
+    defaultLocale: 'en-au',
+  },
+
+  schemaOrg: {
+    identity: defineOrganization({
+      name: 'VisiMate.au',
+      alternateName: 'VisiMate',
+      description: 'A free online visibility tool to help you get seen online.',
+      logo: '/logo.png',
+      url: 'https://visimate.drevan.workers.dev/',
+    })
   }
 })
