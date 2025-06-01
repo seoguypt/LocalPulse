@@ -25,7 +25,14 @@
         "!**/*.spec.{ts,js,vue}",
         "!test/**",
         "!tests/**",
-        "!coverage/**"
+        "!coverage/**",
+        "!README.md",
+        "!**/.DS_Store",
+        "!.github/**",
+        "!.vscode/**",
+        "!.cursor/**",
+        "!**/*.map",
+        "!**/*.d.ts.map"
       ],
       "outputs": [
         ".nuxt/**",
