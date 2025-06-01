@@ -103,5 +103,12 @@ export default defineNuxtConfig({
         styles: ['normal', 'italic'],
       },
     ]
+  },
+
+  image: {
+    provider: 'cloudflare',
+    cloudflare: {
+      baseURL: 'https://visimate.au'
+    }
   }
 })
