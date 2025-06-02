@@ -18,9 +18,9 @@ export interface PageSpeedPerformanceData {
  * @param url Website URL to check
  * @returns Performance data with LCP values and pass/fail status
  */
-export const fetchCruxPerformance = defineCachedFunction(async (url: string): Promise<CruxPerformanceData> => {
+export const fetchCruxPerformance = defineCachedFunction(async (event, url: string): Promise<CruxPerformanceData> => {
   try {
-    const { googleApiKey } = useRuntimeConfig();
+    const { googleApiKey } = useRuntimeConfig(event);
     
     if (!googleApiKey) {
       return {
@@ -62,9 +62,9 @@ export const fetchCruxPerformance = defineCachedFunction(async (url: string): Pr
  * @param url Website URL to check
  * @returns Performance data with LCP values and pass/fail status
  */
-export const fetchPageSpeedPerformance = defineCachedFunction(async (url: string): Promise<PageSpeedPerformanceData> => {
+export const fetchPageSpeedPerformance = defineCachedFunction(async (event, url: string): Promise<PageSpeedPerformanceData> => {
   try {
-    const { googleApiKey } = useRuntimeConfig();
+    const { googleApiKey } = useRuntimeConfig(event);
     
     if (!googleApiKey) {
       return {

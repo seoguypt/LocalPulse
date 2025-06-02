@@ -23,19 +23,18 @@ export default defineEventHandler(async (event) => {
 
   try {
     // First attempt with CrUX API
-    const cruxResult = await fetchCruxPerformance(business.websiteUrl);
+    const cruxResult = await fetchCruxPerformance(event, business.websiteUrl);
 
     // If we have a valid result from CrUX, return it
     if (cruxResult.lcp !== undefined) {
       return {
-        type: 'check' as const,
         value: cruxResult.passes,
         label: cruxResult.message,
       };
     }
 
     // Fallback to PageSpeed Insights API if CrUX doesn't have data
-    const pageSpeedResult = await fetchPageSpeedPerformance(business.websiteUrl);
+    const pageSpeedResult = await fetchPageSpeedPerformance(event, business.websiteUrl);
     
     return {
       type: 'check' as const,
