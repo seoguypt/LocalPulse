@@ -4,10 +4,10 @@
 
 
 @theme {
-  --font-display: 'ArponaSans', sans-serif;
-  --font-sans: 'Darkmode Off', sans-serif;
+  --font-display: 'ArponaSans', 'Inter', sans-serif;
+  --font-sans: 'Darkmode Off', 'Inter', sans-serif;
 }
 
 .dark {
-  --font-sans: 'Darkmode On', sans-serif;
+  --font-sans: 'Darkmode On', 'Inter', sans-serif;
 }

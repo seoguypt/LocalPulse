@@ -38,12 +38,11 @@ export default defineNuxtConfig({
     appleMapkitPrivateKey: process.env.NUXT_APPLE_MAPKIT_PRIVATE_KEY,
     public: {
       googleApiKey: process.env.NUXT_PUBLIC_GOOGLE_API_KEY,
-      posthogPublicKey: 'phc_NnyL6hYZBsre2WNUDrU3Zu6CDN7dpntH7stqhB0dnzu'
+      posthogPublicKey: process.env.NUXT_PUBLIC_POSTHOG_PUBLIC_KEY,
     }
   },
 
   routeRules: {
-    '/chat': { redirect: 'https://calendar.notion.so/meet/andrevantonder/visimate' },
     '/ingest/static/**': { proxy: 'https://us-assets.i.posthog.com/static/**' },
     '/ingest/**': { proxy: 'https://us.i.posthog.com/**' },
   },
@@ -78,9 +77,10 @@ export default defineNuxtConfig({
     })
   },
 
-  fonts: {
-    adobe: {
-      id: ['gov0eiq'],
+  // For nicer looking fonts, add an Adobe Fonts kit ID to your .env file
+  fonts: process.env.ADOBE_KIT_ID ? {
+     adobe: {
+      id: [process.env.ADOBE_KIT_ID || ''], 
     },
     
     families: [
@@ -103,7 +103,7 @@ export default defineNuxtConfig({
         styles: ['normal', 'italic'],
       },
     ]
-  },
+  }: {},
 
   image: {
     provider: 'cloudflare',
