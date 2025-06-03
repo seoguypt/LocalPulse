@@ -5,11 +5,7 @@
     ".env*"
   ],
   "globalEnv": [
-    "NODE_ENV",
-    "NUXT_*",
-    "NITRO_*",
-    "POSTHOG_CLI_ENV_ID",
-    "POSTHOG_CLI_TOKEN"
+    "NODE_ENV"
   ],
   "tasks": {
     "build": {

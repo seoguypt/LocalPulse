@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/seo'
   ],
 
-  css: ['~/assets/css/main.css', process.env.ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
+  css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
   runtimeConfig: {
     googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
@@ -78,9 +78,9 @@ export default defineNuxtConfig({
   },
 
   // For nicer looking fonts, add an Adobe Fonts kit ID to your .env file
-  fonts: process.env.ADOBE_KIT_ID ? {
+  fonts: process.env.NUXT_ADOBE_KIT_ID ? {
      adobe: {
-      id: [process.env.ADOBE_KIT_ID || ''], 
+      id: [process.env.NUXT_ADOBE_KIT_ID || ''], 
     },
     
     families: [
