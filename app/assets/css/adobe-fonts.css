@@ -1,0 +1,8 @@
+:root {
+  --font-display: 'ArponaSans', sans-serif;
+  --font-sans: 'Darkmode Off', sans-serif;
+}
+
+.dark {
+  --font-sans: 'Darkmode On', sans-serif;
+}

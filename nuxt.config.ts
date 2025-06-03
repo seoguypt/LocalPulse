@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/seo'
   ],
 
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', process.env.ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
   runtimeConfig: {
     googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
@@ -101,9 +101,22 @@ export default defineNuxtConfig({
         provider: 'adobe',
         weights: [400, 500, 700],
         styles: ['normal', 'italic'],
+      }
+    ]
+  }: {
+    families: [
+      {
+        name: 'Poppins',
+        weights: [700],
+        styles: ['normal'],
+      },
+      {
+        name: 'Inter',
+        weights: [400, 500, 700],
+        styles: ['normal', 'italic'],
       },
     ]
-  }: {},
+  },
 
   image: {
     provider: 'cloudflare',

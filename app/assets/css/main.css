@@ -2,12 +2,8 @@
 @import "@nuxt/ui";
 @plugin "@tailwindcss/typography";
 
-
+/* Adobe fonts will override these if included. See ./adobe-fonts.css */
 @theme {
-  --font-display: 'ArponaSans', 'Inter', sans-serif;
-  --font-sans: 'Darkmode Off', 'Inter', sans-serif;
-}
-
-.dark {
-  --font-sans: 'Darkmode On', 'Inter', sans-serif;
+  --font-display: 'Poppins', sans-serif;
+  --font-sans: 'Inter', sans-serif;
 }
