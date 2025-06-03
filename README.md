@@ -8,3 +8,8 @@
 - [Vue](https://vuejs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [NuxtUI](https://ui.nuxt.com/)
+
+## Screenshots
+
+![Homepage screenshot](./.github/assets/homepage.png)
+![Homepage screenshot](./.github/assets/report.png)
