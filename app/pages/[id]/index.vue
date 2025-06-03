@@ -448,40 +448,38 @@ const checksAsSelectItems = computed(() => {
             </UButton>
           </div>
 
-          <BusinessChannels :business="business" class="mt-4">
-            <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-coffee">
-              {{ business.category }}
-            </UBadge>
-          </BusinessChannels>
+          <div class="mt-4 space-y-4">
+            <BusinessChannels :business="business">
+              <UBadge color="neutral" variant="subtle" class="text-sm" leading-icon="i-lucide-tag">
+                {{ business.category }}
+              </UBadge>
+            </BusinessChannels>
+
+            <div v-if="business.locations?.length" class="space-y-3">
+              <div class="space-y-2">
+                <div v-for="location in business.locations" :key="location.id" class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div v-if="location.name" class="font-medium text-sm">{{ location.name }}
+                    <span class="inline-flex items-center gap-4 ml-1 text-xs text-gray-500">
+                    <span v-if="location.googlePlaceId" class="flex items-center gap-1">
+                      <UIcon :name="CHANNEL_CONFIG['google-maps']['icon']" class="size-3" :class="CHANNEL_CONFIG['google-maps']['iconColor']" />
+                      Google Maps
+                    </span>
+                    <span v-if="location.appleMapsId"  class="flex items-center gap-1">
+                      <UIcon :name="CHANNEL_CONFIG['apple-maps']['icon']" class="size-3" :class="CHANNEL_CONFIG['apple-maps']['iconColor']" />
+                      Apple Maps
+                    </span>
+                  </span>
+                  </div>
+                  <div v-if="location.address" class="text-sm text-gray-600 dark:text-gray-400">{{ location.address }}</div>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
         </UCard>
 
-        <div
-          class="col-span-1 row-start-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/50 ring ring-primary-300/50 dark:ring-primary-900/50 p-6 flex flex-col items-start">
-          <div class="text-xl font-bold">Need a hand?</div>
 
-          <p class="dark:text-gray-100 text-gray-700 mt-2 text-sm">
-            We've helped countless businesses just like yours fix these issues <strong>fast</strong>. Chat with an
-            expert who can guide you.
-          </p>
-
-          <div class="mt-auto pt-4 flex items-center gap-3">
-            <UButton color="primary" variant="soft" size="lg" to="/chat" icon="i-lucide-headset"
-              trailing-icon="i-lucide-arrow-right">
-              <span>Schedule a <strong><em>free</em></strong> chat</span>
-            </UButton>
-            <NuxtLink to="https://visimate.au/chat" external class="hidden print:block">
-              <QR to="https://visimate.au/chat" :size="56" />
-            </NuxtLink>
-            <ULink to="https://visimate.au/chat" external class="hidden print:block">
-              visimate.au/chat
-            </ULink>
-          </div>
-        </div>
-
-        <UCard variant="subtle" class="col-span-1 md:col-span-2 md:row-span-2">
-          <h2 class="sr-only">Summary</h2>
-
-          <div class="flex flex-col items-center gap-8">
+        <UCard variant="subtle" class="col-span-1 md:col-span-2" :ui="{ body: 'flex flex-col gap-8 items-center justify-around h-full' }">
             <div class="flex flex-col items-center gap-4">
               <CircularProgress :percentage="totalImplementationScore.percentage" class="size-40" />
 
@@ -516,7 +514,6 @@ const checksAsSelectItems = computed(() => {
                 <div class="text-base font-bold">Food Delivery</div>
               </div>
             </div>
-          </div>
         </UCard>
 
         <UCard variant="subtle" class="md:col-span-3">
