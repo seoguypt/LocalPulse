@@ -28,7 +28,9 @@ export default defineNuxtConfig({
     '@nuxtjs/seo'
   ],
 
-
+  ogImage: {
+    enabled: false
+  },
 
   css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
