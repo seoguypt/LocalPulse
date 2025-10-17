@@ -35,10 +35,8 @@ jobs:
           BROWSERLESS_API_KEY: ${{ secrets.BROWSERLESS_API_KEY }}
       
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: visimate
-          directory: .output/public
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy .output/public --project-name=visimate
