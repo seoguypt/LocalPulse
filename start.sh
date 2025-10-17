@@ -15,7 +15,8 @@ echo "Database URL is set: ${DB_URL:0:30}..."
 export DATABASE_URL="$DB_URL"
 
 echo "=== Running database migrations ==="
-if node_modules/.bin/drizzle-kit push; then
+cd /app
+if node node_modules/drizzle-kit/bin.cjs push; then
   echo "✓ Migrations completed successfully"
 else
   echo "⚠ Migration failed or no changes needed"
