@@ -9,9 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Set environment variables
+# Set environment variables for build
 ENV CI=true
-ENV NODE_ENV=production
 ENV NITRO_PRESET=node-server
 ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 
@@ -21,11 +20,12 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Debug: Check what files are present
-RUN echo "=== Files in /app ===" && ls -la
+# Build the application (NODE_ENV will be set by nuxt build automatically)
+RUN pnpm run build
 
-# Build the application
-RUN pnpm run build || (echo "=== BUILD FAILED ===" && exit 1)
+# Check build output
+RUN ls -la .output || echo ".output not found" && \
+    ls -la .nuxt || echo ".nuxt not found"
 
 # Verify build output
 RUN test -f .output/server/index.mjs || (echo "Build failed: index.mjs not found" && ls -la && exit 1)
