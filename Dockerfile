@@ -7,15 +7,15 @@ RUN corepack enable && corepack prepare pnpm@9.0.6 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Set environment variables
 ENV CI=true
 ENV NODE_ENV=production
 ENV NITRO_PRESET=node-server
 
-# Install dependencies
-RUN pnpm install --no-frozen-lockfile
+# Install dependencies (use frozen lockfile for reproducibility)
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
