@@ -11,8 +11,14 @@ let pool: Pool | null = null;
 export function useDrizzle() {
   if (!pool) {
     const config = useRuntimeConfig();
+    const connectionString = config.databaseUrl || process.env.DATABASE_URL;
+    
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is not configured. Please add a PostgreSQL database to your Railway project.');
+    }
+    
     pool = new Pool({
-      connectionString: config.databaseUrl || process.env.DATABASE_URL,
+      connectionString,
     });
   }
   return drizzle(pool, { schema });
