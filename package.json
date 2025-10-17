@@ -33,6 +33,7 @@
     "@vueuse/core": "^13.3.0",
     "@vueuse/nuxt": "13.1.0",
     "@vueuse/router": "^13.3.0",
+    "better-sqlite3": "^12.4.1",
     "drizzle-orm": "^0.43.1",
     "drizzle-zod": "^0.7.1",
     "eslint": "^9.28.0",
