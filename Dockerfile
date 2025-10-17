@@ -9,14 +9,18 @@ WORKDIR /app
 # Copy package files
 COPY package.json ./
 
-# Install dependencies (skip postinstall to avoid oxc issues during install)
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+# Set environment to avoid interactive prompts
+ENV CI=true
+ENV NODE_ENV=production
+
+# Install dependencies
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN pnpm run build
+RUN pnpm run build && ls -la .output
 
 # Production stage
 FROM node:20-alpine AS runner
