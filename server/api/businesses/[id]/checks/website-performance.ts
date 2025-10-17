@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
     // If we have a valid result from CrUX, return it
     if (cruxResult.lcp !== undefined) {
       return {
+        type: 'check' as const,
         value: cruxResult.passes,
         label: cruxResult.message,
       };

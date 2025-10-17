@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
   // Check both review count AND rating
   const count = response.userRatingCount || 0;
   const rating = response.rating || 0;
+  let reviews = response.reviews || [];
   
   // Check both criteria:
   // 1. Rating ≥ 4.0
@@ -56,9 +57,29 @@ export default defineEventHandler(async (event) => {
     label = `${count} reviews with ${rating.toFixed(1)} rating. Good job!`;
   }
 
+  // Try to get reviews with owner replies via SerpApi
+  let enrichedReviews = null;
+  try {
+    const serpApiResult = await $fetch(`/api/google/serpapi-reviews?placeId=${location.googlePlaceId}`);
+    if (serpApiResult.success && serpApiResult.reviews) {
+      enrichedReviews = serpApiResult.reviews;
+      // Use SerpApi reviews if available (includes owner replies)
+      if (enrichedReviews.length > 0) {
+        reviews = enrichedReviews;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch SerpApi reviews:', error);
+    // Continue with Places API reviews if SerpApi fails
+  }
+
   return { 
     type: 'check' as const,
     value: passesCheck,
     label,
+    reviews: reviews.slice(0, 5), // Return latest 5 reviews
+    placeId: location.googlePlaceId,
+    hasOwnerReplies: enrichedReviews ? enrichedReviews.some((r: any) => r.ownerReply) : false,
+    reviewSource: enrichedReviews ? 'serpapi' : 'places_api',
   };
 });

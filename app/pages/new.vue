@@ -261,18 +261,34 @@ const mapProfilesToBusinessData = () => {
 }
 
 const router = useRouter()
+
+// Debug logging
+const debugLogs = ref<Array<{ timestamp: string, type: 'info' | 'error' | 'success', message: string, details?: any }>>([])
+const addDebugLog = (type: 'info' | 'error' | 'success', message: string, details?: any) => {
+  const timestamp = new Date().toLocaleTimeString()
+  console.log(`[${timestamp}] ${type.toUpperCase()}: ${message}`, details)
+  debugLogs.value.push({ timestamp, type, message, details })
+}
+
 // Function to save business and navigate to report
 const saveBusinessAndGetReport = async () => {
-  if (isSaving.value) return
+  if (isSaving.value) {
+    addDebugLog('info', 'Already saving, skipping duplicate request')
+    return
+  }
 
   try {
     isSaving.value = true
+    addDebugLog('info', 'Starting to save business', { businessName: businessName.value, category: categoryId.value })
 
     const { businessData, locations } = mapProfilesToBusinessData()
+    addDebugLog('info', 'Business data mapped', { businessData, locations })
 
     // Generate UUID for the new business
     const businessId = generateUUID()
+    addDebugLog('info', 'Generated business ID', { businessId })
 
+    addDebugLog('info', 'Sending POST request to /api/businesses')
     const business = await $fetch('/api/businesses', {
       method: 'POST',
       body: {
@@ -282,17 +298,29 @@ const saveBusinessAndGetReport = async () => {
       },
     })
 
+    addDebugLog('success', 'Business saved successfully', { business })
+
     if (business) {
       // Store the business ID in localStorage
       addBusinessId(business.id)
+      addDebugLog('info', 'Business ID stored in localStorage')
 
+      addDebugLog('info', 'Navigating to report page', { path: `/${business.id}` })
       router.push(`/${business.id}`)
+    } else {
+      addDebugLog('error', 'Business object is null/undefined after save')
     }
   } catch (error) {
+    addDebugLog('error', 'Error saving business', { 
+      error: error instanceof Error ? error.message : String(error),
+      statusCode: (error as any)?.statusCode,
+      statusMessage: (error as any)?.statusMessage,
+      data: (error as any)?.data
+    })
     console.error('Error saving business:', error)
-    // You might want to show a toast notification here
   } finally {
     isSaving.value = false
+    addDebugLog('info', 'Save process completed')
   }
 }
 </script>
@@ -302,6 +330,52 @@ const saveBusinessAndGetReport = async () => {
     <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Here's What We Found</h2>
 
     <h3 class="text-2xl font-extrabold tracking-tight">{{ businessName }}</h3>
+    
+    <!-- Debug Window -->
+    <UCard v-if="debugLogs.length > 0" variant="subtle" class="mt-4">
+      <h3 class="text-lg font-semibold mb-3">Debug Information</h3>
+      <div class="space-y-2 max-h-96 overflow-y-auto">
+        <div 
+          v-for="(log, index) in debugLogs" 
+          :key="index"
+          class="p-3 rounded-lg text-sm font-mono"
+          :class="{
+            'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800': log.type === 'info',
+            'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800': log.type === 'error',
+            'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800': log.type === 'success'
+          }"
+        >
+          <div class="flex items-center gap-2 mb-1">
+            <UIcon 
+              :name="log.type === 'error' ? 'i-lucide-x-circle' : log.type === 'success' ? 'i-lucide-check-circle' : 'i-lucide-info'" 
+              :class="{
+                'text-blue-500': log.type === 'info',
+                'text-red-500': log.type === 'error',
+                'text-green-500': log.type === 'success'
+              }"
+            />
+            <span class="font-semibold">{{ log.timestamp }}</span>
+            <span 
+              class="px-2 py-0.5 rounded text-xs uppercase font-bold"
+              :class="{
+                'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100': log.type === 'info',
+                'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100': log.type === 'error',
+                'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100': log.type === 'success'
+              }"
+            >
+              {{ log.type }}
+            </span>
+          </div>
+          <div class="mb-2">{{ log.message }}</div>
+          <details v-if="log.details" class="text-xs">
+            <summary class="cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+              Show details
+            </summary>
+            <pre class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-x-auto">{{ JSON.stringify(log.details, null, 2) }}</pre>
+          </details>
+        </div>
+      </div>
+    </UCard>
 
     <UFormField label="Business Category" class="mt-4">
       <USelect v-model="categoryId" :items="categoryItems" class="min-w-32" />

@@ -13,8 +13,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if the business has a YouTube URL in the database
+  const hasYouTube = !!business.youtubeUrl;
   return { 
     type: 'check' as const, 
-    value: !!business.youtubeUrl 
+    value: hasYouTube,
+    url: business.youtubeUrl || undefined
   };
 }); 

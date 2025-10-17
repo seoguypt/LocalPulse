@@ -15,5 +15,9 @@ export default defineEventHandler(async (event) => {
   // Check if the business has a Menulog URL
   const hasMenulogListing = !!business.menulogUrl;
 
-  return { type: 'check' as const, value: hasMenulogListing };
+  return { 
+    type: 'check' as const, 
+    value: hasMenulogListing,
+    url: business.menulogUrl || undefined
+  };
 }); 

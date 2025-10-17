@@ -15,5 +15,9 @@ export default defineEventHandler(async (event) => {
   // Check if the business has a Deliveroo URL
   const hasDeliverooListing = !!business.deliverooUrl;
 
-  return { type: 'check' as const, value: hasDeliverooListing };
+  return { 
+    type: 'check' as const, 
+    value: hasDeliverooListing,
+    url: business.deliverooUrl || undefined
+  };
 }); 

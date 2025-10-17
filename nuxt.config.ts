@@ -61,19 +61,19 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: 'https://visimate.au/',
-    name: 'VisiMate.au — Get seen online',
+    url: 'https://localpulse.app/',
+    name: 'LocalPulse — Get seen online',
     description: 'Get free, step-by-step fixes in under 2 minutes to improve your online visibility.',
     defaultLocale: 'en-au',
   },
 
   schemaOrg: {
     identity: defineOrganization({
-      name: 'VisiMate.au',
-      alternateName: 'VisiMate',
+      name: 'LocalPulse',
+      alternateName: 'LocalPulse',
       description: 'A free online visibility tool to help you get seen online.',
       logo: '/logo.png',
-      url: 'https://visimate.au/',
+      url: 'https://localpulse.app/',
     })
   },
 
@@ -121,7 +121,7 @@ export default defineNuxtConfig({
   image: {
     provider: 'cloudflare',
     cloudflare: {
-      baseURL: 'https://visimate.au'
+      baseURL: 'https://localpulse.app'
     }
   }
 })

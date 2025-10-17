@@ -13,8 +13,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if the business has a LinkedIn URL in the database
+  const hasLinkedIn = !!business.linkedinUrl;
   return { 
     type: 'check' as const, 
-    value: !!business.linkedinUrl 
+    value: hasLinkedIn,
+    url: business.linkedinUrl || undefined
   };
 }); 

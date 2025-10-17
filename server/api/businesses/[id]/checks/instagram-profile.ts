@@ -13,8 +13,21 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if the business has an Instagram username in the database
+  const hasInstagram = !!business.instagramUsername;
+  
+  // Handle both full URLs and usernames
+  let url: string | undefined;
+  if (hasInstagram) {
+    if (business.instagramUsername.startsWith('http')) {
+      url = business.instagramUsername;
+    } else {
+      url = `https://www.instagram.com/${business.instagramUsername}`;
+    }
+  }
+  
   return { 
     type: 'check' as const, 
-    value: !!business.instagramUsername 
+    value: hasInstagram,
+    url
   };
 }); 

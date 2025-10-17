@@ -47,7 +47,9 @@ export default defineEventHandler(async (event) => {
       value: isValidLength,
       label: isValidLength 
         ? `Meta description present (${metaDescription.length} chars)` 
-        : `Meta description too long: ${metaDescription.length} chars (should be ≤ 160)`
+        : `Meta description too long: ${metaDescription.length} chars (should be ≤ 160)`,
+      metaDescription: metaDescription,
+      characterCount: metaDescription.length
     };
   } catch (error) {
     console.error('Error checking meta description:', error);

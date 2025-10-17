@@ -91,15 +91,33 @@ export default defineEventHandler(async (event) => {
 
     // Check for address - we'll check for parts of the address since formatting can vary
     if (gbpAddress) {
+      // Normalize the address for better matching
+      const normalizedGbpAddress = gbpAddress.toLowerCase()
+        .replace(/,/g, ' ') // Remove commas
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+      
       // Split address into parts and check for each significant part
-      const addressParts = gbpAddress.split(',').map(part => part.trim().toLowerCase());
-      const significantParts = addressParts.filter(part => part.length > 3); // Filter out very short parts
+      const addressParts = normalizedGbpAddress.split(' ').filter(part => part.length > 2);
+      
+      // Also try splitting by common delimiters
+      const alternativeParts = gbpAddress.split(/[,\n]/).map(part => part.trim().toLowerCase()).filter(part => part.length > 3);
+      
+      // Combine both approaches
+      const allParts = [...new Set([...addressParts, ...alternativeParts])];
+      const significantParts = allParts.filter(part => 
+        part.length > 2 && 
+        !['the', 'and', 'street', 'road', 'avenue', 'netherlands', 'nederland'].includes(part)
+      );
       
       if (significantParts.length > 0) {
-        // Check if at least 70% of significant address parts are found
+        // Check if at least 60% of significant address parts are found (more lenient)
         const foundParts = significantParts.filter(part => pageText.includes(part));
-        addressFound = foundParts.length / significantParts.length >= 0.7;
-        results.push(`Address ${addressFound ? 'found' : 'missing'}`);
+        addressFound = foundParts.length / significantParts.length >= 0.6;
+        
+        // Debug info
+        const missingParts = significantParts.filter(part => !pageText.includes(part));
+        results.push(`Address ${addressFound ? 'found' : `missing (${missingParts.slice(0, 3).join(', ')})`}`);
       }
     }
 

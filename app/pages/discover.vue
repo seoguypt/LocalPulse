@@ -2,30 +2,30 @@
 import { z } from 'zod';
 
 const businessName = useRouteQuery('businessName', '');
+const city = useRouteQuery('city', '');
 const categoryId = ref<CategoryId>('other');
 
 const discoveredProfiles: Ref<{ type: ChannelId, title: string, subtitle?: string, googlePlaceId?: string, appleMapsId?: string }[]> = ref([])
 
+// Debug logging
+const debugLogs = ref<Array<{ timestamp: string, type: 'info' | 'error' | 'success', message: string, details?: any }>>([])
+const addDebugLog = (type: 'info' | 'error' | 'success', message: string, details?: any) => {
+  const timestamp = new Date().toLocaleTimeString()
+  console.log(`[${timestamp}] ${type.toUpperCase()}: ${message}`, details)
+  debugLogs.value.push({ timestamp, type, message, details })
+}
+
 const { googleApiKey } = useRuntimeConfig().public;
-const getGooglePlaces = async (name: string) => {
-  const rawResponse = await $fetch(`https://places.googleapis.com/v1/places:searchText`, {
+const getGooglePlaces = async (name: string, location: string) => {
+  // Combine business name with city for better search results
+  const searchQuery = location ? `${name} ${location}` : name;
+  addDebugLog('info', 'Starting Google Places search', { name, location, searchQuery, hasApiKey: !!googleApiKey })
+  try {
+    const rawResponse = await $fetch(`https://places.googleapis.com/v1/places:searchText`, {
     method: 'POST',
     body: {
-      textQuery: name,
-      // Australia
-      includePureServiceAreaBusinesses: true,
-      "locationRestriction": {
-        "rectangle": {
-          "low": {
-            "latitude": -44.0,
-            "longitude": 112.0
-          },
-          "high": {
-            "latitude": -10.0,
-            "longitude": 154.0
-          }
-        }
-      },
+      textQuery: searchQuery,
+      // Search globally
     },
     headers: {
       'X-Goog-FieldMask': 'places.id,places.displayName,places.websiteUri,places.formattedAddress,places.types',
@@ -33,6 +33,8 @@ const getGooglePlaces = async (name: string) => {
     }
   })
 
+
+  addDebugLog('info', 'Google Places API raw response', { rawResponse })
 
   const response =  z.object({
     places: z.array(z.object({
@@ -43,10 +45,13 @@ const getGooglePlaces = async (name: string) => {
       websiteUri: z.string().optional(),
       formattedAddress: z.string().optional(),
       types: z.array(z.string()),
-    })),
+    })).optional(),
   }).parse(rawResponse);
 
-  if (!response.places) return [];
+  if (!response.places || response.places.length === 0) {
+    addDebugLog('info', 'No places found in Google Places response')
+    return [];
+  }
 
   // Remove any suggestion where the name doesn't match (Apple returns results with similar names but not exact mataches)
   // Normalize Unicode characters to handle accented characters properly
@@ -56,32 +61,52 @@ const getGooglePlaces = async (name: string) => {
     return normalizedResultName.includes(normalizedSearchName);
   });
 
+  addDebugLog('success', `Google Places search completed`, { foundPlaces: places.length })
   return places;
+  } catch (error) {
+    addDebugLog('error', 'Google Places search failed', { 
+      error: error instanceof Error ? error.message : String(error),
+      statusCode: (error as any)?.statusCode,
+      data: (error as any)?.data
+    })
+    return [];
+  }
 }
 
 const getApplePlaces = async (name: string) => {
-  const response = await $fetch(`/api/apple/maps/search?query=${name}`)
+  addDebugLog('info', 'Starting Apple Maps search', { name })
+  try {
+    const response = await $fetch(`/api/apple/maps/search?query=${name}`)
 
-  // Remove any suggestion where the name doesn't match (Apple returns results with similar names but not exact mataches)
-  // Normalize Unicode characters to handle accented characters properly
-  const normalizedSearchName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const places = response.results.filter(result => {
-    const normalizedResultName = result.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return normalizedResultName.includes(normalizedSearchName);
-  });
+    // Remove any suggestion where the name doesn't match (Apple returns results with similar names but not exact mataches)
+    // Normalize Unicode characters to handle accented characters properly
+    const normalizedSearchName = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const places = response.results.filter(result => {
+      const normalizedResultName = result.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return normalizedResultName.includes(normalizedSearchName);
+    });
 
-  return places;
+    addDebugLog('success', `Apple Maps search completed`, { foundPlaces: places.length })
+    return places;
+  } catch (error) {
+    addDebugLog('error', 'Apple Maps search failed (API not configured)', { 
+      error: error instanceof Error ? error.message : String(error) 
+    })
+    return [];
+  }
 }
 
 const router = useRouter()
 const discoveryProgress = ref(0);
 onMounted(async () => {
+  addDebugLog('info', 'Discovery started', { businessName: businessName.value, city: city.value })
   discoveredProfiles.value = [];
 
   // Google Maps and Apple Maps
   discoveryProgress.value = 0;
+  addDebugLog('info', 'Phase 1: Searching map listings')
 
-  const [googlePlaces, applePlaces] = await Promise.all([getGooglePlaces(businessName.value), getApplePlaces(businessName.value)]);
+  const [googlePlaces, applePlaces] = await Promise.all([getGooglePlaces(businessName.value, city.value), getApplePlaces(businessName.value)]);
 
   for (const place of applePlaces) {
     discoveredProfiles.value.push({
@@ -124,20 +149,31 @@ onMounted(async () => {
   }
 
   categoryId.value = getCategoryIdFromGooglePlaceTypes(googlePlaces.map(place => place.types).flat());
+  addDebugLog('info', 'Category detected', { categoryId: categoryId.value })
 
   // Website
   discoveryProgress.value = 1;
+  addDebugLog('info', 'Phase 2: Searching for website')
 
   if (discoveredProfiles.value.filter(profile => profile.type === 'website').length === 0) {
-    const searchResults = await $fetch(`/api/google/search?query=${businessName.value}`);
-    for (const result of searchResults) {
-      if (result.title.toLowerCase().includes(businessName.value.toLowerCase())) {
-        discoveredProfiles.value.push({
-          type: 'website',
-          title: result.link,
-        });
-        break;
+    try {
+      const searchResults = await $fetch(`/api/google/search?query=${businessName.value}`);
+      addDebugLog('success', 'Google search completed', { resultsCount: searchResults.length })
+      for (const result of searchResults) {
+        if (result.title.toLowerCase().includes(businessName.value.toLowerCase())) {
+          discoveredProfiles.value.push({
+            type: 'website',
+            title: result.link,
+          });
+          addDebugLog('success', 'Website found from search', { url: result.link })
+          break;
+        }
       }
+    } catch (error) {
+      addDebugLog('error', 'Google search failed', { 
+        error: error instanceof Error ? error.message : String(error),
+        statusCode: (error as any)?.statusCode
+      })
     }
   }
 
@@ -146,6 +182,7 @@ onMounted(async () => {
 
   // Social profiles
   discoveryProgress.value = 2;
+  addDebugLog('info', 'Phase 3: Searching for social profiles')
 
   const getFacebookSuggestions = async () => {
     const suggestions = await $fetch(`/api/facebook/suggestions?businessName=${businessName.value}&websiteUrl=${websiteUrl}&googlePlaceId=${googlePlaceId}`);
@@ -220,17 +257,29 @@ onMounted(async () => {
     }
   }
 
-  await Promise.all([
-    getFacebookSuggestions(),
-    getInstagramSuggestions(),
-    getTiktokSuggestions(),
-    getXSuggestions(),
-    getLinkedinSuggestions(),
-    getYoutubeSuggestions(),
-  ]);
+  try {
+    await Promise.all([
+      getFacebookSuggestions(),
+      getInstagramSuggestions(),
+      getTiktokSuggestions(),
+      getXSuggestions(),
+      getLinkedinSuggestions(),
+      getYoutubeSuggestions(),
+    ]);
+    addDebugLog('success', 'Social profile search completed')
+  } catch (error) {
+    addDebugLog('error', 'Social profile search failed', { 
+      error: error instanceof Error ? error.message : String(error) 
+    })
+  }
 
   discoveryProgress.value = 3;
+  addDebugLog('success', 'Discovery completed', { 
+    totalProfiles: discoveredProfiles.value.length,
+    profiles: discoveredProfiles.value 
+  })
 
+  addDebugLog('info', 'Redirecting to /new page')
   router.push({
     path: '/new',
     query: {
@@ -244,6 +293,52 @@ onMounted(async () => {
 <template>
   <UContainer as="main" class="my-auto flex flex-col items-stretch">
       <h2 class="text-4xl font-semibold tracking-tight text-balance w-full mb-4">Discovering your online presence...</h2>
+      
+      <!-- Debug Window -->
+      <UCard v-if="debugLogs.length > 0" variant="subtle" class="mb-6">
+        <h3 class="text-lg font-semibold mb-3">Debug Information</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+          <div 
+            v-for="(log, index) in debugLogs" 
+            :key="index"
+            class="p-3 rounded-lg text-sm font-mono"
+            :class="{
+              'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800': log.type === 'info',
+              'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800': log.type === 'error',
+              'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800': log.type === 'success'
+            }"
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <UIcon 
+                :name="log.type === 'error' ? 'i-lucide-x-circle' : log.type === 'success' ? 'i-lucide-check-circle' : 'i-lucide-info'" 
+                :class="{
+                  'text-blue-500': log.type === 'info',
+                  'text-red-500': log.type === 'error',
+                  'text-green-500': log.type === 'success'
+                }"
+              />
+              <span class="font-semibold">{{ log.timestamp }}</span>
+              <span 
+                class="px-2 py-0.5 rounded text-xs uppercase font-bold"
+                :class="{
+                  'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100': log.type === 'info',
+                  'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100': log.type === 'error',
+                  'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100': log.type === 'success'
+                }"
+              >
+                {{ log.type }}
+              </span>
+            </div>
+            <div class="mb-2">{{ log.message }}</div>
+            <details v-if="log.details" class="text-xs">
+              <summary class="cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                Show details
+              </summary>
+              <pre class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-x-auto">{{ JSON.stringify(log.details, null, 2) }}</pre>
+            </details>
+          </div>
+        </div>
+      </UCard>
 
       <UTree size="xl" :items="[
         {

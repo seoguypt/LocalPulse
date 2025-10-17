@@ -15,5 +15,9 @@ export default defineEventHandler(async (event) => {
   // Check if the business has a DoorDash URL
   const hasDoorDashListing = !!business.doorDashUrl;
 
-  return { type: 'check' as const, value: hasDoorDashListing };
+  return { 
+    type: 'check' as const, 
+    value: hasDoorDashListing,
+    url: business.doorDashUrl || undefined
+  };
 }); 

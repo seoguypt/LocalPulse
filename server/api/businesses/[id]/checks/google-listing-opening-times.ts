@@ -30,6 +30,25 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`)
-  return { type: 'check' as const, value: !!response.currentOpeningHours };
+  const response = await $fetch(`/api/google/places/getPlace?id=${location.googlePlaceId}`) as any;
+  
+  // Check if opening hours are available
+  const hasOpeningHours = response.regularOpeningHours?.weekdayDescriptions?.length > 0;
+  const openingHours = response.regularOpeningHours?.weekdayDescriptions || [];
+  const currentOpeningHours = response.currentOpeningHours;
+  
+  let label = null;
+  if (!hasOpeningHours) {
+    label = 'Opening hours not set on Google Business Profile';
+  } else {
+    label = `Opening hours are configured (${openingHours.length} days)`;
+  }
+
+  return { 
+    type: 'check' as const,
+    value: hasOpeningHours,
+    label,
+    openingHours,
+    currentOpeningHours,
+  };
 });

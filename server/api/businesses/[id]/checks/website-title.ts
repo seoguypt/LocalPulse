@@ -114,6 +114,21 @@ export default defineEventHandler(async (event) => {
             locationInfo.locationParts = addressParts
               .map((part: string) => part.replace(/\d+/g, '').trim()) // Remove numbers
               .filter((part: string) => part.length > 1 && /[a-zA-Z]/.test(part)); // Keep only parts with letters
+            
+            // If we still don't have a city, try to extract it from address parts
+            // Usually the city is the second-to-last part (before country)
+            if (!locationInfo.city && locationInfo.locationParts.length >= 2) {
+              // Filter out street names (they usually have numbers in original or are first)
+              const nonStreetParts = locationInfo.locationParts.filter((part, index) => {
+                const originalPart = addressParts[index];
+                return originalPart && !/\d/.test(originalPart) && index > 0;
+              });
+              
+              // Take the first non-street part as likely city
+              if (nonStreetParts.length > 0) {
+                locationInfo.city = nonStreetParts[0];
+              }
+            }
           }
         }
       } catch (error) {
@@ -233,28 +248,30 @@ export default defineEventHandler(async (event) => {
     
     const passesCheck = containsName && (containsLocation || !hasLocationInfo);
     
-    // Add debug info to the label
-    let debugInfo = '';
-    if (!passesCheck && !containsLocation && hasLocationInfo) {
-      // Show what location info we extracted but failed to match
-      const locationDetails = [];
-      if (locationInfo.suburb) locationDetails.push(`Suburb: ${locationInfo.suburb}`);
-      if (locationInfo.city) locationDetails.push(`City: ${locationInfo.city}`);
-      if (locationInfo.state) locationDetails.push(`State: ${locationInfo.state}`);
-      if (locationInfo.locationParts.length > 0) locationDetails.push(`Address parts: ${locationInfo.locationParts.join(', ')}`);
+    // Build a clear, user-friendly message
+    let label = '';
+    
+    if (passesCheck) {
+      // Success case
+      if (matchedLocations.length > 0) {
+        label = `Title includes business name and location (${matchedLocations[0].replace(/ \(.*\)/, '')})`;
+      } else {
+        label = `Title includes business name`;
+      }
+    } else if (!containsLocation && hasLocationInfo) {
+      // Failed because location is missing
+      const currentTitle = `"${title}"`;
       
-      debugInfo = ` [${locationDetails.join('; ')}]`;
-      debugInfo += ` [Title words: ${titleWords.join(', ')}]`;
-    } else if (passesCheck && matchedLocations.length > 0) {
-      debugInfo = ` [Matched: ${matchedLocations.join(', ')}]`;
+      label = `Title should include location. Current: ${currentTitle}. Try adding "your city" to improve local SEO.`;
+    } else {
+      // Other failure case
+      label = `Title needs improvement: "${title}"`;
     }
     
     return {
       type: 'check' as const,
       value: passesCheck,
-      label: passesCheck 
-        ? `Title contains business name and location${debugInfo}`
-        : `Title missing location: "${title}"${debugInfo}`
+      label
     };
   } catch (error) {
     console.error('Error checking website title:', error);

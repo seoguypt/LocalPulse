@@ -13,8 +13,21 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if the business has a facebook username in the database
+  const hasFacebook = !!business.facebookUsername;
+  
+  // Handle both full URLs and usernames
+  let url: string | undefined;
+  if (hasFacebook) {
+    if (business.facebookUsername.startsWith('http')) {
+      url = business.facebookUsername;
+    } else {
+      url = `https://www.facebook.com/${business.facebookUsername}`;
+    }
+  }
+  
   return { 
     type: 'check' as const, 
-    value: !!business.facebookUsername 
+    value: hasFacebook,
+    url
   };
 }); 

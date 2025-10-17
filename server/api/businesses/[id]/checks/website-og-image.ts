@@ -48,12 +48,18 @@ export default defineEventHandler(async (event) => {
       };
     }
     
+    // Get additional OG image metadata
+    const ogImageWidth = document.querySelector('meta[property="og:image:width"]')?.getAttribute('content');
+    const ogImageHeight = document.querySelector('meta[property="og:image:height"]')?.getAttribute('content');
+    const ogImageAlt = document.querySelector('meta[property="og:image:alt"]')?.getAttribute('content');
+    
     // Validate if the URL is properly formed
+    let resolvedImageUrl = imageUrl;
     try {
       // If relative URL, resolve against base URL
       if (!imageUrl.startsWith('http')) {
         const baseUrl = new URL(business.websiteUrl);
-        new URL(imageUrl, baseUrl); // Just to validate
+        resolvedImageUrl = new URL(imageUrl, baseUrl).href;
       } else {
         new URL(imageUrl); // Validate the URL format
       }
@@ -61,7 +67,11 @@ export default defineEventHandler(async (event) => {
       return {
         type: 'check' as const,
         value: true,
-        label: `Open Graph image found: ${imageUrl.substring(0, 50)}${imageUrl.length > 50 ? '...' : ''}`
+        label: `Open Graph image found`,
+        imageUrl: resolvedImageUrl,
+        imageWidth: ogImageWidth ? parseInt(ogImageWidth) : undefined,
+        imageHeight: ogImageHeight ? parseInt(ogImageHeight) : undefined,
+        imageAlt: ogImageAlt || undefined
       };
     } catch (e) {
       return {
