@@ -26,7 +26,6 @@ export default defineNuxtConfig({
     '@nuxt/scripts',
     '@nuxt/ui',
     '@nuxt/content',
-    '@nuxt/test-utils',
     '@vueuse/nuxt'
   ],
 
