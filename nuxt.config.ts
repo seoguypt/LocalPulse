@@ -28,9 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/seo'
   ],
 
-  ogImage: {
-    enabled: false
-  },
+
 
   css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
@@ -52,10 +50,10 @@ export default defineNuxtConfig({
   },
 
   hub: {
-    workers: false,
-    cache: false,
-    database: false,
-    browser: false
+    workers: true,
+    cache: true,
+    database: true,
+    browser: true
   },
 
   nitro: {
@@ -123,6 +121,9 @@ export default defineNuxtConfig({
   },
 
   image: {
-    provider: 'ipx'
+    provider: 'cloudflare',
+    cloudflare: {
+      baseURL: 'https://localpulse.app'
+    }
   }
 })
