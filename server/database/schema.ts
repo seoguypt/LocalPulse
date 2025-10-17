@@ -1,8 +1,8 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 
-export const businesses = sqliteTable('businesses', {
+export const businesses = pgTable('businesses', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   category: text('category').notNull(),
@@ -19,19 +19,19 @@ export const businesses = sqliteTable('businesses', {
   doorDashUrl: text('door_dash_url'),
   deliverooUrl: text('deliveroo_url'),
   menulogUrl: text('menulog_url'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const businessLocations = sqliteTable('business_locations', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const businessLocations = pgTable('business_locations', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   businessId: text('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   googlePlaceId: text('google_place_id'),
   appleMapsId: text('apple_maps_id'),
   name: text('name'),
   address: text('address'),
-  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const businessesRelations = relations(businesses, ({ many }) => ({
