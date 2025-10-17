@@ -1,5 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { defineOrganization } from 'nuxt-schema-org/schema'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-31',
@@ -59,22 +58,7 @@ export default defineNuxtConfig({
     }
   },
 
-  site: {
-    url: 'https://localpulse.app/',
-    name: 'LocalPulse — Get seen online',
-    description: 'Get free, step-by-step fixes in under 2 minutes to improve your online visibility.',
-    defaultLocale: 'en-au',
-  },
 
-  schemaOrg: {
-    identity: defineOrganization({
-      name: 'LocalPulse',
-      alternateName: 'LocalPulse',
-      description: 'A free online visibility tool to help you get seen online.',
-      logo: '/logo.png',
-      url: 'https://localpulse.app/',
-    })
-  },
 
   // For nicer looking fonts, add an Adobe Fonts kit ID to your .env file
   fonts: process.env.NUXT_ADOBE_KIT_ID ? {
