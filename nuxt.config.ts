@@ -112,9 +112,6 @@ export default defineNuxtConfig({
   },
 
   image: {
-    provider: 'cloudflare',
-    cloudflare: {
-      baseURL: 'https://localpulse.app'
-    }
+    // Use default provider for Railway deployment
   }
 })
