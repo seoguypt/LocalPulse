@@ -20,15 +20,20 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application (NODE_ENV will be set by nuxt build automatically)
-RUN pnpm run build
+# Build the application with verbose output
+RUN echo "=== Starting build ===" && \
+    pnpm run build || (echo "=== BUILD COMMAND FAILED ===" && exit 1) && \
+    echo "=== Build completed ===" && \
+    echo "=== Checking directories ===" && \
+    ls -la && \
+    echo "=== Checking .output ===" && \
+    (ls -la .output 2>&1 || echo ".output directory does not exist") && \
+    echo "=== Checking .nuxt ===" && \
+    (ls -la .nuxt 2>&1 || echo ".nuxt directory does not exist")
 
-# Check build output
-RUN ls -la .output || echo ".output not found" && \
-    ls -la .nuxt || echo ".nuxt not found"
-
-# Verify build output
-RUN test -f .output/server/index.mjs || (echo "Build failed: index.mjs not found" && ls -la && exit 1)
+# Verify build output exists
+RUN test -d .output || (echo "ERROR: .output directory was not created by build" && exit 1)
+RUN test -f .output/server/index.mjs || (echo "ERROR: index.mjs not found in .output/server/" && ls -la .output/server/ && exit 1)
 
 # Production stage
 FROM node:20-alpine AS runner
