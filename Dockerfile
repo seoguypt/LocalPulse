@@ -43,8 +43,16 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Copy built application
+# Copy built application and startup script
 COPY --from=builder /app/.output /app/.output
+COPY --from=builder /app/start.sh /app/start.sh
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/server/database /app/server/database
+COPY --from=builder /app/drizzle.config.ts /app/drizzle.config.ts
+COPY --from=builder /app/package.json /app/package.json
+
+# Make startup script executable
+RUN chmod +x /app/start.sh
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -63,5 +71,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 
-# Start the application
-CMD ["node", ".output/server/index.mjs"]
+# Start the application with migrations
+CMD ["/app/start.sh"]
