@@ -52,9 +52,9 @@ export default defineNuxtConfig({
   },
 
   hub: {
-    workers: true,
-    cache: true,
-    database: true,
+    workers: false,
+    cache: false,
+    database: false,
     browser: false
   },
 
@@ -123,9 +123,6 @@ export default defineNuxtConfig({
   },
 
   image: {
-    provider: 'cloudflare',
-    cloudflare: {
-      baseURL: 'https://localpulse.app'
-    }
+    provider: 'ipx'
   }
 })
