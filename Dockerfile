@@ -13,6 +13,7 @@ COPY package.json pnpm-lock.yaml ./
 ENV CI=true
 ENV NODE_ENV=production
 ENV NITRO_PRESET=node-server
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
 
 # Install dependencies (use frozen lockfile for reproducibility)
 RUN pnpm install --frozen-lockfile
@@ -23,20 +24,11 @@ COPY . .
 # Debug: Check what files are present
 RUN echo "=== Files in /app ===" && ls -la
 
-# Build the application with verbose output and error handling
-RUN echo "=== Starting build ===" && \
-    pnpm run build 2>&1 | tee build.log || (echo "=== Build command failed ===" && cat build.log && exit 1) && \
-    echo "=== Build completed ==="
-
-# Debug: Check if .output was created
-RUN echo "=== Checking for .output directory ===" && \
-    ls -la && \
-    echo "=== Checking if .output exists ===" && \
-    if [ -d .output ]; then echo ".output directory EXISTS"; ls -la .output; else echo ".output directory DOES NOT EXIST"; fi
+# Build the application
+RUN pnpm run build || (echo "=== BUILD FAILED ===" && exit 1)
 
 # Verify build output
-RUN ls -la .output && \
-    test -f .output/server/index.mjs || (echo "Build failed: index.mjs not found" && exit 1)
+RUN test -f .output/server/index.mjs || (echo "Build failed: index.mjs not found" && ls -la && exit 1)
 
 # Production stage
 FROM node:20-alpine AS runner
