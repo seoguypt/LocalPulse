@@ -23,14 +23,16 @@ COPY . .
 # Debug: Check what files are present
 RUN echo "=== Files in /app ===" && ls -la
 
-# Build the application with verbose output
+# Build the application with verbose output and error handling
 RUN echo "=== Starting build ===" && \
-    pnpm run build && \
+    pnpm run build 2>&1 | tee build.log || (echo "=== Build command failed ===" && cat build.log && exit 1) && \
     echo "=== Build completed ==="
 
 # Debug: Check if .output was created
 RUN echo "=== Checking for .output directory ===" && \
-    ls -la
+    ls -la && \
+    echo "=== Checking if .output exists ===" && \
+    if [ -d .output ]; then echo ".output directory EXISTS"; ls -la .output; else echo ".output directory DOES NOT EXIST"; fi
 
 # Verify build output
 RUN ls -la .output && \
