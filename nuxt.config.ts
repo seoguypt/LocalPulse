@@ -27,8 +27,13 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/content',
     '@nuxt/test-utils',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    '@nuxthub/core'
   ],
+
+  hub: {
+    database: true
+  },
 
   css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
