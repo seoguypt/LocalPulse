@@ -51,7 +51,7 @@ export default defineNuxtConfig({
     workers: true,
     cache: true,
     database: true,
-    browser: true
+    browser: false
   },
 
   nitro: {
