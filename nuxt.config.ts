@@ -56,6 +56,15 @@ export default defineNuxtConfig({
     preset: 'cloudflare-pages',
     experimental: {
       openAPI: true
+    },
+    rollupConfig: {
+      external: ['exsolve']
+    }
+  },
+
+  vite: {
+    optimizeDeps: {
+      exclude: ['exsolve']
     }
   },
 
