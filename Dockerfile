@@ -20,8 +20,17 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application
-RUN pnpm run build
+# Debug: Check what files are present
+RUN echo "=== Files in /app ===" && ls -la
+
+# Build the application with verbose output
+RUN echo "=== Starting build ===" && \
+    pnpm run build && \
+    echo "=== Build completed ==="
+
+# Debug: Check if .output was created
+RUN echo "=== Checking for .output directory ===" && \
+    ls -la
 
 # Verify build output
 RUN ls -la .output && \
