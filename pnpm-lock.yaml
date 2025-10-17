@@ -119,6 +119,18 @@ importers:
       '@nuxt/test-utils':
         specifier: 3.18.0
         version: 3.18.0(@types/node@22.15.29)(@vue/test-utils@2.4.6)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(magicast@0.3.5)(playwright-core@1.52.0)(terser@5.44.0)(typescript@5.8.3)(vitest@3.1.4(@types/debug@4.1.12)(@types/node@22.15.29)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))(yaml@2.8.1)
+      '@oxc-minify/binding-win32-x64-msvc':
+        specifier: ^0.95.0
+        version: 0.95.0
+      '@oxc-parser/binding-win32-x64-msvc':
+        specifier: ^0.95.0
+        version: 0.95.0
+      '@oxc-resolver/binding-win32-x64-msvc':
+        specifier: ^11.10.0
+        version: 11.10.0
+      '@oxc-transform/binding-win32-x64-msvc':
+        specifier: ^0.95.0
+        version: 0.95.0
       '@tailwindcss/typography':
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@4.1.8)
@@ -1706,6 +1718,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@oxc-minify/binding-win32-x64-msvc@0.95.0':
+    resolution: {integrity: sha512-mtCkksnBcO4dIxuj1n9THbMihV+zjO7ZIVCPOq54pylA+hTb/OHau3OV+XyU0pnmREGTuF9xV3BUKag1SYS/lQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    os: [win32]
+
   '@oxc-parser/binding-android-arm64@0.94.0':
     resolution: {integrity: sha512-Ficqj6MggRGFkemU4pVFTyth3jWVL/zpIWjGMTXaPU81l46ZDcYVFWp9ia6nfE5mm8UdVSI2trvmK+BpNUim7g==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1795,8 +1812,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@oxc-parser/binding-win32-x64-msvc@0.95.0':
+    resolution: {integrity: sha512-BQpgl7rDjFvCIHudmUR0dCwc4ylBYZl4CPVinlD3NhkMif4WD5dADckoo5ES/KOpFyvwcbKZX+grP63cjHi26g==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    os: [win32]
+
   '@oxc-project/types@0.94.0':
     resolution: {integrity: sha512-+UgQT/4o59cZfH6Cp7G0hwmqEQ0wE+AdIwhikdwnhWI9Dp8CgSY081+Q3O67/wq3VJu8mgUEB93J9EHHn70fOw==}
+
+  '@oxc-resolver/binding-win32-x64-msvc@11.10.0':
+    resolution: {integrity: sha512-Q8gwXHjDeEokECEFCECkJW1OEOEgfFUGoLZs88jDpZ/QmdBklH/SbMLKJdYeIPztQ6HD069GAVPnP3WcXyHoUA==}
+    os: [win32]
 
   '@oxc-transform/binding-android-arm64@0.94.0':
     resolution: {integrity: sha512-abxgEoomc5HNbDQaGhBWguR+W4cdrcEIwV8xIQ2qpUuhEUoHy6nQLfN/gREAZMdkyIaKwk12FckB9aNxVTte2w==}
@@ -1885,6 +1911,11 @@ packages:
     resolution: {integrity: sha512-HEE/8x6H67jPlkCDDB3xl74eR86zY6nLAql6onmidF5JPNXt9v2XGB6xEwr4brUIaMLPkl90plbdCy9jWhEjdQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
+    os: [win32]
+
+  '@oxc-transform/binding-win32-x64-msvc@0.95.0':
+    resolution: {integrity: sha512-Y8JY79A7fTuBjEXZFu+mHbHzgsV3uJDUuUKeGffpOwI1ayOGCKeBJTiMhksYkiir1xS+DkGLEz73+xse9Is9rw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
     os: [win32]
 
   '@parcel/watcher-android-arm64@2.5.1':
@@ -9925,6 +9956,8 @@ snapshots:
   '@oxc-minify/binding-win32-x64-msvc@0.94.0':
     optional: true
 
+  '@oxc-minify/binding-win32-x64-msvc@0.95.0': {}
+
   '@oxc-parser/binding-android-arm64@0.94.0':
     optional: true
 
@@ -9972,7 +10005,11 @@ snapshots:
   '@oxc-parser/binding-win32-x64-msvc@0.94.0':
     optional: true
 
+  '@oxc-parser/binding-win32-x64-msvc@0.95.0': {}
+
   '@oxc-project/types@0.94.0': {}
+
+  '@oxc-resolver/binding-win32-x64-msvc@11.10.0': {}
 
   '@oxc-transform/binding-android-arm64@0.94.0':
     optional: true
@@ -10020,6 +10057,8 @@ snapshots:
 
   '@oxc-transform/binding-win32-x64-msvc@0.94.0':
     optional: true
+
+  '@oxc-transform/binding-win32-x64-msvc@0.95.0': {}
 
   '@parcel/watcher-android-arm64@2.5.1':
     optional: true
