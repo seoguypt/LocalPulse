@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: localpulse
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm install && pnpm run build
+    startCommand: node .output/server/index.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PNPM_VERSION
+        value: 9
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=4096
