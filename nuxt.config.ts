@@ -4,6 +4,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-05-31',
   devtools: { enabled: true },
 
+  devServer: {
+    host: '0.0.0.0',
+    port: 3000
+  },
+
   future: {
     compatibilityVersion: 4,
   },
@@ -22,8 +27,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/content',
     '@nuxt/test-utils',
-    '@vueuse/nuxt',
-    '@nuxthub/core'
+    '@vueuse/nuxt'
   ],
 
   css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
@@ -45,26 +49,22 @@ export default defineNuxtConfig({
     '/ingest/**': { proxy: 'https://us.i.posthog.com/**' },
   },
 
-  hub: {
-    workers: true,
-    cache: true,
-    database: true,
-    browser: true
-  },
+
 
   nitro: {
-    preset: 'cloudflare-pages',
+    preset: 'node-server',
     experimental: {
       openAPI: true
-    },
-    rollupConfig: {
-      external: ['exsolve']
     }
   },
 
   vite: {
     optimizeDeps: {
       exclude: ['exsolve']
+    },
+    server: {
+      allowedHosts: ['localpulse.aaid.me', '.aaid.me'],
+      origin: 'https://localpulse.aaid.me'
     }
   },
 
@@ -72,10 +72,10 @@ export default defineNuxtConfig({
 
   // For nicer looking fonts, add an Adobe Fonts kit ID to your .env file
   fonts: process.env.NUXT_ADOBE_KIT_ID ? {
-     adobe: {
-      id: [process.env.NUXT_ADOBE_KIT_ID || ''], 
+    adobe: {
+      id: [process.env.NUXT_ADOBE_KIT_ID || ''],
     },
-    
+
     families: [
       {
         name: 'ArponaSans',
@@ -96,7 +96,7 @@ export default defineNuxtConfig({
         styles: ['normal', 'italic'],
       }
     ]
-  }: {
+  } : {
     families: [
       {
         name: 'Poppins',
