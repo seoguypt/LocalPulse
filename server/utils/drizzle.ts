@@ -13,6 +13,11 @@ export function useDrizzle() {
     const config = useRuntimeConfig();
     const connectionString = config.databaseUrl || process.env.DATABASE_URL;
     
+    console.log('[useDrizzle] Checking database configuration...');
+    console.log('[useDrizzle] config.databaseUrl:', config.databaseUrl ? 'SET (length: ' + config.databaseUrl.length + ')' : 'NOT SET');
+    console.log('[useDrizzle] process.env.DATABASE_URL:', process.env.DATABASE_URL ? 'SET (length: ' + process.env.DATABASE_URL.length + ')' : 'NOT SET');
+    console.log('[useDrizzle] Final connectionString:', connectionString ? connectionString.substring(0, 30) + '...' : 'NOT SET');
+    
     if (!connectionString) {
       throw new Error('DATABASE_URL is not configured. Please add a PostgreSQL database to your Railway project.');
     }

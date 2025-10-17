@@ -32,7 +32,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', process.env.NUXT_ADOBE_KIT_ID && '~/assets/css/adobe-fonts.css'],
 
   runtimeConfig: {
-    databaseUrl: process.env.DATABASE_URL,
+    databaseUrl: process.env.NUXT_DATABASE_URL || process.env.DATABASE_URL,
     googleApiKey: process.env.NUXT_GOOGLE_API_KEY,
     googleProgrammableSearchEngineId: process.env.NUXT_GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID,
     appleMapkitTeamId: process.env.NUXT_APPLE_MAPKIT_TEAM_ID,
